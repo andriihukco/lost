@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { type CSSProperties, useEffect, useRef } from 'react';
 import { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LatLng } from '@/lib/geo';
@@ -254,6 +254,22 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     }
   };
 
+  // Tapping a treasure centres it in the area above the sheet, which opens at half height and covers the lower half.
+  function centerOn(m: MapLibreMap, t: Treasure) {
+    // The sheet opens at half height: its top sits at about (height - tab bar) / 2. The pin should sit in the middle of
+    // the band between TOP_INSET and that top. A positive offset moves the pin down, so the shift is negated.
+    const h = m.getContainer().clientHeight;
+    const sheetTop = (h - insetRef.current) / 2;
+    const visibleMid = (TOP_INSET + sheetTop) / 2;
+    const up = h / 2 - visibleMid;
+    m.easeTo({
+      center: [t.lng, t.lat],
+      zoom: Math.max(m.getZoom(), 16),
+      duration: 500,
+      offset: [0, -up],
+    });
+  }
+
   // "Show my location": centre on me at a street-level zoom.
   useEffect(() => {
     const map = mapRef.current;
@@ -323,6 +339,8 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     el.setAttribute('aria-label', 'Скарб поза екраном');
     el.onclick = () => {
       const t = treasuresRef.current.find((x) => x.id === id);
+      const m = mapRef.current;
+      if (t && m) centerOn(m, t);
       if (t) selectRef.current?.(t);
     };
     const core = document.createElement('span');
@@ -376,7 +394,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       };
       el.onclick = () => {
         const m = mapRef.current;
-        if (m) m.easeTo({ center: [entry.treasure.lng, entry.treasure.lat], zoom: Math.max(m.getZoom(), 16), duration: 500 });
+        if (m) centerOn(m, entry.treasure);
         selectRef.current?.(entry.treasure);
       };
       pinMap.current.set(t.id, entry);
@@ -458,8 +476,9 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
 
   // MapLibre's stylesheet makes its container position:relative, which would override "absolute inset-0".
   // A wrapper keeps the sizing; the map fills it.
+  // --map-bottom lifts the map's bottom controls (attribution) above the tab bar.
   return (
-    <div className="absolute inset-0">
+    <div className="lost-map absolute inset-0" style={{ '--map-bottom': `${bottomInset}px` } as CSSProperties}>
       <div ref={container} className="h-full w-full" />
       <div ref={overlay} className="pointer-events-none absolute inset-0 overflow-hidden" />
     </div>

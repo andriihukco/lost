@@ -55,7 +55,7 @@ export default function ProfileTab({ player, onSaved }: { player: Player; onSave
         </label>
       </div>
 
-      <p className="ios-section mt-6">Тварина</p>
+      <p className="ios-section mt-6">Тотем</p>
       <div className="ios-group grid grid-cols-6 gap-1 p-3">
         {AVATARS.map((a) => {
           const gone = isTaken(a.key, taken, null); // the list already excludes my own row

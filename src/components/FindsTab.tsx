@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Icon from '@/components/Icon';
 import { unmarkFound, type UnfoundStatus } from '@/lib/found';
 import { formatDistance } from '@/lib/geoFormat';
 import { pinOrDefault } from '@/lib/pinEmoji';
@@ -75,7 +76,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
                   <button type="button" onClick={() => toggle(t.id)} aria-pressed={on} aria-label={on ? 'Прибрати з маршруту' : 'Додати до маршруту'}
                     className="grid min-h-[44px] min-w-[44px] place-items-center pl-4">
                     <span className={`grid h-6 w-6 place-items-center rounded-full border-2 text-[13px] font-extrabold ${on ? 'border-[var(--green)] bg-[var(--green)] text-white' : 'border-[var(--line)]'}`}>
-                      {on ? '✓' : ''}
+                      {on && <Icon name="check" size={16} />}
                     </span>
                   </button>
                   <button type="button" onClick={() => onShow(t.id)} className={`${row} flex-1`}>
@@ -102,7 +103,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
             {mine.map((t) => (
               <li key={t.id} className="ios-row !p-0">
                 <button type="button" onClick={() => onShow(t.id)} className={`${row} flex-1`}>
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--green-soft)] text-xl">✅</span>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--green-soft)] text-[var(--green-deep)]"><Icon name="task_alt" filled size={22} /></span>
                   <span className="min-w-0 flex-1 truncate text-[17px] font-semibold">{t.title}</span>
                 </button>
                 <button type="button" disabled={busyId === t.id} onClick={() => void undo(t)} className="min-h-[44px] shrink-0 rounded-xl px-3 pr-4 text-[15px] font-semibold text-[var(--danger)] disabled:opacity-40">

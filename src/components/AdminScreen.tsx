@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import TreasureForm from '@/components/TreasureForm';
 import TreasureManager from '@/components/TreasureManager';
+import Icon from '@/components/Icon';
+import Splash from '@/components/Splash';
 import { checkIsAdmin } from '@/lib/player';
 import { supabase } from '@/lib/supabase';
 
@@ -52,7 +54,7 @@ export default function AdminScreen() {
     setView('login');
   }
 
-  if (view === 'loading') return <main className="p-6 text-[var(--muted)]">Завантаження…</main>;
+  if (view === 'loading') return <Splash label="Перевіряємо доступ" />;
 
   if (view === 'login') {
     return (
@@ -84,7 +86,7 @@ export default function AdminScreen() {
             {busy ? 'Входимо…' : 'Увійти'}
           </button>
         </form>
-        <Link href="/" className="text-sm text-[var(--green-deep)] font-bold">← На карту</Link>
+        <Link href="/" className="inline-flex items-center gap-1 text-sm text-[var(--green-deep)] font-bold"><Icon name="arrow_back" size={18} />На карту</Link>
       </main>
     );
   }
@@ -92,7 +94,7 @@ export default function AdminScreen() {
   return (
     <main className="min-h-dvh">
       <div className="flex items-center justify-between px-5 pt-6">
-        <Link href="/" className="text-sm text-[var(--green-deep)] font-bold">← На карту</Link>
+        <Link href="/" className="inline-flex items-center gap-1 text-sm text-[var(--green-deep)] font-bold"><Icon name="arrow_back" size={18} />На карту</Link>
         <button type="button" onClick={() => void signOut()} className="text-sm text-[var(--muted)]">Вийти</button>
       </div>
       <div className="flex gap-2 px-5 pt-4">

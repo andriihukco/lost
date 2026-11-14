@@ -10,6 +10,7 @@
     "postinstall": "node -e \"require('fs').copyFileSync('node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs','public/maplibre-gl-worker.mjs')\""
   },
   "dependencies": {
+    "@material-symbols/svg-400": "^0.49.0",
     "@supabase/supabase-js": "^2.119.0",
     "maplibre-gl": "^6.18.0",
     "motion": "^14.14.0",

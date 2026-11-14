@@ -56,19 +56,23 @@ export default function BottomSheet({ children, initial = 'peek', bottomOffset =
 
   if (vh === 0) return null;
 
+  // The clip box ends where the tab bar begins, so nothing of the sheet slides under the bar. Taps above the
+  // sheet pass through to the map.
   return (
-    <motion.div
-      className="absolute inset-x-0 bottom-0 touch-none rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] shadow-[0_-4px_0_var(--line)]"
-      style={{ height: vh * SNAPS.full, y, bottom: bottomOffset }}
-      drag="y"
-      dragConstraints={{ top: 0, bottom: maxOffset }}
-      dragElastic={{ top: RUBBER_BAND, bottom: 0.05 }} // resistance above full, almost none below peek
-      dragMomentum={false}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-    >
-      <div className="mx-auto mt-3 h-1.5 w-12 cursor-grab rounded-full bg-[var(--line)]" aria-hidden />
-      <div className="h-[calc(100%-1.75rem)] overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">{children}</div>
-    </motion.div>
+    <div className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ bottom: bottomOffset }}>
+      <motion.div
+        className="pointer-events-auto absolute inset-x-0 bottom-0 touch-none rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] shadow-[0_-4px_0_var(--line)]"
+        style={{ height: vh * SNAPS.full, y }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: maxOffset }}
+        dragElastic={{ top: RUBBER_BAND, bottom: 0.05 }} // resistance above full, almost none below peek
+        dragMomentum={false}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+      >
+        <div className="mx-auto mt-3 h-1.5 w-12 cursor-grab rounded-full bg-[var(--line)]" aria-hidden />
+        <div className="h-[calc(100%-1.75rem)] overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">{children}</div>
+      </motion.div>
+    </div>
   );
 }

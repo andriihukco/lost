@@ -1,38 +1,50 @@
 'use client';
 
 import { useState } from 'react';
+import Icon from '@/components/Icon';
+import type { IconName } from '@/components/iconPaths';
+import { compassPermOf, firstGateStep } from '@/lib/entryGate';
 import { WELCOME_STEPS, type WelcomeStep } from '@/lib/welcome';
 import type { HeadingStatus } from '@/lib/useHeading';
 
 type Props = {
+  start: WelcomeStep;
   compassStatus: HeadingStatus;
   onCompass: () => Promise<HeadingStatus>;
   onDone: () => void;
 };
 
-// First-run screen: what the app is for, then the two permissions it needs.
-// Location is asked for here so the browser prompt is explained first.
-export default function Welcome({ compassStatus, onCompass, onDone }: Props) {
-  const [step, setStep] = useState<WelcomeStep>('intro');
+// Entry gate. The map opens only after location and compass are granted (or the device has no compass).
+// There is no skip: a refused permission shows how to allow it and a retry button.
+export default function Welcome({ start, compassStatus, onCompass, onDone }: Props) {
+  const [step, setStep] = useState<WelcomeStep>(start);
+  const [blocked, setBlocked] = useState<'location' | 'compass' | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const index = WELCOME_STEPS.indexOf(step);
-  const next = () => {
-    setNote(null);
-    setStep(WELCOME_STEPS[index + 1] ?? 'compass');
-  };
 
   function askLocation() {
     setBusy(true);
     setNote(null);
     if (!('geolocation' in navigator)) {
-      setNote('Цей браузер не має геолокації. Карта працюватиме без неї.');
       setBusy(false);
+      setBlocked('location');
+      setNote('Цей браузер не має геолокації. Без неї гра неможлива.');
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      () => { setBusy(false); next(); },
-      () => { setBusy(false); setNote('Геолокацію не дозволено. Ви зможете увімкнути її пізніше в налаштуваннях браузера.'); },
+      () => {
+        setBusy(false);
+        setBlocked(null);
+        // After location, the compass is next only if it still needs a tap; otherwise the player is in.
+        if (firstGateStep(true, 'granted', compassPermOf(compassStatus)) === null) onDone();
+        else setStep('compass');
+      },
+      () => {
+        setBusy(false);
+        setBlocked('location');
+        setNote('Геолокацію заблоковано. Дозвольте доступ до місцезнаходження в налаштуваннях браузера, потім натисніть «Спробувати знову».');
+      },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
     );
   }
@@ -42,8 +54,13 @@ export default function Welcome({ compassStatus, onCompass, onDone }: Props) {
     setNote(null);
     const result = await onCompass();
     setBusy(false);
-    if (result === 'denied') setNote('Компас не дозволено. Напрямок показуватиметься за рухом GPS.');
-    else onDone();
+    if (firstGateStep(true, 'granted', compassPermOf(result)) === null) {
+      setBlocked(null);
+      onDone();
+    } else {
+      setBlocked('compass');
+      setNote('Доступ до руху й орієнтації заблоковано. На iPhone: Налаштування → Safari → Рух і орієнтація. Потім натисніть «Спробувати знову».');
+    }
   }
 
   return (
@@ -56,44 +73,40 @@ export default function Welcome({ compassStatus, onCompass, onDone }: Props) {
 
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center text-center">
         {step === 'intro' && (
-          <Panel emoji="🍄" title="Ласкаво просимо до Lost" text="Шукайте схований скарби разом з друзями. Ходіть лісовими стежками, знаходьте гриби на мапі й відмічайте місця." />
+          <Panel icon="travel_explore" title="Ласкаво просимо до Lost" text="Шукайте схований скарби разом з друзями. Ходіть лісовими стежками, знаходьте скарби на мапі й відмічайте місця." />
         )}
         {step === 'location' && (
-          <Panel emoji="📍" title="Геолокація" text="Щоб бачити відстань до скарбів і показувати на мапі, де ви. Інші гравці бачать ваше місце, поки ви в грі." />
+          <Panel icon="location_on" title="Геолокація" text="Щоб бачити відстань до скарбів і показувати на мапі, де ви. Інші гравці бачать ваше місце, поки ви в грі." />
         )}
         {step === 'compass' && (
-          <Panel emoji="🧭" title="Компас" text="Щоб мапа показувала, куди ви дивитеся, і вказувала напрямок до скарбу. На iPhone браузер спитає дозвіл." />
+          <Panel icon="explore" title="Компас" text="Щоб мапа показувала, куди ви дивитеся, і вказувала напрямок до скарбу. На iPhone браузер спитає дозвіл." />
         )}
-        {note && <p role="status" className="mt-4 text-[15px] font-semibold text-[var(--danger)]">{note}</p>}
+        {note && <p role="alert" className="mt-4 text-[15px] font-semibold text-[var(--danger)]">{note}</p>}
       </div>
 
       <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-        {step === 'intro' && <button type="button" onClick={next} className="dl-btn">Далі</button>}
+        {step === 'intro' && <button type="button" onClick={() => setStep('location')} className="dl-btn">Далі</button>}
         {step === 'location' && (
-          <>
-            <button type="button" disabled={busy} onClick={askLocation} className="dl-btn">Дозволити геолокацію</button>
-            <button type="button" onClick={next} className="min-h-[44px] text-[16px] font-bold text-[var(--muted)]">Пізніше</button>
-          </>
+          <button type="button" disabled={busy} onClick={askLocation} className="dl-btn">
+            {blocked === 'location' ? 'Спробувати знову' : 'Дозволити геолокацію'}
+          </button>
         )}
         {step === 'compass' && (
-          compassStatus === 'needs-permission' ? (
-            <>
-              <button type="button" disabled={busy} onClick={() => void askCompass()} className="dl-btn">Дозволити компас</button>
-              <button type="button" onClick={onDone} className="min-h-[44px] text-[16px] font-bold text-[var(--muted)]">Пропустити</button>
-            </>
-          ) : (
-            <button type="button" onClick={onDone} className="dl-btn">Почати гру</button>
-          )
+          <button type="button" disabled={busy} onClick={() => void askCompass()} className="dl-btn">
+            {blocked === 'compass' ? 'Спробувати знову' : 'Дозволити компас'}
+          </button>
         )}
       </div>
     </div>
   );
 }
 
-function Panel({ emoji, title, text }: { emoji: string; title: string; text: string }) {
+function Panel({ icon, title, text }: { icon: IconName; title: string; text: string }) {
   return (
     <>
-      <span className="grid h-32 w-32 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-6xl shadow-[0_6px_0_var(--green-deep)]">{emoji}</span>
+      <span className="grid h-32 w-32 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-[var(--green-deep)] shadow-[0_6px_0_var(--green-deep)]">
+        <Icon name={icon} size={64} />
+      </span>
       <h1 className="dl-title mt-8 text-[34px]">{title}</h1>
       <p className="mt-4 text-[17px] leading-relaxed text-[var(--muted)]">{text}</p>
     </>

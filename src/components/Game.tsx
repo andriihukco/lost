@@ -9,6 +9,9 @@ import Welcome from '@/components/Welcome';
 import InAppGate from '@/components/InAppGate';
 import { detectInApp, type InApp } from '@/lib/inApp';
 import { isWelcomed, markWelcomed } from '@/lib/welcome';
+import Icon from '@/components/Icon';
+import Splash from '@/components/Splash';
+import { compassPermOf, firstGateStep, type LocationPerm } from '@/lib/entryGate';
 import ProfileTab from '@/components/ProfileTab';
 import TabBar, { type Tab } from '@/components/TabBar';
 import TreasureSheetContent from '@/components/TreasureSheetContent';
@@ -51,11 +54,15 @@ export default function Game() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   // Location is asked for on the welcome screen first; until then nothing prompts the browser.
   const [welcomed, setWelcomed] = useState<boolean | null>(null);
+  const [locPerm, setLocPerm] = useState<LocationPerm>('unknown');
+  const [entered, setEntered] = useState(false); // the entry gate was passed in this visit
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
   const [recenter, setRecenter] = useState(0);
   const geo = useGeolocation(welcomed === true);
   const compass = useHeading();
+  // The entry gate: a first visit, or a returning player with a missing permission, must pass it before the map.
+  const gateStep = welcomed === null || entered ? null : firstGateStep(welcomed, locPerm, compassPermOf(compass.status));
   const wake = useWakeLock();
   const { treasures, error, reload } = useTreasures();
   // Compass if the browser has one (phones), otherwise the GPS course while moving.
@@ -111,6 +118,18 @@ export default function Game() {
   useEffect(() => {
     setWelcomed(isWelcomed(window.localStorage));
     setInApp(detectInApp(navigator.userAgent));
+  }, []);
+
+  // Location permission as the browser reports it (a returning player who revoked it is sent back to the gate).
+  useEffect(() => {
+    let perm: PermissionStatus | null = null;
+    const toLoc = (s: PermissionState): LocationPerm => s;
+    navigator.permissions?.query({ name: 'geolocation' }).then((p) => {
+      perm = p;
+      setLocPerm(toLoc(p.state));
+      p.onchange = () => setLocPerm(toLoc(p.state));
+    }).catch(() => {});
+    return () => { if (perm) perm.onchange = null; };
   }, []);
 
   useEffect(() => {
@@ -224,7 +243,7 @@ export default function Game() {
 
   const gate = inApp?.inApp === true && !inAppOk;
   if (gate) return <InAppGate info={inApp} url={window.location.href} onContinue={() => setInAppOk(true)} />;
-  if (!ready) return <main className="p-6 text-[17px] text-[var(--muted)]">Завантаження…</main>;
+  if (!ready) return <Splash />;
   if (failed) return <main className="p-6 text-[17px] font-semibold text-[var(--danger)]">{failed}</main>;
 
   const nameRecord = Object.fromEntries([...names.current].map(([id, v]) => [id, v.nickname]));
@@ -280,11 +299,6 @@ export default function Game() {
               {geo.status === 'denied' ? 'GPS вимкнено · увімкніть геолокацію' : 'GPS: шукаю сигнал…'}
             </span>
           )}
-          {compass.status === 'needs-permission' && (
-            <button type="button" onClick={() => void compass.requestPermission()} className="dl-tag min-h-[44px] px-4 py-2 text-[15px]">
-              Увімкнути компас
-            </button>
-          )}
           {allFound && <p className="dl-card px-4 py-3 text-[15px] font-bold">Усі скарби знайдено</p>}
           {error && <p className="dl-card px-4 py-3 text-[15px] font-semibold text-[var(--danger)]">{error}</p>}
           {toasts.map((t) => (
@@ -304,12 +318,9 @@ export default function Game() {
             else setRecenter((n) => n + 1);
           }}
           style={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
-          className="dl-card absolute right-3 z-10 grid h-12 w-12 place-items-center rounded-full"
+          className="md-fab absolute right-3 z-10 grid h-12 w-12 place-items-center rounded-full"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green-deep)" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
-            <circle cx="12" cy="12" r="3.5" />
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-          </svg>
+          <Icon name="my_location" size={24} />
         </button>
       )}
 
@@ -359,7 +370,7 @@ export default function Game() {
       {showSheet && (
         <BottomSheet key={selected.id} initial="half" bottomOffset={tabBarH}>
           <div className="flex justify-end px-4 pt-1">
-            <button type="button" aria-label="Закрити" onClick={() => setSelectedId(null)} className="grid h-11 w-11 place-items-center rounded-full text-2xl text-[var(--muted)]">×</button>
+            <button type="button" aria-label="Закрити" onClick={() => setSelectedId(null)} className="grid h-11 w-11 place-items-center rounded-full text-[var(--muted)]"><Icon name="close" size={24} /></button>
           </div>
           <TreasureSheetContent
             treasure={selected}
@@ -381,13 +392,15 @@ export default function Game() {
 
       {player && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); }} onHeight={setTabBarH} />}
 
-      {welcomed === false && (
+      {gateStep && (
         <Welcome
+          start={gateStep}
           compassStatus={compass.status}
           onCompass={compass.requestPermission}
           onDone={() => {
             markWelcomed(window.localStorage);
             setWelcomed(true);
+            setEntered(true);
           }}
         />
       )}

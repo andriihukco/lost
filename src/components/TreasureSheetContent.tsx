@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import CameraOverlay from '@/components/CameraOverlay';
+import Icon from '@/components/Icon';
 import { isFoundable, type LatLng } from '@/lib/geo';
 import { bearingDeg, cardinal, formatDistance } from '@/lib/geoFormat';
 import { relativeBearing } from '@/lib/heading';
@@ -131,13 +132,13 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
           className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[var(--green-soft)] text-2xl font-black text-[var(--green-deep)]"
           style={arrowDeg !== null ? { transform: `rotate(${arrowDeg}deg)` } : undefined}
         >
-          {arrowDeg !== null ? '↑' : '•'}
+          <Icon name={arrowDeg !== null ? 'navigation' : 'location_searching'} filled size={28} />
         </span>
         <div className="min-w-0">
           <p className="dl-label">До місця</p>
           <p className="text-4xl font-black tabular-nums tracking-tight">{distanceM !== null ? formatDistance(distanceM) : '—'}</p>
           <p className="text-sm font-semibold text-[var(--muted)]">
-            {!pos ? 'Чекаємо на GPS' : direction ? `на ${direction}${heading === null ? ' · компас вимкнено' : ''}` : ''}
+            {!pos ? 'Чекаємо на GPS' : direction ? `на ${direction}` : ''}
           </p>
         </div>
       </div>
@@ -161,7 +162,8 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
       )}
 
       {photoUrls.length > 0 && (
-        <button type="button" onClick={() => setCamera(true)} className="dl-btn-secondary">
+        <button type="button" onClick={() => setCamera(true)} className="dl-btn-secondary flex items-center justify-center gap-2">
+          <Icon name="photo_camera" size={22} />
           Камера: знайти місце
         </button>
       )}
