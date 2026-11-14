@@ -13,11 +13,13 @@ export default function OfflineMap({
   variant,
   onDone,
   onLater,
+  onSaved,
 }: {
   points: LatLng[];
   variant: 'prompt' | 'card';
   onDone?: () => void;
   onLater?: () => void;
+  onSaved?: () => void;
 }) {
   const [urls, setUrls] = useState<string[] | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export default function OfflineMap({
     const res = await saveOffline(urls, (done, total) => setProgress({ done, total }));
     setBusy(false);
     setResult(res);
+    if (res.failed === 0) onSaved?.();
   }
 
   const card = variant === 'card';

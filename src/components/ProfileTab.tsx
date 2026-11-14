@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import NicknamePicker from '@/components/NicknamePicker';
 import { avatarEmoji, nicknameFor, type AvatarKey } from '@/lib/avatars';
 import { getAllPlayers, savePlayer, type Player } from '@/lib/player';
-import OfflineMap from '@/components/OfflineMap';
+import OfflineSection from '@/components/OfflineSection';
 import { TransferCodeMaker } from '@/components/ProfileTransfer';
 import { AnimatePresence, motion } from 'motion/react';
 import type { LatLng } from '@/lib/geo';
@@ -74,9 +74,9 @@ export default function ProfileTab({ player, onSaved, offlinePoints, bottomInset
       </AnimatePresence>
       {message && <p role="status" className="mt-3 text-center text-[15px] font-semibold text-[var(--green-deep)]">{message}</p>}
 
-      <p className="ios-section mt-8">Офлайн</p>
+      <p className="ios-section mt-8">Офлайн-карта</p>
       <div className="dl-card mt-2 p-4">
-        <OfflineMap points={offlinePoints} variant="card" />
+        <OfflineSection points={offlinePoints} />
       </div>
 
       <p className="ios-section mt-8">Перенести профіль</p>

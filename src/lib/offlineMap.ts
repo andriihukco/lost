@@ -105,5 +105,58 @@ export async function saveOffline(urls: string[], onProgress: (done: number, tot
     }
   };
   await Promise.all(Array.from({ length: 6 }, worker));
+  if (failed === 0) writeOfflineStatus(window.localStorage, { savedAt: new Date().toISOString(), files: ok });
   return { ok, failed };
+}
+
+// What was saved, and when, in this browser. The cache itself is in the service worker (public/sw.js).
+export const OFFLINE_CACHE = 'lost-map-v1'; // must match MAP in public/sw.js
+const STATUS_KEY = 'lost.offlineMap';
+export type OfflineStatus = { savedAt: string; files: number };
+
+export function readOfflineStatus(storage: Storage): OfflineStatus | null {
+  try {
+    const raw = storage.getItem(STATUS_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Partial<OfflineStatus>;
+    return typeof v.savedAt === 'string' && typeof v.files === 'number' ? { savedAt: v.savedAt, files: v.files } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeOfflineStatus(storage: Storage, status: OfflineStatus): void {
+  try {
+    storage.setItem(STATUS_KEY, JSON.stringify(status));
+  } catch {
+    // storage blocked: the saved map still works, the status just is not remembered
+  }
+}
+
+// Removes the saved map from this device: its cache and the status record. The app shell is kept.
+export async function clearOffline(storage: Storage): Promise<void> {
+  if (typeof caches !== 'undefined') await caches.delete(OFFLINE_CACHE);
+  try {
+    storage.removeItem(STATUS_KEY);
+  } catch {
+    // nothing to remove
+  }
+}
+
+// How much the app keeps on this device: the number of map files in the cache, and the bytes the browser reports
+// for the whole site (null when the browser does not say).
+export async function offlineUsage(): Promise<{ files: number; bytes: number | null }> {
+  let files = 0;
+  try {
+    if (typeof caches !== 'undefined') files = (await (await caches.open(OFFLINE_CACHE)).keys()).length;
+  } catch {
+    files = 0;
+  }
+  let bytes: number | null = null;
+  try {
+    bytes = (await navigator.storage?.estimate?.())?.usage ?? null;
+  } catch {
+    bytes = null;
+  }
+  return { files, bytes };
 }
