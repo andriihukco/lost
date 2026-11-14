@@ -18,7 +18,7 @@ export default function NicknamePicker({ value, taken, onPick }: { value: Avatar
             aria-label={gone ? `${a.nickname}, уже обрано` : a.nickname}
             disabled={gone}
             onClick={() => onPick(a.key)}
-            className={`flex min-h-[64px] items-center gap-3 rounded-2xl border-2 px-3 py-2.5 text-left transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:grayscale ${
+            className={`flex min-h-[64px] items-center gap-3 rounded-full border-2 px-3 py-2.5 text-left transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:grayscale ${
               selected
                 ? 'border-[var(--green)] bg-[var(--green-soft)] elev-sm'
                 : 'border-[var(--line)] bg-[var(--paper)] elev-sm'

@@ -104,7 +104,7 @@ export default function AdminScreen() {
         </button>
       </header>
       <nav aria-label="Розділи адмінки" className="px-4 pb-3">
-        <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-[var(--line)] p-1">
+        <div role="tablist" className="grid grid-cols-3 gap-1 rounded-full bg-[var(--line)] p-1">
           {([['treasures', 'Скарби'], ['players', 'Гравці'], ['map', 'Карта']] as const).map(([id, label]) => (
             <button
               key={id}
@@ -112,7 +112,7 @@ export default function AdminScreen() {
               role="tab"
               aria-selected={section === id}
               onClick={() => setSection(id)}
-              className={`min-h-[40px] rounded-xl text-sm font-bold transition-colors ${section === id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
+              className={`min-h-[40px] rounded-full text-sm font-bold transition-colors ${section === id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
             >
               {label}
             </button>

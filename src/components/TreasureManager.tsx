@@ -57,7 +57,7 @@ export default function TreasureManager() {
         <button type="button" onClick={() => void reload()} className="min-h-[44px] px-2 text-sm font-bold text-[var(--green-deep)]">Оновити</button>
       </div>
 
-      <div role="tablist" aria-label="Фільтр скарбів" className="grid grid-cols-3 gap-1 rounded-2xl bg-[var(--line)] p-1">
+      <div role="tablist" aria-label="Фільтр скарбів" className="grid grid-cols-3 gap-1 rounded-full bg-[var(--line)] p-1">
         {FILTERS.map((f) => (
           <button
             key={f.id}
@@ -65,7 +65,7 @@ export default function TreasureManager() {
             role="tab"
             aria-selected={filter === f.id}
             onClick={() => setFilter(f.id)}
-            className={`min-h-[40px] rounded-xl text-sm font-bold transition-colors ${filter === f.id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
+            className={`min-h-[40px] rounded-full text-sm font-bold transition-colors ${filter === f.id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
           >
             {f.label}
           </button>

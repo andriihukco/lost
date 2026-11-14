@@ -69,7 +69,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
       <h1 className="ios-large-title pt-4">Знахідки</h1>
       <p className="mt-1 text-[15px] font-medium text-[var(--muted)]">Знайдено {foundCount} з {treasures.length}</p>
 
-      <div role="tablist" aria-label="Скарби" className="mt-5 grid grid-cols-2 gap-1 rounded-2xl bg-[var(--line)] p-1">
+      <div role="tablist" aria-label="Скарби" className="mt-5 grid grid-cols-2 gap-1 rounded-full bg-[var(--line)] p-1">
         {([['map', `На карті · ${open.length}`], ['found', `Знайдені · ${foundCount}`]] as const).map(([id, label]) => (
           <button
             key={id}
@@ -77,7 +77,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
             role="tab"
             aria-selected={view === id}
             onClick={() => setView(id)}
-            className={`min-h-[44px] rounded-xl text-[15px] font-bold transition-colors ${view === id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
+            className={`min-h-[44px] rounded-full text-[15px] font-bold transition-colors ${view === id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
           >
             {label}
           </button>
@@ -125,7 +125,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--green-soft)] text-[var(--green-deep)]"><Icon name="task_alt" filled size={22} /></span>
                   <span className="min-w-0 flex-1 truncate text-[17px] font-semibold">{t.title}</span>
                 </button>
-                <button type="button" disabled={busyId === t.id} onClick={() => void undo(t)} className="min-h-[44px] shrink-0 rounded-xl px-3 pr-4 text-[15px] font-semibold text-[var(--danger)] disabled:opacity-40">
+                <button type="button" disabled={busyId === t.id} onClick={() => void undo(t)} className="min-h-[44px] shrink-0 rounded-full px-3 pr-4 text-[15px] font-semibold text-[var(--danger)] disabled:opacity-40">
                   Повернути
                 </button>
               </li>

@@ -92,7 +92,7 @@ export default function PlayersPanel() {
                 type="button"
                 disabled={busyId === p.user_id}
                 onClick={() => void remove(p)}
-                className="min-h-[44px] shrink-0 rounded-xl px-3 text-sm font-bold text-[var(--danger)] disabled:opacity-40"
+                className="min-h-[44px] shrink-0 rounded-full px-3 text-sm font-bold text-[var(--danger)] disabled:opacity-40"
               >
                 Видалити
               </button>

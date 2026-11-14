@@ -37,7 +37,7 @@ export default function RatingTab({ myId }: { myId: string }) {
     <div className="mx-auto w-full max-w-xl px-4 pb-28 pt-safe-top">
       <h1 className="ios-large-title pt-4">Рейтинг</h1>
 
-      <div role="tablist" aria-label="Категорія рейтингу" className="mt-5 grid grid-cols-3 gap-1 rounded-2xl bg-[var(--line)] p-1">
+      <div role="tablist" aria-label="Категорія рейтингу" className="mt-5 grid grid-cols-3 gap-1 rounded-full bg-[var(--line)] p-1">
         {CATEGORIES.map((c) => (
           <button
             key={c.id}
@@ -45,7 +45,7 @@ export default function RatingTab({ myId }: { myId: string }) {
             role="tab"
             aria-selected={category === c.id}
             onClick={() => setCategory(c.id)}
-            className={`min-h-[44px] rounded-xl px-1 text-[13px] font-bold leading-tight transition-colors ${category === c.id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
+            className={`min-h-[44px] rounded-full px-1 text-[13px] font-bold leading-tight transition-colors ${category === c.id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
           >
             {c.label}
           </button>
