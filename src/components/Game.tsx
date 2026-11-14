@@ -5,6 +5,8 @@ import BottomSheet from '@/components/BottomSheet';
 import FindsTab from '@/components/FindsTab';
 import MapView, { type OtherPlayer, type RouteView } from '@/components/MapView';
 import Onboarding from '@/components/Onboarding';
+import Welcome from '@/components/Welcome';
+import { isWelcomed, markWelcomed } from '@/lib/welcome';
 import ProfileTab from '@/components/ProfileTab';
 import TabBar, { type Tab } from '@/components/TabBar';
 import TreasureSheetContent from '@/components/TreasureSheetContent';
@@ -45,7 +47,10 @@ export default function Game() {
   const [route, setRoute] = useState<RouteState | null>(null);
   const [focus, setFocus] = useState<{ id: string | null; nonce: number }>({ id: null, nonce: 0 });
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const geo = useGeolocation();
+  // Location is asked for on the welcome screen first; until then nothing prompts the browser.
+  const [welcomed, setWelcomed] = useState<boolean | null>(null);
+  const [recenter, setRecenter] = useState(0);
+  const geo = useGeolocation(welcomed === true);
   const compass = useHeading();
   const wake = useWakeLock();
   const { treasures, error, reload } = useTreasures();
@@ -97,6 +102,10 @@ export default function Game() {
     setTab('map');
     setSelectedId(null);
     setFocus((f) => ({ id, nonce: f.nonce + 1 }));
+  }, []);
+
+  useEffect(() => {
+    setWelcomed(isWelcomed(window.localStorage));
   }, []);
 
   useEffect(() => {
@@ -235,6 +244,7 @@ export default function Game() {
         route={routeView}
         focusId={focus.id}
         focusNonce={focus.nonce}
+        recenterNonce={recenter}
       />
 
       {tab !== 'map' && player && (
@@ -276,6 +286,24 @@ export default function Game() {
             </p>
           ))}
         </div>
+      )}
+
+      {tab === 'map' && (
+        <button
+          type="button"
+          aria-label="Показати моє місцеположення"
+          onClick={() => {
+            if (!geo.pos) pushToast('Немає GPS: увімкніть геолокацію');
+            else setRecenter((n) => n + 1);
+          }}
+          style={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
+          className="dl-card absolute right-3 z-10 grid h-12 w-12 place-items-center rounded-full"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green-deep)" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+            <circle cx="12" cy="12" r="3.5" />
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+          </svg>
+        </button>
       )}
 
       {tab === 'map' && route && (
@@ -346,7 +374,18 @@ export default function Game() {
 
       {player && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); }} onHeight={setTabBarH} />}
 
-      {ready && userId && !player && <Onboarding userId={userId} onSaved={setPlayer} />}
+      {welcomed === false && (
+        <Welcome
+          compassStatus={compass.status}
+          onCompass={compass.requestPermission}
+          onDone={() => {
+            markWelcomed(window.localStorage);
+            setWelcomed(true);
+          }}
+        />
+      )}
+
+      {ready && userId && !player && welcomed === true && <Onboarding userId={userId} onSaved={setPlayer} />}
     </main>
   );
 }

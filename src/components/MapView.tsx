@@ -40,11 +40,22 @@ type Props = {
   route?: RouteView | null;
   focusId?: string | null;
   focusNonce?: number;
+  recenterNonce?: number; // changes when the player asks to see their own location
 };
 
 // Room kept clear at the top for the status card and chips.
 const TOP_INSET = 72;
 const SIDE_INSET = 16;
+
+const CONE_SVG = `<svg viewBox="0 0 160 160" width="160" height="160" aria-hidden="true">
+  <defs>
+    <radialGradient id="dl-cone-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4285F4" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#4285F4" stop-opacity="0.04"/>
+    </radialGradient>
+  </defs>
+  <path d="M80 80 L36 14 Q80 -4 124 14 Z" fill="url(#dl-cone-grad)"/>
+</svg>`;
 
 // Player: emoji in a circle, a tip that points where the player faces, and the name below.
 function renderPlayer(el: HTMLElement, p: { avatar: string | null; name: string; heading: number | null; me: boolean }) {
@@ -55,7 +66,14 @@ function renderPlayer(el: HTMLElement, p: { avatar: string | null; name: string;
   el.setAttribute('aria-label', p.name);
   const root = document.createElement('div');
   root.className = 'dl-player-root';
-  if (p.heading !== null) {
+  if (p.heading !== null && p.me) {
+    // My own view cone: a soft blue sector, as in Google Maps, turned by the compass.
+    const cone = document.createElement('div');
+    cone.className = 'dl-cone';
+    cone.style.transform = `rotate(${p.heading}deg)`;
+    cone.innerHTML = CONE_SVG;
+    root.append(cone);
+  } else if (p.heading !== null) {
     const heading = document.createElement('div');
     heading.className = 'dl-heading';
     heading.style.transform = `rotate(${p.heading}deg)`;
@@ -95,7 +113,7 @@ function buildPin(emoji: string): { el: HTMLButtonElement; label: HTMLSpanElemen
 type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
 type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; badge: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0 }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
@@ -110,6 +128,10 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
   const insetRef = useRef(bottomInset);
   const updateRef = useRef<() => void>(() => {});
   const routeRef = useRef<RouteView | null>(route);
+  const meRef = useRef<LatLng | null>(me);
+  useEffect(() => {
+    meRef.current = me;
+  }, [me]);
   const applyRouteRef = useRef<() => void>(() => {});
   const stopEls = useRef(new Map<string, Marker>());
   const selectRef = useRef(onSelectTreasure); // read through a ref: a new callback must not rebuild pins
@@ -232,6 +254,14 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     }
   };
 
+  // "Show my location": centre on me at a street-level zoom.
+  useEffect(() => {
+    const map = mapRef.current;
+    const here = meRef.current;
+    if (!map || !here || recenterNonce === 0) return;
+    map.easeTo({ center: [here.lng, here.lat], zoom: Math.max(map.getZoom(), 16), duration: 500 });
+  }, [recenterNonce]);
+
   // Show a treasure from the Знахідки tab: fly the map to it.
   useEffect(() => {
     const map = mapRef.current;
@@ -344,7 +374,11 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
         badge,
         treasure: t,
       };
-      el.onclick = () => selectRef.current?.(entry.treasure);
+      el.onclick = () => {
+        const m = mapRef.current;
+        if (m) m.easeTo({ center: [entry.treasure.lng, entry.treasure.lat], zoom: Math.max(m.getZoom(), 16), duration: 500 });
+        selectRef.current?.(entry.treasure);
+      };
       pinMap.current.set(t.id, entry);
     }
   }, [treasures]);

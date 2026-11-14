@@ -8,10 +8,11 @@ export type GpsStatus = 'off' | 'searching' | 'ok' | 'denied';
 export type GeoState = { pos: LatLng | null; accuracy: number | null; status: GpsStatus; course: number | null };
 
 // watchPosition with enableHighAccuracy (spec §3, Task 9). Accuracy passes through; geo.ts handles missing values.
-export function useGeolocation(): GeoState {
+export function useGeolocation(enabled: boolean = true): GeoState {
   const [state, setState] = useState<GeoState>({ pos: null, accuracy: null, status: 'searching', course: null });
 
   useEffect(() => {
+    if (!enabled) return; // not asked yet (first-run welcome)
     if (!('geolocation' in navigator)) {
       setState({ pos: null, accuracy: null, status: 'off', course: null });
       return;
@@ -33,7 +34,7 @@ export function useGeolocation(): GeoState {
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 },
     );
     return () => navigator.geolocation.clearWatch(id);
-  }, []);
+  }, [enabled]);
 
   return state;
 }

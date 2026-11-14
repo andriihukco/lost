@@ -9,7 +9,7 @@ type IOSOrientation = typeof DeviceOrientationEvent & { requestPermission?: () =
 
 // Device compass. Works on phones: Android Chrome reports an absolute heading; iOS Safari needs a tap
 // (requestPermission) and reports webkitCompassHeading. Desktop browsers have no compass.
-export function useHeading(): { heading: number | null; status: HeadingStatus; requestPermission: () => Promise<void> } {
+export function useHeading(): { heading: number | null; status: HeadingStatus; requestPermission: () => Promise<HeadingStatus> } {
   const [heading, setHeading] = useState<number | null>(null);
   const [status, setStatus] = useState<HeadingStatus>('unsupported');
 
@@ -46,15 +46,24 @@ export function useHeading(): { heading: number | null; status: HeadingStatus; r
     };
   }, [attach, onReading]);
 
-  const requestPermission = useCallback(async () => {
+  // Returns the resulting status, so callers do not read a stale one.
+  const requestPermission = useCallback(async (): Promise<HeadingStatus> => {
     const DOE = window.DeviceOrientationEvent as IOSOrientation | undefined;
-    if (!DOE || typeof DOE.requestPermission !== 'function') return;
+    if (!DOE || typeof DOE.requestPermission !== 'function') {
+      const current: HeadingStatus = 'listening';
+      return current;
+    }
     try {
       const result = await DOE.requestPermission();
-      if (result === 'granted') attach();
-      else setStatus('denied');
+      if (result === 'granted') {
+        attach();
+        return 'listening';
+      }
+      setStatus('denied');
+      return 'denied';
     } catch {
       setStatus('denied');
+      return 'denied';
     }
   }, [attach]);
 
