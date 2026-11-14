@@ -37,6 +37,13 @@ export default function InAppGate({ info, url, onContinue }: { info: InApp; url:
             Відкрити в {browser}
           </a>
         )}
+        <ol className="dl-card flex flex-col gap-2 p-4 text-left text-[15px] leading-snug">
+          <li><span className="font-bold">1.</span> У {info.name ?? 'застосунку'} натисніть меню «⋯» у правому верхньому куті.</li>
+          <li><span className="font-bold">2.</span> Оберіть «Відкрити в {browser}» (або «Open in browser»).</li>
+          {info.name === 'Telegram' && (
+            <li className="text-[var(--muted)]">Щоб усі посилання відкривались у браузері: у налаштуваннях Telegram знайдіть пункт про внутрішній браузер і виберіть системний.</li>
+          )}
+        </ol>
         <button type="button" onClick={() => void copy()} className="dl-btn-secondary">
           {copied ? 'Посилання скопійовано' : 'Скопіювати посилання'}
         </button>
