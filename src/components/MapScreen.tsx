@@ -9,6 +9,8 @@ import { openRoomConnection, type PresenceUser, type RoomConnection } from '@/li
 import { shouldSend } from '@/lib/sendPolicy';
 import { supabase } from '@/lib/supabase';
 import { useGeolocation } from '@/lib/useGeolocation';
+import { useWakeLock } from '@/lib/useWakeLock';
+import StatusBar from '@/components/StatusBar';
 import { useTreasures } from '@/lib/useTreasures';
 import type { LatLng } from '@/lib/geo';
 
@@ -24,6 +26,7 @@ export default function MapScreen({ code }: { code: string }) {
   const [presence, setPresence] = useState<PresenceUser[]>([]);
   const [positions, setPositions] = useState<Record<string, Position>>({});
   const geo = useGeolocation();
+  const wake = useWakeLock();
   const { treasures, error, reload } = useTreasures(room?.id ?? null);
   const connRef = useRef<RoomConnection | null>(null);
   const names = useRef(new Map<string, PresenceUser>()); // keeps a name after its presence leaves
@@ -103,12 +106,18 @@ export default function MapScreen({ code }: { code: string }) {
   return (
     <main className="relative h-dvh w-full overflow-hidden">
       <MapView treasures={treasures} me={geo.pos} others={others} />
-      <div className="absolute inset-x-0 top-0 p-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] text-sm">
-        <div className="rounded-2xl bg-white/80 px-4 py-2 font-medium shadow backdrop-blur">
-          {room?.name ?? 'Гра'} · GPS: {geo.status === 'ok' ? 'точно' : geo.status === 'denied' ? 'вимкнено' : 'пошук'}
-          {room && !online && <span className="ml-2 text-red-600">Немає зв&apos;язку</span>}
-          {error && <span className="ml-2 text-red-600">{error}</span>}
-        </div>
+      <div className="absolute inset-x-0 top-0 p-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+        <StatusBar
+          roomName={room?.name ?? 'Гра'}
+          foundCount={treasures.filter((t) => t.is_found).length}
+          total={treasures.length}
+          gps={geo.status}
+          accuracy={geo.accuracy}
+          wakeActive={wake.active}
+          wakeSupported={wake.supported}
+          online={online || !room}
+        />
+        {error && <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm text-red-600">{error}</p>}
       </div>
     </main>
   );
