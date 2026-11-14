@@ -5,16 +5,16 @@ import PinEmojiPicker from '@/components/PinEmojiPicker';
 import PinPicker from '@/components/PinPicker';
 import { parseCoordinates } from '@/lib/coords';
 import type { LatLng } from '@/lib/geo';
-import { createMapMark } from '@/lib/mapMarks';
+import { createMapMark, type MapMark, type MarkInput, updateMapMark } from '@/lib/mapMarks';
 import { markEmoji, MARK_DEFAULT_EMOJI } from '@/lib/mapMarkRules';
 
-// The map-mark form: a title, an optional note, an emoji and a place on the map. Saved marks are shown on the map.
-export default function MarkForm({ onCreated }: { onCreated: () => void }) {
-  const [title, setTitle] = useState('');
-  const [note, setNote] = useState('');
-  const [emoji, setEmoji] = useState<string>(MARK_DEFAULT_EMOJI);
-  const [point, setPoint] = useState<LatLng | null>(null);
-  const [coordsText, setCoordsText] = useState('');
+// The map-mark form, for a new mark or for editing one (pass `initial`). Saved marks are shown on the map.
+export default function MarkForm({ initial, onSaved }: { initial?: MapMark | null; onSaved: () => void }) {
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [note, setNote] = useState(initial?.note ?? '');
+  const [emoji, setEmoji] = useState<string>(initial?.emoji ?? MARK_DEFAULT_EMOJI);
+  const [point, setPoint] = useState<LatLng | null>(initial ? { lat: initial.lat, lng: initial.lng } : null);
+  const [coordsText, setCoordsText] = useState(initial ? `${initial.lat.toFixed(6)}, ${initial.lng.toFixed(6)}` : '');
   const [coordsError, setCoordsError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,11 +40,13 @@ export default function MarkForm({ onCreated }: { onCreated: () => void }) {
   async function submit() {
     if (!title.trim()) return setError('Додайте назву мітки');
     if (!point) return setError('Вкажіть місце на карті або координати');
+    const input: MarkInput = { title: title.trim(), note: note.trim() || null, emoji: markEmoji(emoji), lat: point.lat, lng: point.lng };
     setBusy(true);
     setError(null);
     try {
-      await createMapMark({ title: title.trim(), note: note.trim() || null, emoji: markEmoji(emoji), lat: point.lat, lng: point.lng });
-      onCreated();
+      if (initial) await updateMapMark(initial.id, input);
+      else await createMapMark(input);
+      onSaved();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -81,7 +83,7 @@ export default function MarkForm({ onCreated }: { onCreated: () => void }) {
 
       {error && <p role="alert" className="text-sm font-semibold text-[var(--danger)]">{error}</p>}
       <button type="submit" disabled={!canSubmit} className="dl-btn">
-        {busy ? 'Зберігаємо…' : 'Додати мітку на мапу'}
+        {busy ? 'Зберігаємо…' : initial ? 'Зберегти зміни' : 'Додати мітку на мапу'}
       </button>
     </form>
   );

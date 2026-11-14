@@ -22,6 +22,8 @@ R=$(req POST /rest/v1/map_marks "$ATOK" '{"title":"Небезпечна соба
 MID=$(body "$R" | python3 -c 'import json,sys; print(json.loads(sys.stdin.read())[0]["id"])')
 R=$(req POST /rest/v1/map_marks "$P1TOK" '{"title":"x","emoji":"⚠️","lat":49.8,"lng":24.0}'); check "player cannot add a mark" "$(code "$R")" "403"
 R=$(req GET "/rest/v1/map_marks?select=title" "$P1TOK"); check "player reads the marks" "$(body "$R" | python3 -c 'import json,sys; print([m["title"] for m in json.loads(sys.stdin.read())])')" "['Небезпечна собака']"
+R=$(req PATCH "/rest/v1/map_marks?id=eq.$MID" "$ATOK" '{"title":"Зачинений вхід"}'); check "admin edits a mark" "$(body "$R" | python3 -c 'import json,sys; print([m["title"] for m in json.loads(sys.stdin.read())])')" "['Зачинений вхід']"
+R=$(req PATCH "/rest/v1/map_marks?id=eq.$MID" "$P1TOK" '{"title":"хакер"}'); R2=$(req GET "/rest/v1/map_marks?select=title" "$ATOK"); check "player cannot edit a mark" "$(body "$R2" | python3 -c 'import json,sys; print([m["title"] for m in json.loads(sys.stdin.read())])')" "['Зачинений вхід']"
 R=$(req DELETE "/rest/v1/map_marks?id=eq.$MID" "$P1TOK"); R2=$(req GET "/rest/v1/map_marks?select=id" "$ATOK"); check "player cannot delete a mark" "$(body "$R2" | python3 -c 'import json,sys; print(len(json.loads(sys.stdin.read())))')" "1"
 R=$(req DELETE "/rest/v1/map_marks?id=eq.$MID" "$ATOK"); R2=$(req GET "/rest/v1/map_marks?select=id" "$ATOK"); check "admin deletes a mark" "$(body "$R2" | python3 -c 'import json,sys; print(len(json.loads(sys.stdin.read())))')" "0"
 

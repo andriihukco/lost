@@ -19,8 +19,10 @@ export async function listMapMarks(): Promise<MapMark[]> {
   return (data ?? []) as MapMark[];
 }
 
+export type MarkInput = Omit<MapMark, 'id'>;
+
 // Admin only (RLS, migration 0007). Returns the saved row.
-export async function createMapMark(m: Omit<MapMark, 'id'>): Promise<MapMark> {
+export async function createMapMark(m: MarkInput): Promise<MapMark> {
   const { data, error } = await supabase
     .from('map_marks')
     .insert({ title: m.title, note: m.note, emoji: m.emoji, lat: m.lat, lng: m.lng })
@@ -34,4 +36,16 @@ export async function deleteMapMark(id: string): Promise<void> {
   const { data, error } = await supabase.from('map_marks').delete().eq('id', id).select('id');
   if (error) throw new Error('Не вдалося видалити мітку');
   if (!data || data.length === 0) throw new Error('Мітку не видалено: перевірте доступ');
+}
+
+// Admin only: changes the title, note, emoji and place of a mark. A player's attempt changes nothing (RLS).
+export async function updateMapMark(id: string, m: MarkInput): Promise<MapMark> {
+  const { data, error } = await supabase
+    .from('map_marks')
+    .update({ title: m.title, note: m.note, emoji: m.emoji, lat: m.lat, lng: m.lng })
+    .eq('id', id)
+    .select('id, title, note, emoji, lat, lng');
+  if (error) throw new Error('Не вдалося змінити мітку');
+  if (!data || data.length === 0) throw new Error('Мітку не змінено: перевірте доступ');
+  return data[0] as MapMark;
 }

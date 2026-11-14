@@ -62,12 +62,15 @@ export default function MarksPanel() {
 
       <ul className="flex flex-col gap-2">
         {marks.map((m) => (
-          <li key={m.id} className="dl-card flex items-center gap-3 px-4 py-3">
-            <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-2xl">{m.emoji}</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[16px] font-bold">{m.title}</p>
-              <p className="truncate text-[13px] font-semibold text-[var(--muted)]">{m.note ?? `${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}`}</p>
-            </div>
+          <li key={m.id} className="dl-card flex items-center gap-3 py-2 pl-2 pr-3">
+            <Link href={`/admin/marks/new?id=${m.id}`} aria-label={`Редагувати мітку «${m.title}»`} className="flex min-h-[56px] min-w-0 flex-1 items-center gap-3 rounded-2xl px-2">
+              <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-2xl">{m.emoji}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[16px] font-bold">{m.title}</span>
+                <span className="block truncate text-[13px] font-semibold text-[var(--muted)]">{m.note ?? `${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}`}</span>
+              </span>
+              <Icon name="arrow_forward" size={20} />
+            </Link>
             <button type="button" disabled={busyId === m.id} onClick={() => void remove(m)} className="min-h-[44px] shrink-0 rounded-full px-3 text-sm font-bold text-[var(--danger)] disabled:opacity-40">
               Видалити
             </button>
