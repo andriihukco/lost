@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+
+type View = 'map' | 'found';
 import Icon from '@/components/Icon';
 import { unmarkFound, type UnfoundStatus } from '@/lib/found';
 import { formatDistance } from '@/lib/geoFormat';
@@ -30,6 +32,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [view, setView] = useState<View>('map');
 
   const open = useMemo(() => treasures.filter((t) => !t.is_found), [treasures]);
   const mine = useMemo(() => treasures.filter((t) => t.is_found && t.found_by === myId), [treasures, myId]);
@@ -65,9 +68,24 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
       <h1 className="ios-large-title pt-4">Знахідки</h1>
       <p className="mt-1 text-[15px] font-medium text-[var(--muted)]">Знайдено {foundCount} з {treasures.length}</p>
 
-      {open.length > 0 && (
+      <div role="tablist" aria-label="Скарби" className="mt-5 grid grid-cols-2 gap-1 rounded-2xl bg-[var(--line)] p-1">
+        {([['map', `На карті · ${open.length}`], ['found', `Знайдені · ${foundCount}`]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={view === id}
+            onClick={() => setView(id)}
+            className={`min-h-[44px] rounded-xl text-[15px] font-bold transition-colors ${view === id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'map' && open.length > 0 && (
         <>
-          <p className="ios-section mt-6">На карті · {open.length}</p>
+          <p className="mt-5 text-[14px] font-medium text-[var(--muted)]">Натисніть скарб, щоб побачити його на мапі, або відмітьте кілька для маршруту.</p>
           <ul className="ios-group">
             {open.map((t) => {
               const on = picked.has(t.id);
@@ -96,7 +114,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
         </>
       )}
 
-      {mine.length > 0 && (
+      {view === 'found' && mine.length > 0 && (
         <>
           <p className="ios-section mt-6">Знайдені мною · {mine.length}</p>
           <ul className="ios-group">
@@ -115,7 +133,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
         </>
       )}
 
-      {others.length > 0 && (
+      {view === 'found' && others.length > 0 && (
         <>
           <p className="ios-section mt-6">Знайдені іншими · {others.length}</p>
           <ul className="ios-group">
@@ -135,10 +153,16 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
         </>
       )}
 
-      {treasures.length === 0 && (
+      {view === 'map' && open.length === 0 && (
         <div className="ios-group mt-6 px-5 py-10 text-center">
-          <p className="text-[17px] font-semibold">Скарбів ще немає</p>
-          <p className="mt-2 text-[15px] text-[var(--muted)]">Адміністратор ще не додав жодного гриба.</p>
+          <p className="text-[17px] font-semibold">{treasures.length === 0 ? 'Скарбів ще немає' : 'Усі скарби знайдено'}</p>
+          <p className="mt-2 text-[15px] text-[var(--muted)]">{treasures.length === 0 ? 'Адміністратор ще не додав жодного гриба.' : 'Переглянути їх можна на вкладці «Знайдені».'}</p>
+        </div>
+      )}
+      {view === 'found' && foundCount === 0 && (
+        <div className="ios-group mt-6 px-5 py-10 text-center">
+          <p className="text-[17px] font-semibold">Ще нічого не знайдено</p>
+          <p className="mt-2 text-[15px] text-[var(--muted)]">Знайдені скарби з&apos;являться тут.</p>
         </div>
       )}
 
