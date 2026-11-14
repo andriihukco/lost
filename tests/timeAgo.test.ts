@@ -10,7 +10,7 @@ test('just now under a minute', () => {
 test('minutes, then hours, then days', () => {
   expect(timeAgo(ago(5 * 60_000), now)).toBe('5 хв тому');
   expect(timeAgo(ago(3 * 3_600_000), now)).toBe('3 год тому');
-  expect(timeAgo(ago(2 * 86_400_000), now)).toBe('2 дн тому');
+  expect(timeAgo(ago(2 * 86_400_000), now)).toBe('2 дн. тому');
 });
 test('no time means never', () => {
   expect(timeAgo(null, now)).toBe('ніколи');

@@ -10,7 +10,7 @@ export default function PinEmojiPicker({ value, onChange }: { value: string; onC
         {value.trim() || DEFAULT_PIN}
       </span>
       <label className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-sm text-[var(--muted)]">Емодзі на мапі</span>
+        <span className="text-sm text-[var(--muted)]">Емодзі на карті</span>
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}

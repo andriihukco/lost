@@ -30,7 +30,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
     if (!('geolocation' in navigator)) {
       setBusy(false);
       setBlocked('location');
-      setNote('Цей браузер не має геолокації. Без неї гра неможлива.');
+      setNote('Цей браузер не підтримує геолокацію. Без неї гра неможлива.');
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -45,7 +45,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
       () => {
         setBusy(false);
         setBlocked('location');
-        setNote('Геолокацію заблоковано. Дозвольте доступ до місцезнаходження в налаштуваннях браузера, потім натисніть «Спробувати знову».');
+        setNote('Геолокацію заблоковано. Дозвольте доступ до місцезнаходження в налаштуваннях браузера, а потім натисніть «Спробувати ще раз».');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
     );
@@ -62,7 +62,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
       onDone();
     } else {
       setBlocked('compass');
-      setNote('Доступ до руху й орієнтації заблоковано. На iPhone: Налаштування → Safari → Рух і орієнтація. Потім натисніть «Спробувати знову».');
+      setNote('Доступ до руху й орієнтації заблоковано. На iPhone: Налаштування → Safari → Рух і орієнтація. Потім натисніть «Спробувати ще раз».');
     }
   }
 
@@ -76,13 +76,13 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
 
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center text-center">
         {step === 'intro' && (
-          <Panel icon="travel_explore" title="Ласкаво просимо до Lost" text="Шукайте схований скарби разом з друзями. Ходіть лісовими стежками, знаходьте скарби на мапі й відмічайте місця." />
+          <Panel icon="travel_explore" title="Ласкаво просимо до Lost" text="Шукайте сховані скарби разом із друзями. Ходіть лісовими стежками, знаходьте скарби на карті й відмічайте місця." />
         )}
         {step === 'location' && (
-          <Panel icon="location_on" title="Геолокація" text="Щоб бачити відстань до скарбів і показувати на мапі, де ви. Інші гравці бачать ваше місце, поки ви в грі." />
+          <Panel icon="location_on" title="Геолокація" text="Щоб бачити відстань до скарбів і показувати на карті, де ви. Інші гравці бачать ваше місце, поки ви в грі." />
         )}
         {step === 'compass' && (
-          <Panel icon="explore" title="Компас" text="Щоб мапа показувала, куди ви дивитеся, і вказувала напрямок до скарбу. На iPhone браузер спитає дозвіл." />
+          <Panel icon="explore" title="Компас" text="Щоб карта показувала, куди ви дивитеся, і вказувала напрямок до скарбу. На iPhone браузер запитає дозвіл." />
         )}
         {note && <p role="alert" className="mt-4 text-[15px] font-semibold text-[var(--danger)]">{note}</p>}
       </div>
@@ -91,12 +91,12 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
         {step === 'intro' && <button type="button" onClick={() => setStep('location')} className="dl-btn">Далі</button>}
         {step === 'location' && (
           <button type="button" disabled={busy} onClick={askLocation} className="dl-btn">
-            {blocked === 'location' ? 'Спробувати знову' : 'Дозволити геолокацію'}
+            {blocked === 'location' ? 'Спробувати ще раз' : 'Дозволити геолокацію'}
           </button>
         )}
         {step === 'compass' && (
           <button type="button" disabled={busy} onClick={() => void askCompass()} className="dl-btn">
-            {blocked === 'compass' ? 'Спробувати знову' : 'Дозволити компас'}
+            {blocked === 'compass' ? 'Спробувати ще раз' : 'Дозволити компас'}
           </button>
         )}
       </div>

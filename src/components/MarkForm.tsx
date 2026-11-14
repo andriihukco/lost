@@ -85,7 +85,7 @@ export default function MarkForm({ initial, onSaved }: { initial?: MapMark | nul
       {error && <p role="alert" className="text-sm font-semibold text-[var(--danger)]">{error}</p>}
       <StickyAction>
         <button type="submit" disabled={!canSubmit} className="dl-btn">
-          {busy ? 'Зберігаємо…' : initial ? 'Зберегти зміни' : 'Додати мітку на мапу'}
+          {busy ? 'Зберігаємо…' : initial ? 'Зберегти зміни' : 'Додати мітку на карту'}
         </button>
       </StickyAction>
     </form>

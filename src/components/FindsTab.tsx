@@ -1,4 +1,5 @@
 'use client';
+import { plural } from '@/lib/plural';
 
 import { useMemo, useState } from 'react';
 
@@ -86,7 +87,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
 
       {view === 'map' && open.length > 0 && (
         <>
-          <p className="mt-5 px-1 text-[14px] font-medium leading-snug text-[var(--muted)]">Натисніть скарб, щоб побачити його на мапі, або відмітьте кілька на мапі одночасно, щоб побудувати маршрут.</p>
+          <p className="mt-5 px-1 text-[14px] font-medium leading-snug text-[var(--muted)]">Натисніть скарб, щоб побачити його на карті, або відмітьте кілька на карті одночасно, щоб побудувати маршрут.</p>
           <ul className="ios-group mt-3">
             {open.map((t) => {
               const on = picked.has(t.id);
@@ -144,7 +145,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--line)] text-xl">🔎</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[17px] font-semibold">{t.title}</span>
-                    <span className="block text-[13px] text-[var(--muted)]">Знайшов(ла) {names[t.found_by ?? ''] ?? 'гравець'}</span>
+                    <span className="block text-[13px] text-[var(--muted)]">Знайдено: {names[t.found_by ?? ''] ?? 'гравець'}</span>
                   </span>
                   <span aria-hidden className="text-[var(--muted)]">›</span>
                 </button>
@@ -157,7 +158,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
       {view === 'map' && open.length === 0 && (
         <div className="ios-group mt-6 px-5 py-10 text-center">
           <p className="text-[17px] font-semibold">{treasures.length === 0 ? 'Скарбів ще немає' : 'Усі скарби знайдено'}</p>
-          <p className="mt-2 text-[15px] text-[var(--muted)]">{treasures.length === 0 ? 'Адміністратор ще не додав жодного гриба.' : 'Переглянути їх можна на вкладці «Знайдені».'}</p>
+          <p className="mt-2 text-[15px] text-[var(--muted)]">{treasures.length === 0 ? 'Адміністратор ще не додав жодного скарбу.' : 'Переглянути їх можна на вкладці «Знайдені».'}</p>
         </div>
       )}
       {view === 'found' && foundCount === 0 && (
@@ -172,7 +173,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
           <button type="button" disabled={!gpsReady} onClick={() => onRoute([...picked])} className="dl-btn">
             <span className="inline-flex items-center justify-center gap-2">
               <Icon name="route" size={22} />
-              {gpsReady ? `Маршрут до ${picked.size} ${picked.size === 1 ? 'точки' : 'точок'}` : 'Потрібен GPS для маршруту'}
+              {gpsReady ? `Маршрут до ${picked.size} ${plural(picked.size, ['точка', 'точки', 'точок'])}` : 'Потрібен GPS для маршруту'}
             </span>
           </button>
         </div>

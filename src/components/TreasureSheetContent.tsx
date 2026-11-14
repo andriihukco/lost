@@ -29,7 +29,7 @@ type Props = {
 
 const ERROR_TEXT: Record<Exclude<FoundStatus, 'won'>, string> = {
   taken: 'Цей скарб уже знайшов інший гравець.',
-  not_player: 'Спочатку оберіть імʼя й тотем.',
+  not_player: 'Спочатку оберіть нік.',
   not_found: 'Скарб не знайдено.',
 };
 

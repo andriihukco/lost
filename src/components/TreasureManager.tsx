@@ -82,7 +82,7 @@ export default function TreasureManager() {
         <div className="dl-card flex flex-col items-center gap-2 p-8 text-center">
           <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--green-soft)] text-[var(--green-deep)]"><Icon name="travel_explore" size={28} /></span>
           <p className="text-[17px] font-bold">Ще немає скарбів</p>
-          <p className="text-sm text-[var(--muted)]">Натисніть + , щоб додати перший.</p>
+          <p className="text-sm text-[var(--muted)]">Натисніть +, щоб додати перший.</p>
         </div>
       )}
       {loaded && items.length > 0 && shown.length === 0 && (

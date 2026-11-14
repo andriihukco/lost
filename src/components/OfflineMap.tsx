@@ -30,7 +30,7 @@ export default function OfflineMap({
     let alive = true;
     planOfflineUrls(points, process.env.NEXT_PUBLIC_MAPTILER_KEY)
       .then((u) => { if (alive) setUrls(u); })
-      .catch(() => { if (alive) setPlanError('Щоб підготувати мапу, потрібен інтернет.'); });
+      .catch(() => { if (alive) setPlanError('Щоб підготувати карту, потрібен інтернет.'); });
     return () => { alive = false; };
     // The plan is made once per opening; new treasures are picked up the next time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -58,11 +58,11 @@ export default function OfflineMap({
           <Icon name={saved ? 'check' : 'travel_explore'} size={26} />
         </span>
         <div className="min-w-0 pt-0.5">
-          <p className="text-[17px] font-bold">{saved ? 'Мапу збережено' : 'Мапа без інтернету'}</p>
+          <p className="text-[17px] font-bold">{saved ? 'Карту збережено' : 'Карта без інтернету'}</p>
           <p className="mt-0.5 text-[14px] leading-snug text-[var(--muted)]">
             {saved
               ? 'Карта і скарби працюють без зв’язку.'
-              : `Збережемо мапу на ${OFFLINE_RADIUS_M / 1000} км навколо скарбів, міток і вас.`}
+              : `Збережемо карту на ${OFFLINE_RADIUS_M / 1000} км навколо скарбів, міток і вас.`}
           </p>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function OfflineMap({
         ) : (
           <>
             <button type="button" disabled={!urls || busy} onClick={() => void save()} className="dl-btn">
-              {busy ? 'Зберігаємо…' : result ? 'Спробувати ще раз' : 'Зберегти мапу'}
+              {busy ? 'Зберігаємо…' : result ? 'Спробувати ще раз' : 'Зберегти карту'}
             </button>
             {variant === 'prompt' && !busy && onLater && (
               <button type="button" onClick={onLater} className="dl-btn-secondary">Не зараз</button>

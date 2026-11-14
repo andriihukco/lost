@@ -7,5 +7,5 @@ export function timeAgo(iso: string | null, now: number): string {
   if (min < 60) return `${min} хв тому`;
   const hours = Math.floor(min / 60);
   if (hours < 24) return `${hours} год тому`;
-  return `${Math.floor(hours / 24)} дн тому`;
+  return `${Math.floor(hours / 24)} дн. тому`;
 }

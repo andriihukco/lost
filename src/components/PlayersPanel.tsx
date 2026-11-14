@@ -56,7 +56,7 @@ export default function PlayersPanel() {
       <div className="flex items-end justify-between pt-1">
         <div>
           <h1 className="dl-title text-[30px]">Гравці</h1>
-          <p className="text-sm font-semibold text-[var(--muted)]">всього {players.length} · на мапі зараз {onlineCount}</p>
+          <p className="text-sm font-semibold text-[var(--muted)]">всього {players.length} · на карті зараз {onlineCount}</p>
         </div>
         <button type="button" onClick={() => void reload()} className="min-h-[44px] px-2 text-sm font-bold text-[var(--green-deep)]">Оновити</button>
       </div>

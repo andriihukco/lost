@@ -28,7 +28,7 @@ export default function MarksPanel() {
   }, [reload]);
 
   async function remove(m: MapMark) {
-    if (!window.confirm(`Видалити мітку «${m.title}» з мапи?`)) return;
+    if (!window.confirm(`Видалити мітку «${m.title}» з карти?`)) return;
     setBusyId(m.id);
     try {
       await deleteMapMark(m.id);
@@ -45,7 +45,7 @@ export default function MarksPanel() {
       <div className="flex items-end justify-between pt-2">
         <div>
           <h1 className="dl-title text-[30px]">Мітки</h1>
-          <p className="text-sm font-semibold text-[var(--muted)]">Попередження на мапі, не скарби: їх не можна знайти</p>
+          <p className="text-sm font-semibold text-[var(--muted)]">Попередження на карті, не скарби: їх не можна знайти</p>
         </div>
         <button type="button" onClick={() => void reload()} className="min-h-[44px] px-2 text-sm font-bold text-[var(--green-deep)]">Оновити</button>
       </div>

@@ -21,7 +21,7 @@ export async function savePlayer(userId: string, nickname: string, avatar: Avata
     .select('user_id, nickname, avatar')
     .single();
   if (error && (error.code === '23505' || /avatar taken/.test(error.message ?? ''))) {
-    throw new Error('Цей тотем уже обрано. Оберіть інший.');
+    throw new Error('Цю тварину вже обрано. Оберіть іншу.');
   }
   if (error || !data) throw new Error('Не вдалося зберегти. Спробуйте ще раз.');
   return data as Player;

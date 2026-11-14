@@ -62,7 +62,7 @@ export default function MapKindPicker({ value, onChange, view }: { value: MapKin
     <div className="absolute right-3 z-10" style={{ top: 'calc(env(safe-area-inset-top) + 72px)' }}>
       <button
         type="button"
-        aria-label={`Вигляд мапи: ${LABEL[value]}. Перемкнути на ${LABEL[OTHER[value]]}`}
+        aria-label={`Вигляд карти: ${LABEL[value]}. Перемкнути на ${LABEL[OTHER[value]]}`}
         onClick={() => onChange(OTHER[value])}
         className="relative grid h-[68px] w-[68px] items-end overflow-hidden rounded-2xl border-2 border-[var(--paper)] elev-md"
       >

@@ -1,4 +1,5 @@
 'use client';
+import { plural } from '@/lib/plural';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TreasureModal from '@/components/TreasureModal';
@@ -274,7 +275,7 @@ export default function Game() {
         if (change.eventType === 'UPDATE' && row.is_found === false) pushToast(`«${title}» знову на карті`);
         if (row.is_found === true && row.found_by && row.found_by !== player.user_id) {
           const finder = row.found_by;
-          void resolveName(finder).then((name) => pushToast(`${name} знайшов(ла) «${title}»`));
+          void resolveName(finder).then((name) => pushToast(`«${title}» знайдено: ${name}`));
         }
       },
       onStatus: setOnline,
@@ -447,7 +448,7 @@ export default function Game() {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">
-                Маршрут · {route.stops.length} {route.stops.length === 1 ? 'точка' : 'точок'}
+                Маршрут · {route.stops.length} {plural(route.stops.length, ['точка', 'точки', 'точок'])}
               </p>
               <p className="text-[17px] font-extrabold tabular-nums">
                 {route.pending || !route.walk ? (
@@ -482,7 +483,7 @@ export default function Game() {
         >
           <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-2xl">{selectedMark.emoji}</span>
           <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Мітка на мапі</p>
+            <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Мітка на карті</p>
             <p className="text-[17px] font-bold">{selectedMark.title}</p>
             {selectedMark.note && <p className="mt-0.5 text-[15px] text-[var(--muted)]">{selectedMark.note}</p>}
           </div>
@@ -528,7 +529,7 @@ export default function Game() {
               void reload();
               if (status === 'won') {
                 setSelectedId(null);
-                pushToast('Знахідку підтверджено! Скарб знято з карти.');
+                pushToast('Знахідку підтверджено! Скарб позначено як знайдений.');
               }
             }}
           />

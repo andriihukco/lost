@@ -21,9 +21,9 @@ type Props = {
 };
 
 function historyLabel(h: HistoryEvent): string {
-  if (h.action === 'place') return 'дійшов(ла) до місця';
-  if (h.action === 'found') return `знайшов(ла)${h.manual ? ' вручну' : ''}`;
-  return 'повернув(ла) на карту';
+  if (h.action === 'place') return 'місце відмічено';
+  if (h.action === 'found') return `знайдено${h.manual ? ' вручну' : ''}`;
+  return 'повернуто на карту';
 }
 
 // The admin's treasure view, shown in the full-screen treasure modal. Three parts, top to bottom:
@@ -214,8 +214,7 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
             {history.length === 0 && <li className="text-[var(--muted)]">Подій ще немає</li>}
             {history.map((h) => (
               <li key={h.id}>
-                <span className="font-semibold">{names[h.user_id] ?? 'гравець'}</span>{' '}
-                {historyLabel(h)}
+                <span className="font-semibold">{names[h.user_id] ?? 'гравець'}</span> · {historyLabel(h)}
                 <span className="text-[var(--muted)]"> · {new Date(h.created_at).toLocaleString('uk-UA')}</span>
               </li>
             ))}
@@ -227,7 +226,7 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
         <button type="button" disabled={busy} onClick={remove} className="dl-btn-danger">
           Видалити скарб
         </button>
-        <p className="text-center text-xs text-[var(--muted)]">Історія і фото теж буде видалено.</p>
+        <p className="text-center text-xs text-[var(--muted)]">Разом з історією та фото буде видалено.</p>
       </section>
 
       {/* Pinned to the bottom of the modal's scroll area, so the save action is always in reach. */}

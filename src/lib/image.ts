@@ -20,7 +20,7 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string): Promise<Blob> {
 // Safari may answer a WebP request with PNG; then fall back to JPEG.
 export async function compressPhoto(file: File, maxSide = 1200): Promise<Blob> {
   if (!file.type.startsWith('image/')) throw new Error('Оберіть зображення');
-  if (file.size > MAX_INPUT_BYTES) throw new Error('Файл завеликий (макс. 25 МБ)');
+  if (file.size > MAX_INPUT_BYTES) throw new Error('Файл завеликий (максимум 25 МБ)');
 
   const bitmap = await createImageBitmap(file);
   const { w, h } = fitWithin(bitmap.width, bitmap.height, maxSide);
@@ -28,7 +28,7 @@ export async function compressPhoto(file: File, maxSide = 1200): Promise<Blob> {
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas недоступний');
+  if (!ctx) throw new Error('Цей браузер не може обробити фото');
   ctx.drawImage(bitmap, 0, 0, w, h);
   bitmap.close();
 
