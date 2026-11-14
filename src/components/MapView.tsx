@@ -5,8 +5,8 @@ import { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LatLng } from '@/lib/geo';
 import { avatarEmoji } from '@/lib/avatars';
-import { configureMapLibre, mapStyle, reserveStyle } from '@/lib/mapSetup';
-import { isBusinessLayer } from '@/lib/mapStyle';
+import { configureMapLibre, reserveStyle } from '@/lib/mapSetup';
+import { isBusinessLayer, type MapKind, styleFor } from '@/lib/mapStyle';
 import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import { formatDistance } from '@/lib/geoFormat';
 import { edgePoint, type Box } from '@/lib/offscreen';
@@ -43,6 +43,7 @@ type Props = {
   focusNonce?: number;
   recenterNonce?: number; // changes when the player asks to see their own location
   unlimited?: boolean; // admin view: no movement limit around me and the treasures
+  mapKind?: MapKind; // outdoor, satellite or hybrid; switching keeps pins and the route
   fitTo?: LatLng[]; // when this array changes, the camera fits these points once (admin: everyone on the map)
 };
 
@@ -116,7 +117,8 @@ function buildPin(emoji: string): { el: HTMLButtonElement; label: HTMLSpanElemen
 type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
 type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; badge: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0, unlimited = false, fitTo }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0, unlimited = false, fitTo, mapKind = 'outdoor' }: Props) {
+  const kindRef = useRef<MapKind>(mapKind); // the kind the map is currently showing
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
@@ -155,7 +157,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     try {
       map = new MapLibreMap({
         container: container.current,
-        style: mapStyle(),
+        style: styleFor(kindRef.current, process.env.NEXT_PUBLIC_MAPTILER_KEY),
         center: [24.0315, 49.8419],
         zoom: 15,
         attributionControl: { compact: true },
@@ -218,6 +220,14 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     const b = viewBounds(pts, MAP_PAD_M);
     map.setMaxBounds(b ? [[b.west, b.south], [b.east, b.north]] : null);
   }, [meLat, meLng, treasures, unlimited]);
+
+  // Switch the map kind: a new style keeps the pins (DOM markers) and the route is re-applied on style.load.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || kindRef.current === mapKind) return;
+    kindRef.current = mapKind;
+    map.setStyle(styleFor(mapKind, process.env.NEXT_PUBLIC_MAPTILER_KEY), { diff: false });
+  }, [mapKind]);
 
   // Admin: fit the camera to the given points when they are first supplied.
   useEffect(() => {

@@ -48,7 +48,7 @@ export default function TreasureModal({ title, onClose, children }: Props) {
       >
         <div aria-hidden className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-[var(--line)]" />
         <div className="flex items-center justify-between gap-3">
-          <h2 className="dl-title min-w-0 truncate text-[22px]">{title}</h2>
+          <h2 className="dl-title min-w-0 truncate text-[28px]">{title}</h2>
           <button
             type="button"
             aria-label="Закрити"

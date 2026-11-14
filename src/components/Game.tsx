@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TreasureModal from '@/components/TreasureModal';
+import MapKindPicker from '@/components/MapKindPicker';
+import { loadMapKind, saveMapKind } from '@/lib/mapKind';
+import type { MapKind } from '@/lib/mapStyle';
 import { AnimatePresence } from 'motion/react';
 import FindsTab from '@/components/FindsTab';
 import MapView, { type OtherPlayer, type RouteView } from '@/components/MapView';
@@ -59,6 +62,7 @@ export default function Game() {
   const [welcomed, setWelcomed] = useState<boolean | null>(null);
   const [locPerm, setLocPerm] = useState<LocationPerm>('unknown');
   const [entered, setEntered] = useState(false); // the entry gate was passed in this visit
+  const [mapKind, setMapKind] = useState<MapKind>('outdoor');
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
   const [recenter, setRecenter] = useState(0);
@@ -121,6 +125,7 @@ export default function Game() {
   useEffect(() => {
     setWelcomed(isWelcomed(window.localStorage));
     setInApp(detectInApp(navigator.userAgent));
+    setMapKind(loadMapKind(window.localStorage));
   }, []);
 
   // Location permission as the browser reports it (a returning player who revoked it is sent back to the gate).
@@ -292,6 +297,7 @@ export default function Game() {
         focusId={focus.id}
         focusNonce={focus.nonce}
         recenterNonce={recenter}
+        mapKind={mapKind}
       />
 
       {tab !== 'map' && player && (
@@ -344,6 +350,16 @@ export default function Game() {
         >
           <Icon name="my_location" size={24} />
         </button>
+      )}
+
+      {tab === 'map' && (
+        <MapKindPicker
+          value={mapKind}
+          onChange={(k) => {
+            setMapKind(k);
+            saveMapKind(window.localStorage, k);
+          }}
+        />
       )}
 
       {tab === 'map' && route && (
