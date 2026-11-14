@@ -65,7 +65,7 @@ export default function AdminMap() {
       <p className="text-sm font-semibold text-[var(--muted)]">Гравців на мапі: {others.length} · скарбів на мапі: {open.length}</p>
       <div className="relative h-[calc(100dvh-14rem)] overflow-hidden rounded-[24px] border-2 border-[var(--line)]">
         <MapView
-          treasures={open}
+          treasures={treasures}
           distances={{}}
           me={null}
           meAvatar={null}

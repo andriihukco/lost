@@ -443,6 +443,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     const origin = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
     const seen = new Set<string>();
     for (const t of treasuresRef.current) {
+      if (t.is_found) continue; // a found treasure is greyed on the map; it gets no edge arrow
       const p = map.project([t.lng, t.lat]);
       const edge = edgePoint({ x: p.x, y: p.y }, origin, box);
       if (!edge) continue;
@@ -518,12 +519,14 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       const existing = pinMap.current.get(t.id);
       if (existing) {
         existing.treasure = t;
+        existing.el.classList.toggle('dl-pin-found', t.is_found);
         existing.badge.textContent = pinOrDefault(t.pin_emoji);
         existing.marker.setLngLat([t.lng, t.lat]);
         continue;
       }
       const { el, label, badge } = buildPin(t.pin_emoji);
       el.setAttribute('aria-label', t.title);
+      el.classList.toggle('dl-pin-found', t.is_found);
       const entry: PinEntry = {
         marker: new Marker({ element: el, anchor: 'center' }).setLngLat([t.lng, t.lat]).addTo(map),
         el,

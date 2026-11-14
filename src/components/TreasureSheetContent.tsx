@@ -8,7 +8,7 @@ import { isFoundable, type LatLng } from '@/lib/geo';
 import { bearingDeg, cardinal, formatDistance } from '@/lib/geoFormat';
 import { relativeBearing } from '@/lib/heading';
 import { hasArrived, markArrived } from '@/lib/arrival';
-import { markFound, markPlace, type FoundStatus } from '@/lib/found';
+import { markFound, markPlace, unmarkFound, type FoundStatus } from '@/lib/found';
 import { PHOTO_BUCKET } from '@/lib/treasures';
 import { supabase } from '@/lib/supabase';
 import { useIsPhone } from '@/lib/useIsPhone';
@@ -21,7 +21,10 @@ type Props = {
   distanceM: number | null;
   heading: number | null;
   onResult: (status: FoundStatus) => void;
-  onRoute?: () => void; // build a walking route to this treasure
+  onRoute?: () => void; // build a walking route to this treasure (not offered for a found treasure)
+  finderName?: string | null; // who found it, shown for a found treasure
+  canUnmark?: boolean; // the finder or an admin may bring a found treasure back to the map
+  onUnmarked?: () => void;
 };
 
 const ERROR_TEXT: Record<Exclude<FoundStatus, 'won'>, string> = {
@@ -32,7 +35,7 @@ const ERROR_TEXT: Record<Exclude<FoundStatus, 'won'>, string> = {
 
 // The treasure view, top to bottom: photo, distance, hint, secondary actions, then the one primary action,
 // which stays pinned at the bottom. Two steps: "Я знайшов місце" (at the spot), then "Я знайшов скарб".
-export default function TreasureSheetContent({ treasure, pos, accuracy, distanceM, heading, onResult, onRoute }: Props) {
+export default function TreasureSheetContent({ treasure, pos, accuracy, distanceM, heading, onResult, onRoute, finderName, canUnmark = false, onUnmarked }: Props) {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [revealed, setRevealed] = useState(false); // the photo stays blurred until tapped
   const [arrived, setArrived] = useState(false);
@@ -103,6 +106,21 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
       if (status === 'won') navigator.vibrate?.(15);
       else setError(ERROR_TEXT[status]);
       onResult(status);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Bring a found treasure back to the map: the finder or an admin (the database checks which).
+  async function unmark() {
+    setBusy(true);
+    setError(null);
+    try {
+      const s = await unmarkFound(treasure.id);
+      if (s === 'unfound') onUnmarked?.();
+      else setError(s === 'not_yours' ? 'Повернути може лише той, хто знайшов, або адміністратор.' : 'Скарб уже на карті.');
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -224,16 +242,30 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
     {/* The primary action: a full-width bar at the bottom, its contents in the same column as the page. */}
     <div className="sticky bottom-0 mt-auto w-full border-t border-[var(--line)] bg-[var(--paper)]/95 backdrop-blur-md">
       <div className="mx-auto w-full max-w-md px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3">
-        <p className="mb-2.5 text-center text-[14px] font-medium text-[var(--muted)]">{status}</p>
-        {/* Two separate buttons (different keys), so a tap on step one never becomes a tap on step two. */}
-        {!arrived ? (
-          <button key="place" type="button" disabled={!canArrive || busy} onClick={arrive} className="dl-btn">
-            Я знайшов місце
-          </button>
+        {treasure.is_found ? (
+          // A found treasure stays on the map, greyed: no finding, no route. Only a return to the map is offered.
+          <>
+            <p className="mb-2.5 text-center text-[14px] font-medium text-[var(--muted)]">Знайдено: {finderName ?? 'гравець'}</p>
+            {canUnmark && (
+              <button type="button" disabled={busy} onClick={() => void unmark()} className="dl-btn-secondary">
+                Повернути на карту
+              </button>
+            )}
+          </>
         ) : (
-          <button key="treasure" type="button" disabled={busy || !step2Ready} onClick={() => void confirm()} className="dl-btn">
-            Я знайшов скарб
-          </button>
+          <>
+            <p className="mb-2.5 text-center text-[14px] font-medium text-[var(--muted)]">{status}</p>
+            {/* Two separate buttons (different keys), so a tap on step one never becomes a tap on step two. */}
+            {!arrived ? (
+              <button key="place" type="button" disabled={!canArrive || busy} onClick={arrive} className="dl-btn">
+                Я знайшов місце
+              </button>
+            ) : (
+              <button key="treasure" type="button" disabled={busy || !step2Ready} onClick={() => void confirm()} className="dl-btn">
+                Я знайшов скарб
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

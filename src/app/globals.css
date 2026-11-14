@@ -157,6 +157,15 @@ body {
   font-size: 24px;
   line-height: 1;
 }
+/* A found treasure stays on the map, greyed out. */
+.dl-pin-found {
+  opacity: 0.6;
+}
+.dl-pin-found .dl-pin-badge {
+  filter: grayscale(1);
+  border-color: var(--muted);
+}
+
 /* Treasures whose pins would overlap: one badge with the count. */
 .dl-cluster {
   display: grid;

@@ -31,7 +31,7 @@ import { nearestWithin, NEARBY_M } from '@/lib/nearby';
 import { shouldLogLocation } from '@/lib/locationLog';
 import { saveLocation } from '@/lib/locationStore';
 import { openGameConnection, type GameConnection, type PresenceUser, type TreasureChange } from '@/lib/realtime';
-import { getAllPlayers, getPlayer, type Player } from '@/lib/player';
+import { checkIsAdmin, getAllPlayers, getPlayer, type Player } from '@/lib/player';
 import RatingTab from '@/components/RatingTab';
 import { supabase } from '@/lib/supabase';
 import { ensureSession } from '@/lib/session';
@@ -71,6 +71,7 @@ export default function Game() {
   const [mapView, setMapView] = useState({ lat: 49.8419, lng: 24.0315, zoom: 15 }); // the area in view, for the map-type previews
   const [selectedMark, setSelectedMark] = useState<MapMark | null>(null);
   const [onboardingMap, setOnboardingMap] = useState(false); // after the nickname: the offline-map step of onboarding
+  const [isAdmin, setIsAdmin] = useState(false); // an admin may bring a found treasure back to the map, as the finder can
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
   const [recenter, setRecenter] = useState(0);
@@ -118,7 +119,8 @@ export default function Game() {
       pushToast('Потрібен GPS, щоб побудувати маршрут');
       return;
     }
-    const chosen = list.filter((t) => ids.includes(t.id));
+    // A found treasure is never routed to: it stays on the map only as a greyed mark.
+    const chosen = list.filter((t) => ids.includes(t.id) && !t.is_found);
     if (chosen.length === 0) return;
     const start = geo.pos;
     const order = optimalOrder(start, chosen.map((t) => ({ lat: t.lat, lng: t.lng })));
@@ -224,6 +226,12 @@ export default function Game() {
     return () => { cancelled = true; };
   }, []);
 
+  // Whether this browser's session is an admin's (the database decides; the player app only shows the action).
+  useEffect(() => {
+    if (!userId) return;
+    checkIsAdmin().then(setIsAdmin).catch(() => {});
+  }, [userId]);
+
   // An admin can remove a player. The removed session is signed out and the page reloads, so the next
   // visit starts a new identity and asks for an animal again.
   useEffect(() => {
@@ -310,7 +318,7 @@ export default function Game() {
       }));
   }, [positions, presence, player]);
 
-  // Found treasures leave the map for everyone; the finder sees them under the "Знахідки" tab.
+  // Found treasures stay on the map, greyed, for everyone. They get no distance, no route and no edge arrow.
   const openTreasures = useMemo(() => treasures.filter((t) => !t.is_found), [treasures]);
   const distances = useMemo(() => {
     const out: Record<string, number> = {};
@@ -349,7 +357,7 @@ export default function Game() {
   return (
     <main className="relative h-dvh w-full overflow-hidden">
       <MapView
-        treasures={openTreasures}
+        treasures={treasures}
         distances={distances}
         me={geo.pos}
         meAvatar={player?.avatar ?? null}
@@ -505,7 +513,14 @@ export default function Game() {
             accuracy={geo.accuracy}
             distanceM={distances[selected.id] ?? null}
             heading={myHeading}
-            onRoute={() => void planRoute([selected.id], treasures)}
+            onRoute={selected.is_found ? undefined : () => void planRoute([selected.id], treasures)}
+            finderName={selected.is_found ? nameOf(selected.found_by ?? '') : null}
+            canUnmark={selected.is_found && (selected.found_by === player?.user_id || isAdmin)}
+            onUnmarked={() => {
+              void reload();
+              setSelectedId(null);
+              pushToast('Скарб повернуто на карту');
+            }}
             onResult={(status) => {
               void reload();
               if (status === 'won') {
