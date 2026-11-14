@@ -42,6 +42,17 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
   const [error, setError] = useState<string | null>(null);
   const [camera, setCamera] = useState(false);
   const phone = useIsPhone(); // the camera overlay is for standing at the spot with a phone
+  // Step two ("Я знайшов скарб") opens a moment after step one, so the tap that confirmed the place
+  // cannot also confirm the treasure (on a phone the second button would sit under the same finger).
+  const [step2Ready, setStep2Ready] = useState(false);
+  useEffect(() => {
+    if (!arrived) {
+      setStep2Ready(false);
+      return;
+    }
+    const t = setTimeout(() => setStep2Ready(true), 900);
+    return () => clearTimeout(t);
+  }, [arrived]);
 
   useEffect(() => {
     try {
@@ -86,6 +97,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
   }
 
   async function confirm(manualNote?: string) {
+    if (!arrived) return; // the treasure is confirmed only after the place
     setBusy(true);
     setError(null);
     try {
@@ -235,12 +247,13 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
     <div className="sticky bottom-0 mt-auto w-full border-t border-[var(--line)] bg-[var(--paper)]/95 backdrop-blur-md">
       <div className="mx-auto w-full max-w-md px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3">
         <p className="mb-2.5 text-center text-[14px] font-medium text-[var(--muted)]">{status}</p>
+        {/* Two separate buttons (different keys), so a tap on step one never becomes a tap on step two. */}
         {!arrived ? (
-          <button type="button" disabled={!canArrive || busy} onClick={arrive} className="dl-btn">
+          <button key="place" type="button" disabled={!canArrive || busy} onClick={arrive} className="dl-btn">
             Я знайшов місце
           </button>
         ) : (
-          <button type="button" disabled={busy} onClick={() => void confirm()} className="dl-btn">
+          <button key="treasure" type="button" disabled={busy || !step2Ready} onClick={() => void confirm()} className="dl-btn">
             Я знайшов скарб
           </button>
         )}
