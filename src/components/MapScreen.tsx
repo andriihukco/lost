@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import MapView, { type OtherPlayer } from '@/components/MapView';
 import { ensureSession } from '@/lib/session';
@@ -106,6 +107,14 @@ export default function MapScreen({ code }: { code: string }) {
   return (
     <main className="relative h-dvh w-full overflow-hidden">
       <MapView treasures={treasures} me={geo.pos} others={others} />
+      {room && me && room.host_id === me.userId && (
+        <Link
+          href={`/r/${code}/treasures/new`}
+          className="absolute inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] rounded-2xl bg-blue-600 px-4 py-3 text-center font-semibold text-white shadow"
+        >
+          + Додати скарб
+        </Link>
+      )}
       <div className="absolute inset-x-0 top-0 p-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <StatusBar
           roomName={room?.name ?? 'Гра'}

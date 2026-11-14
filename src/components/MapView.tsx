@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Map as MapLibreMap, Marker, setWorkerUrl, type StyleSpecification } from 'maplibre-gl';
+import { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LatLng } from '@/lib/geo';
+import { configureMapLibre, mapStyle } from '@/lib/mapSetup';
 import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import type { Treasure } from '@/lib/useTreasures';
 
@@ -17,19 +18,6 @@ type OtherEntry = {
   startedAt: number;
   seenAt: number;
 };
-
-// MapTiler streets style when the key is set; otherwise a blank style so the map still renders offline.
-// Public OSM tile servers are not used (spec C5).
-const BLANK_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {},
-  layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#e9e7e1' } }],
-};
-
-function styleFor(): string | StyleSpecification {
-  const key = process.env.NEXT_PUBLIC_MAPTILER_KEY;
-  return key ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${key}` : BLANK_STYLE;
-}
 
 type Props = {
   treasures: Treasure[];
@@ -48,12 +36,10 @@ export default function MapView({ treasures, me, others, onSelectTreasure }: Pro
 
   useEffect(() => {
     if (!container.current) return;
-    // Turbopack cannot resolve MapLibre's worker chunk; serve it from /public (copied by postinstall).
-    // Absolute URL: a relative one is re-resolved against the chunk path and 404s.
-    setWorkerUrl(new URL('/maplibre-gl-worker.mjs', window.location.origin).href);
+    configureMapLibre();
     const map = new MapLibreMap({
       container: container.current,
-      style: styleFor(),
+      style: mapStyle(),
       center: [24.0315, 49.8419],
       zoom: 15,
       attributionControl: { compact: true },
