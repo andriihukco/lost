@@ -98,7 +98,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-md flex-col gap-4 px-5 pb-6">
+    <section className="mx-auto flex min-h-full w-full max-w-md flex-col gap-4 px-5 pb-0">
       {treasure.hint && <p className="selectable text-base text-[var(--muted)]">{treasure.hint}</p>}
 
       {photoUrls.length > 0 && (
@@ -154,24 +154,6 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
         </div>
       </div>
 
-      {!arrived ? (
-        <>
-          <p className="text-sm font-semibold text-[var(--muted)]">
-            {canArrive ? 'Ви біля місця. Натисніть, коли побачите його.' : 'Підійдіть ближче, щоб відмітити місце (до 15 м).'}
-          </p>
-          <button type="button" disabled={!canArrive || busy} onClick={arrive} className="dl-btn">
-            Я знайшов місце
-          </button>
-        </>
-      ) : (
-        <>
-          <p className="text-sm font-semibold text-[var(--muted)]">Ви на місці. Знайдіть скарб і підтвердіть.</p>
-          <button type="button" disabled={busy} onClick={() => void confirm()} className="dl-btn">
-            Я знайшов скарб
-          </button>
-        </>
-      )}
-
       {photoUrls.length > 0 && (
         <button type="button" onClick={() => setCamera(true)} className="dl-btn-secondary flex items-center justify-center gap-2">
           <Icon name="photo_camera" size={22} />
@@ -207,6 +189,29 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
           </button>
         </form>
       )}
+
+      {/* The main action stays at the bottom of the screen, above the scrolled content. */}
+      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-[var(--line)] bg-[var(--paper)]/95 px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-md">
+        <div className="flex flex-col gap-2">
+        {!arrived ? (
+          <>
+            <p className="text-sm font-semibold text-[var(--muted)]">
+              {canArrive ? 'Ви біля місця. Натисніть, коли побачите його.' : 'Підійдіть ближче, щоб відмітити місце (до 15 м).'}
+            </p>
+            <button type="button" disabled={!canArrive || busy} onClick={arrive} className="dl-btn">
+              Я знайшов місце
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-semibold text-[var(--muted)]">Ви на місці. Знайдіть скарб і підтвердіть.</p>
+            <button type="button" disabled={busy} onClick={() => void confirm()} className="dl-btn">
+              Я знайшов скарб
+            </button>
+          </>
+        )}
+        </div>
+      </div>
 
       <p className="selectable text-center text-xs font-semibold tabular-nums text-[var(--muted)]">
         {treasure.lat.toFixed(5)}, {treasure.lng.toFixed(5)}

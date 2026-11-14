@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import BottomSheet from '@/components/BottomSheet';
+import TreasureModal from '@/components/TreasureModal';
+import { AnimatePresence } from 'motion/react';
 import FindsTab from '@/components/FindsTab';
 import MapView, { type OtherPlayer, type RouteView } from '@/components/MapView';
 import Onboarding from '@/components/Onboarding';
@@ -387,20 +388,9 @@ export default function Game() {
         </button>
       )}
 
-      {showSheet && (
-        <BottomSheet
-          key={selected.id}
-          initial="half"
-          bottomOffset={tabBarH}
-          header={
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="dl-title min-w-0 truncate text-[26px]">{selected.title}</h2>
-              <button type="button" aria-label="Закрити" onClick={() => setSelectedId(null)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--page)] text-[var(--muted)]">
-                <Icon name="close" size={22} />
-              </button>
-            </div>
-          }
-        >
+      <AnimatePresence>
+        {showSheet && (
+          <TreasureModal key={selected.id} title={selected.title} onClose={() => setSelectedId(null)}>
           <TreasureSheetContent
             treasure={selected}
             pos={geo.pos}
@@ -416,8 +406,9 @@ export default function Game() {
               }
             }}
           />
-        </BottomSheet>
-      )}
+          </TreasureModal>
+        )}
+      </AnimatePresence>
 
       {player && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); }} onHeight={setTabBarH} />}
 
