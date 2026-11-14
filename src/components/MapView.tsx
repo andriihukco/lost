@@ -42,6 +42,8 @@ type Props = {
   focusId?: string | null;
   focusNonce?: number;
   recenterNonce?: number; // changes when the player asks to see their own location
+  unlimited?: boolean; // admin view: no movement limit around me and the treasures
+  fitTo?: LatLng[]; // when this array changes, the camera fits these points once (admin: everyone on the map)
 };
 
 // Room kept clear at the top for the status card and chips.
@@ -114,7 +116,7 @@ function buildPin(emoji: string): { el: HTMLButtonElement; label: HTMLSpanElemen
 type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
 type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; badge: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0 }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0, unlimited = false, fitTo }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
@@ -207,11 +209,23 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    if (unlimited) {
+      map.setMaxBounds(null);
+      return;
+    }
     const pts: LatLng[] = treasures.map((t) => ({ lat: t.lat, lng: t.lng }));
     if (meLat !== null && meLng !== null) pts.push({ lat: meLat, lng: meLng });
     const b = viewBounds(pts, MAP_PAD_M);
     map.setMaxBounds(b ? [[b.west, b.south], [b.east, b.north]] : null);
-  }, [meLat, meLng, treasures]);
+  }, [meLat, meLng, treasures, unlimited]);
+
+  // Admin: fit the camera to the given points when they are first supplied.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !fitTo || fitTo.length === 0) return;
+    const b = viewBounds(fitTo, 200);
+    if (b) map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 40, duration: 0 });
+  }, [fitTo]);
 
   // Walking route: a line along the path and numbered stops. Re-applied after every style load.
   useEffect(() => {

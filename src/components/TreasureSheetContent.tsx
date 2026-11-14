@@ -8,7 +8,7 @@ import { isFoundable, type LatLng } from '@/lib/geo';
 import { bearingDeg, cardinal, formatDistance } from '@/lib/geoFormat';
 import { relativeBearing } from '@/lib/heading';
 import { hasArrived, markArrived } from '@/lib/arrival';
-import { markFound, type FoundStatus } from '@/lib/found';
+import { markFound, markPlace, type FoundStatus } from '@/lib/found';
 import { PHOTO_BUCKET } from '@/lib/treasures';
 import { supabase } from '@/lib/supabase';
 import type { Treasure } from '@/lib/useTreasures';
@@ -78,6 +78,8 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
     }
     setArrived(true);
     setError(null);
+    // The first-to-the-place point for the leaderboard; a failure here never blocks the player.
+    void markPlace(treasure.id).catch(() => {});
   }
 
   async function confirm(manualNote?: string) {

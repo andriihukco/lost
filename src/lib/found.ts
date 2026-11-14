@@ -19,3 +19,10 @@ export async function unmarkFound(treasureId: string): Promise<UnfoundStatus> {
   if (error || !data) throw new Error('Не вдалося повернути скарб');
   return (data as { status: UnfoundStatus }).status;
 }
+
+// "I found the place" (first step): recorded once per player and treasure, for the leaderboard (migration 0006).
+export async function markPlace(treasureId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('mark_place', { p_treasure_id: treasureId });
+  if (error || !data) throw new Error('Не вдалося відмітити місце');
+  return (data as { status: string }).status;
+}

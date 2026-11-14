@@ -21,7 +21,7 @@ export type AdminTreasure = {
 export type HistoryEvent = {
   id: number;
   user_id: string;
-  action: 'found' | 'unfound';
+  action: 'place' | 'found' | 'unfound';
   manual: boolean;
   note: string | null;
   created_at: string;

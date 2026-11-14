@@ -4,12 +4,13 @@ import { useEffect, useRef } from 'react';
 import Icon from '@/components/Icon';
 import type { IconName } from '@/components/iconPaths';
 
-export type Tab = 'map' | 'finds' | 'profile';
+export type Tab = 'map' | 'finds' | 'rating' | 'profile';
 
-const ORDER: Tab[] = ['map', 'finds', 'profile'];
+const ORDER: Tab[] = ['map', 'finds', 'rating', 'profile'];
 const ITEMS: { id: Tab; label: string; icon: IconName }[] = [
   { id: 'map', label: 'Карта', icon: 'map' },
   { id: 'finds', label: 'Знахідки', icon: 'task_alt' },
+  { id: 'rating', label: 'Рейтинг', icon: 'trophy' },
   { id: 'profile', label: 'Профіль', icon: 'person' },
 ];
 
@@ -36,11 +37,11 @@ export default function TabBar({ tab, onChange, onHeight }: { tab: Tab; onChange
       aria-label="Головна навігація"
       className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-2"
     >
-      <div className="liquid-pill pointer-events-auto relative mx-auto grid max-w-sm grid-cols-3 rounded-full p-1.5">
+      <div className="liquid-pill pointer-events-auto relative mx-auto grid max-w-sm grid-cols-4 rounded-full p-1.5">
         <span
           aria-hidden
           className="liquid-indicator"
-          style={{ left: `calc(6px + ${index} * (100% - 12px) / 3)` }}
+          style={{ left: `calc(6px + ${index} * (100% - 12px) / 4)` }}
         />
         {ITEMS.map((it) => {
           const active = tab === it.id;

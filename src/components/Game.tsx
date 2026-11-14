@@ -25,6 +25,8 @@ import { shouldLogLocation } from '@/lib/locationLog';
 import { saveLocation } from '@/lib/locationStore';
 import { openGameConnection, type GameConnection, type PresenceUser, type TreasureChange } from '@/lib/realtime';
 import { getAllPlayers, getPlayer, type Player } from '@/lib/player';
+import RatingTab from '@/components/RatingTab';
+import { supabase } from '@/lib/supabase';
 import { ensureSession } from '@/lib/session';
 import { shouldSend } from '@/lib/sendPolicy';
 import { shouldBroadcastHeading } from '@/lib/heading';
@@ -151,6 +153,24 @@ export default function Game() {
     return () => { cancelled = true; };
   }, []);
 
+  // An admin can remove a player. The removed session is signed out and the page reloads, so the next
+  // visit starts a new identity and asks for an animal again.
+  useEffect(() => {
+    if (!player) return;
+    const uid = player.user_id;
+    const id = setInterval(async () => {
+      try {
+        if ((await getPlayer(uid)) === null) {
+          await supabase.auth.signOut({ scope: 'local' });
+          window.location.reload();
+        }
+      } catch {
+        // offline or a failed check: the next check tries again
+      }
+    }, 20_000);
+    return () => clearInterval(id);
+  }, [player]);
+
   // Realtime opens once this browser has a player profile. Found changes arrive here too.
   useEffect(() => {
     if (!player) return;
@@ -275,7 +295,7 @@ export default function Game() {
 
       {tab !== 'map' && player && (
         <div className="absolute inset-0 z-20 overflow-y-auto bg-[var(--page)]">
-          {tab === 'finds' ? (
+          {tab === 'finds' && (
             <FindsTab
               treasures={treasures}
               myId={player.user_id}
@@ -286,9 +306,9 @@ export default function Game() {
               onRoute={(ids) => void planRoute(ids, treasures)}
               onChanged={() => { void reload(); }}
             />
-          ) : (
-            <ProfileTab player={player} onSaved={setPlayer} />
           )}
+          {tab === 'rating' && <RatingTab myId={player.user_id} />}
+          {tab === 'profile' && <ProfileTab player={player} onSaved={setPlayer} />}
         </div>
       )}
 

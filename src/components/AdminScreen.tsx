@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import TreasureManager from '@/components/TreasureManager';
+import PlayersPanel from '@/components/PlayersPanel';
+import AdminMap from '@/components/AdminMap';
 import Icon from '@/components/Icon';
 import Splash from '@/components/Splash';
 import { checkIsAdmin } from '@/lib/player';
@@ -18,6 +20,7 @@ export default function AdminScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [section, setSection] = useState<'treasures' | 'players' | 'map'>('treasures');
 
   useEffect(() => {
     (async () => {
@@ -100,7 +103,25 @@ export default function AdminScreen() {
           <Icon name="logout" size={22} />
         </button>
       </header>
-      <TreasureManager />
+      <nav aria-label="Розділи адмінки" className="px-4 pb-3">
+        <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-[var(--line)] p-1">
+          {([['treasures', 'Скарби'], ['players', 'Гравці'], ['map', 'Карта']] as const).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={section === id}
+              onClick={() => setSection(id)}
+              className={`min-h-[40px] rounded-xl text-sm font-bold transition-colors ${section === id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
+      {section === 'treasures' && <TreasureManager />}
+      {section === 'players' && <PlayersPanel />}
+      {section === 'map' && <AdminMap />}
     </main>
   );
 }

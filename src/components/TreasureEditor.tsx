@@ -22,6 +22,12 @@ type Props = {
 
 const field = 'dl-field';
 
+function historyLabel(h: HistoryEvent): string {
+  if (h.action === 'place') return 'дійшов(ла) до місця';
+  if (h.action === 'found') return `знайшов(ла)${h.manual ? ' вручну' : ''}`;
+  return 'повернув(ла) на карту';
+}
+
 export default function TreasureEditor({ treasure, names, onChanged, onDeleted }: Props) {
   const [title, setTitle] = useState(treasure.title);
   const [hint, setHint] = useState(treasure.hint ?? '');
@@ -192,7 +198,7 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
             {history.map((h) => (
               <li key={h.id}>
                 <span className="font-medium">{names[h.user_id] ?? 'гравець'}</span>{' '}
-                {h.action === 'found' ? `знайшов(ла)${h.manual ? ' вручну' : ''}` : 'повернув(ла) на карту'}
+                {historyLabel(h)}
                 <span className="text-[var(--muted)]"> · {new Date(h.created_at).toLocaleString('uk-UA')}</span>
               </li>
             ))}
