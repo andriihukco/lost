@@ -3,6 +3,7 @@ import type { LatLng } from '@/lib/geo';
 const NUM = '-?\\d+(?:\\.\\d+)?';
 // Map URLs carry dot-decimal coordinates (@lat,lng, q=…, ll=…).
 const URL_PATTERNS = [
+  new RegExp(`!3d(${NUM})!4d(${NUM})`), // place pin; checked before @, which is only the view centre
   new RegExp(`@(${NUM}),(${NUM})`),
   new RegExp(`[?&](?:q|ll)=(${NUM}),(${NUM})`),
 ];
