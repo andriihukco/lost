@@ -12,6 +12,8 @@ import { supabase } from '@/lib/supabase';
 import { useGeolocation } from '@/lib/useGeolocation';
 import { useWakeLock } from '@/lib/useWakeLock';
 import StatusBar from '@/components/StatusBar';
+import TreasureSheetContent from '@/components/TreasureSheetContent';
+import type { Treasure } from '@/lib/useTreasures';
 import { useTreasures } from '@/lib/useTreasures';
 import type { LatLng } from '@/lib/geo';
 
@@ -29,6 +31,7 @@ export default function MapScreen({ code }: { code: string }) {
   const geo = useGeolocation();
   const wake = useWakeLock();
   const { treasures, error, reload } = useTreasures(room?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const connRef = useRef<RoomConnection | null>(null);
   const names = useRef(new Map<string, PresenceUser>()); // keeps a name after its presence leaves
   const lastSent = useRef<{ pos: LatLng | null; at: number }>({ pos: null, at: -Infinity });
@@ -102,12 +105,28 @@ export default function MapScreen({ code }: { code: string }) {
       }));
   }, [positions, presence, me]); // presence triggers a re-read of the name cache
 
+  const selected: Treasure | null = treasures.find((t) => t.id === selectedId) ?? null;
+
   if (failed) return <main className="p-6">Кімнату не знайдено</main>;
 
   return (
     <main className="relative h-dvh w-full overflow-hidden">
-      <MapView treasures={treasures} me={geo.pos} others={others} />
-      {room && me && room.host_id === me.userId && (
+      <MapView treasures={treasures} me={geo.pos} others={others} onSelectTreasure={(t) => setSelectedId(t.id)} />
+      {selected && (
+        <div className="absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] rounded-3xl bg-white/90 shadow-xl backdrop-blur">
+          <div className="flex justify-end p-2">
+            <button type="button" aria-label="Закрити" onClick={() => setSelectedId(null)} className="px-3 text-xl text-neutral-500">×</button>
+          </div>
+          <TreasureSheetContent
+            key={selected.id}
+            treasure={selected}
+            pos={geo.pos}
+            accuracy={geo.accuracy}
+            onResult={() => void reload()}
+          />
+        </div>
+      )}
+      {!selected && room && me && room.host_id === me.userId && (
         <Link
           href={`/r/${code}/treasures/new`}
           className="absolute inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] rounded-2xl bg-blue-600 px-4 py-3 text-center font-semibold text-white shadow"
