@@ -6,6 +6,8 @@ import FindsTab from '@/components/FindsTab';
 import MapView, { type OtherPlayer, type RouteView } from '@/components/MapView';
 import Onboarding from '@/components/Onboarding';
 import Welcome from '@/components/Welcome';
+import InAppGate from '@/components/InAppGate';
+import { detectInApp, type InApp } from '@/lib/inApp';
 import { isWelcomed, markWelcomed } from '@/lib/welcome';
 import ProfileTab from '@/components/ProfileTab';
 import TabBar, { type Tab } from '@/components/TabBar';
@@ -49,6 +51,8 @@ export default function Game() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   // Location is asked for on the welcome screen first; until then nothing prompts the browser.
   const [welcomed, setWelcomed] = useState<boolean | null>(null);
+  const [inApp, setInApp] = useState<InApp | null>(null);
+  const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
   const [recenter, setRecenter] = useState(0);
   const geo = useGeolocation(welcomed === true);
   const compass = useHeading();
@@ -106,6 +110,7 @@ export default function Game() {
 
   useEffect(() => {
     setWelcomed(isWelcomed(window.localStorage));
+    setInApp(detectInApp(navigator.userAgent));
   }, []);
 
   useEffect(() => {
@@ -217,6 +222,8 @@ export default function Game() {
   const allFound = treasures.length > 0 && foundCount === treasures.length;
   const showSheet = tab === 'map' && selected !== null && player !== null;
 
+  const gate = inApp?.inApp === true && !inAppOk;
+  if (gate) return <InAppGate info={inApp} url={window.location.href} onContinue={() => setInAppOk(true)} />;
   if (!ready) return <main className="p-6 text-[17px] text-[var(--muted)]">Завантаження…</main>;
   if (failed) return <main className="p-6 text-[17px] font-semibold text-[var(--danger)]">{failed}</main>;
 
