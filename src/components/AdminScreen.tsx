@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import TreasureForm from '@/components/TreasureForm';
+import TreasureManager from '@/components/TreasureManager';
 import { checkIsAdmin } from '@/lib/player';
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +17,7 @@ export default function AdminScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<'add' | 'manage'>('manage');
 
   useEffect(() => {
     (async () => {
@@ -93,7 +95,19 @@ export default function AdminScreen() {
         <Link href="/" className="text-sm text-blue-600">← На карту</Link>
         <button type="button" onClick={() => void signOut()} className="text-sm text-neutral-500">Вийти</button>
       </div>
-      <TreasureForm />
+      <div className="flex gap-2 px-5 pt-4">
+        {(['manage', 'add'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-blue-600 text-white' : 'bg-white/80 text-neutral-700'}`}
+          >
+            {t === 'manage' ? 'Скарби' : 'Додати скарб'}
+          </button>
+        ))}
+      </div>
+      {tab === 'add' ? <TreasureForm /> : <TreasureManager />}
     </main>
   );
 }
