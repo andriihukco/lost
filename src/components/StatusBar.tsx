@@ -13,34 +13,31 @@ type Props = {
   online: boolean;
 };
 
-// Passive top status (spec §5.1): title, found counter, GPS and wake-lock state.
 const GPS_GOOD_M = 25; // accuracy at or below this reads as "точно"
 
-function gpsLabel(gps: GpsStatus, accuracy: number | null): string {
-  if (gps === 'denied') return 'GPS: немає';
-  if (gps === 'off') return 'GPS: недоступний';
-  if (gps === 'searching') return 'GPS: пошук';
-  if (accuracy !== null && accuracy > GPS_GOOD_M) return 'GPS: слабко';
-  return 'GPS: точно';
+function gpsLabel(gps: GpsStatus, accuracy: number | null): { text: string; tone: 'ok' | 'warn' | 'bad' } {
+  if (gps === 'denied') return { text: 'GPS вимкнено', tone: 'bad' };
+  if (gps === 'off') return { text: 'GPS недоступний', tone: 'bad' };
+  if (gps === 'searching') return { text: 'GPS: пошук', tone: 'warn' };
+  if (accuracy !== null && accuracy > GPS_GOOD_M) return { text: 'GPS слабкий', tone: 'warn' };
+  return { text: 'GPS точно', tone: 'ok' };
 }
 
-export default function StatusBar({
-  title, foundCount, total, gps, accuracy, wakeActive, wakeSupported, online,
-}: Props) {
-  const wakeText = wakeActive ? 'Екран активний' : 'Екран не блокується';
+const TONE = { ok: 'text-[var(--green-deep)]', warn: 'text-[#b56b00]', bad: 'text-[var(--danger)]' };
+
+// Top status card: title, found counter, and the GPS, screen and connection state.
+export default function StatusBar({ title, foundCount, total, gps, accuracy, wakeActive, wakeSupported, online }: Props) {
+  const g = gpsLabel(gps, accuracy);
   return (
-    <div
-      role="status"
-      className="apple-material-thick rounded-2xl px-4 py-2 text-sm font-medium shadow-[var(--shadow-soft)]"
-    >
+    <div role="status" className="dl-card px-4 py-3">
       <div className="flex items-center justify-between gap-3">
-        <span className="truncate">{title}</span>
-        <span className="tabular-nums">Знайдено {foundCount}/{total}</span>
+        <span className="dl-title truncate text-xl">{title}</span>
+        <span className="dl-tag px-3 py-1 text-sm tabular-nums">Знайдено {foundCount}/{total}</span>
       </div>
-      <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-neutral-500">
-        <span>{gpsLabel(gps, accuracy)}</span>
-        <span>{wakeSupported ? wakeText : 'Екран не блокується'}</span>
-        {!online && <span className="text-red-600">Немає зв&apos;язку</span>}
+      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold">
+        <span className={TONE[g.tone]}>{g.text}</span>
+        <span className="text-[var(--muted)]">{wakeSupported && wakeActive ? 'Екран не гасне' : 'Екран може згаснути'}</span>
+        {!online && <span className="text-[var(--danger)]">Немає зв&apos;язку</span>}
       </div>
     </div>
   );

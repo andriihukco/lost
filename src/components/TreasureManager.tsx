@@ -33,21 +33,21 @@ export default function TreasureManager() {
     <section className="flex flex-col gap-3 px-5 pb-10">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold tracking-tight">Скарби ({items.length})</h2>
-        <button type="button" onClick={() => void reload()} className="text-sm text-blue-600">Оновити</button>
+        <button type="button" onClick={() => void reload()} className="text-sm text-[var(--green-deep)] font-bold">Оновити</button>
       </div>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      {items.length === 0 && !error && <p className="text-neutral-500">Ще немає скарбів</p>}
+      {error && <p role="alert" className="text-sm text-[var(--danger)]">{error}</p>}
+      {items.length === 0 && !error && <p className="text-[var(--muted)]">Ще немає скарбів</p>}
       <ul className="flex flex-col gap-2">
         {items.map((t) => (
           <li key={t.id}>
             <button
               type="button"
               onClick={() => setSelectedId(selectedId === t.id ? null : t.id)}
-              className="flex w-full items-center justify-between gap-3 rounded-xl bg-white/80 px-4 py-3 text-left shadow-sm"
+              className="flex w-full items-center justify-between gap-3 rounded-xl dl-card px-4 py-3 text-left"
             >
               <span className="min-w-0">
                 <span className="block truncate font-semibold">{t.title}</span>
-                <span className="block text-xs text-neutral-500">
+                <span className="block text-xs text-[var(--muted)]">
                   {t.is_found
                     ? `Знайдено: ${names[t.found_by ?? ''] ?? 'гравець'}${t.found_manual ? ' (вручну)' : ''}`
                     : 'На карті'}

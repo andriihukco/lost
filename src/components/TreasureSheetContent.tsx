@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { isFoundable, haversineM, type LatLng } from '@/lib/geo';
+import { isFoundable, type LatLng } from '@/lib/geo';
 import { bearingDeg, cardinal, formatDistance } from '@/lib/geoFormat';
+import { relativeBearing } from '@/lib/heading';
 import { hasArrived, markArrived } from '@/lib/arrival';
 import { markFound, type FoundStatus } from '@/lib/found';
 import { PHOTO_BUCKET } from '@/lib/treasures';
@@ -14,6 +15,7 @@ type Props = {
   pos: LatLng | null;
   accuracy: number | null;
   distanceM: number | null;
+  heading: number | null;
   onResult: (status: FoundStatus) => void;
 };
 
@@ -24,7 +26,7 @@ const ERROR_TEXT: Record<Exclude<FoundStatus, 'won'>, string> = {
 };
 
 // Two steps: "Я знайшов місце" (you are at the spot), then "Я знайшов скарб" (you have the treasure).
-export default function TreasureSheetContent({ treasure, pos, accuracy, distanceM, onResult }: Props) {
+export default function TreasureSheetContent({ treasure, pos, accuracy, distanceM, heading, onResult }: Props) {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [revealed, setRevealed] = useState(false); // spoiler: stays blurred until tapped
   const [arrived, setArrived] = useState(false);
@@ -58,7 +60,10 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
   }, [treasure.photo_paths]);
 
   const canArrive = distanceM !== null && isFoundable(distanceM, accuracy);
-  const direction = pos ? cardinal(bearingDeg(pos, { lat: treasure.lat, lng: treasure.lng })) : null;
+  const bearing = pos ? bearingDeg(pos, { lat: treasure.lat, lng: treasure.lng }) : null;
+  const direction = bearing !== null ? cardinal(bearing) : null;
+  // The arrow points at the treasure from where the player faces (needs a compass or GPS course).
+  const arrowDeg = bearing !== null ? relativeBearing(bearing, heading) : null;
 
   function arrive() {
     try {
@@ -75,13 +80,9 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
     setError(null);
     try {
       const status = await markFound(treasure.id, manualNote);
-      if (status === 'won') {
-        navigator.vibrate?.(15);
-        onResult(status);
-      } else {
-        setError(ERROR_TEXT[status]);
-        onResult(status);
-      }
+      if (status === 'won') navigator.vibrate?.(15);
+      else setError(ERROR_TEXT[status]);
+      onResult(status);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -89,14 +90,11 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
     }
   }
 
-  const bigButton =
-    'w-full rounded-2xl px-4 py-4 text-lg font-semibold text-white shadow-sm disabled:opacity-40';
-
   return (
-    <section className="flex flex-col gap-4 p-5">
+    <section className="mx-auto flex w-full max-w-md flex-col gap-4 px-5 pb-6">
       <header>
-        <h2 className="text-2xl font-bold leading-[1.1] tracking-[-0.02em]">{treasure.title}</h2>
-        {treasure.hint && <p className="selectable mt-1 text-neutral-600">{treasure.hint}</p>}
+        <h2 className="dl-title text-3xl">{treasure.title}</h2>
+        {treasure.hint && <p className="selectable mt-2 text-base text-[var(--muted)]">{treasure.hint}</p>}
       </header>
 
       {photoUrls.length > 0 && (
@@ -104,7 +102,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
           type="button"
           onClick={() => setRevealed(true)}
           aria-label={revealed ? 'Фото підказки' : 'Показати фото підказки'}
-          className="relative flex gap-2 overflow-x-auto rounded-2xl"
+          className="relative flex gap-2 overflow-x-auto rounded-[20px] border-2 border-[var(--line)]"
         >
           {photoUrls.map((url, i) => (
             <img
@@ -112,49 +110,56 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
               src={url}
               alt={`Підказка ${i + 1}`}
               style={{ filter: revealed ? 'none' : 'blur(22px)' }}
-              className="h-44 w-auto max-w-[80%] shrink-0 rounded-2xl object-cover transition-[filter] duration-300"
+              className="h-44 w-auto max-w-[80%] shrink-0 rounded-[18px] object-cover transition-[filter] duration-300"
             />
           ))}
           {!revealed && (
-            <span className="absolute inset-0 grid place-items-center rounded-2xl bg-black/20 text-sm font-semibold text-white">
-              Торкніться, щоб показати
+            <span className="absolute inset-0 grid place-items-center rounded-[18px] bg-[var(--ink)] text-sm font-bold text-white">
+              Натисніть, щоб показати
             </span>
           )}
         </button>
       )}
 
-      <div className="rounded-2xl bg-neutral-100 px-4 py-3">
-        <p className="text-sm text-neutral-500">До місця</p>
-        <p className="text-4xl font-bold tabular-nums tracking-[-0.02em]">
-          {distanceM !== null ? formatDistance(distanceM) : '—'}
-        </p>
-        <p className="text-sm text-neutral-600">
-          {!pos ? 'Чекаємо на GPS' : direction ? `на ${direction}` : ''}
-        </p>
+      <div className="dl-card flex items-center gap-4 p-4">
+        <span
+          aria-hidden
+          className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[var(--green-soft)] text-2xl font-black text-[var(--green-deep)]"
+          style={arrowDeg !== null ? { transform: `rotate(${arrowDeg}deg)` } : undefined}
+        >
+          {arrowDeg !== null ? '↑' : '•'}
+        </span>
+        <div className="min-w-0">
+          <p className="dl-label">До місця</p>
+          <p className="text-4xl font-black tabular-nums tracking-tight">{distanceM !== null ? formatDistance(distanceM) : '—'}</p>
+          <p className="text-sm font-semibold text-[var(--muted)]">
+            {!pos ? 'Чекаємо на GPS' : direction ? `на ${direction}${heading === null ? ' · компас вимкнено' : ''}` : ''}
+          </p>
+        </div>
       </div>
 
       {!arrived ? (
         <>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm font-semibold text-[var(--muted)]">
             {canArrive ? 'Ви біля місця. Натисніть, коли побачите його.' : 'Підійдіть ближче, щоб відмітити місце (до 15 м).'}
           </p>
-          <button type="button" disabled={!canArrive || busy} onClick={arrive} className={`${bigButton} bg-blue-600`}>
+          <button type="button" disabled={!canArrive || busy} onClick={arrive} className="dl-btn">
             Я знайшов місце
           </button>
         </>
       ) : (
         <>
-          <p className="text-sm text-neutral-600">Ви на місці. Знайдіть скарб і підтвердіть.</p>
-          <button type="button" disabled={busy} onClick={() => void confirm()} className={`${bigButton} bg-green-600`}>
+          <p className="text-sm font-semibold text-[var(--muted)]">Ви на місці. Знайдіть скарб і підтвердіть.</p>
+          <button type="button" disabled={busy} onClick={() => void confirm()} className="dl-btn">
             Я знайшов скарб
           </button>
         </>
       )}
 
-      {error && <p role="alert" className="text-sm font-medium text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm font-bold text-[var(--danger)]">{error}</p>}
 
       {!manual ? (
-        <button type="button" onClick={() => setManual(true)} className="self-center text-sm text-neutral-500">
+        <button type="button" onClick={() => setManual(true)} className="self-center text-sm font-bold text-[var(--muted)] underline">
           GPS не працює? Підтвердити вручну
         </button>
       ) : (
@@ -165,20 +170,14 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
             if (note.trim()) void confirm(note.trim());
           }}
         >
-          <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Що ви бачите біля скарбу?"
-            maxLength={200}
-            className="rounded-xl bg-white px-4 py-3 text-[16px] outline-none ring-1 ring-black/10"
-          />
-          <button type="submit" disabled={!note.trim() || busy} className="rounded-xl bg-neutral-800 px-4 py-3 font-semibold text-white disabled:opacity-40">
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Що ви бачите біля скарбу?" maxLength={200} className="dl-field" />
+          <button type="submit" disabled={!note.trim() || busy} className="dl-btn-secondary">
             Підтвердити вручну
           </button>
         </form>
       )}
 
-      <p className="selectable text-center text-xs text-neutral-400 tabular-nums">
+      <p className="selectable text-center text-xs font-semibold tabular-nums text-[var(--muted)]">
         {treasure.lat.toFixed(5)}, {treasure.lng.toFixed(5)}
       </p>
     </section>

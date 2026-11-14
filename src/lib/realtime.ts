@@ -4,7 +4,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { LatLng } from '@/lib/geo';
 
-export type PosMessage = { user_id: string; lat: number; lng: number; accuracy: number | null; ts: number };
+export type PosMessage = { user_id: string; lat: number; lng: number; accuracy: number | null; heading: number | null; ts: number };
 export type PresenceUser = { user_id: string; nickname: string; avatar: string };
 export type TreasureChange = {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
@@ -19,7 +19,7 @@ type Handlers = {
 };
 
 export type GameConnection = {
-  sendPosition: (p: LatLng, accuracy: number | null) => void;
+  sendPosition: (p: LatLng, accuracy: number | null, heading: number | null) => void;
   close: () => void;
 };
 
@@ -78,8 +78,8 @@ export function openGameConnection(opts: Handlers & { me: PresenceUser }): GameC
   connect();
 
   return {
-    sendPosition(p, accuracy) {
-      const payload: PosMessage = { user_id: opts.me.user_id, lat: p.lat, lng: p.lng, accuracy, ts: Date.now() };
+    sendPosition(p, accuracy, heading) {
+      const payload: PosMessage = { user_id: opts.me.user_id, lat: p.lat, lng: p.lng, accuracy, heading, ts: Date.now() };
       channel?.send({ type: 'broadcast', event: 'pos', payload });
     },
     close() {

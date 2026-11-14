@@ -57,7 +57,7 @@ export default function BottomSheet({ children, initial = 'peek' }: Props) {
 
   return (
     <motion.div
-      className="absolute inset-x-0 bottom-0 touch-none apple-material-thick rounded-t-3xl shadow-[var(--shadow-deep)]"
+      className="absolute inset-x-0 bottom-0 touch-none rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] shadow-[0_-4px_0_var(--line)]"
       style={{ height: vh * SNAPS.full, y }}
       drag="y"
       dragConstraints={{ top: 0, bottom: maxOffset }}
@@ -66,8 +66,8 @@ export default function BottomSheet({ children, initial = 'peek' }: Props) {
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div className="mx-auto mt-2 h-1.5 w-10 cursor-grab rounded-full bg-neutral-400" aria-hidden />
-      <div className="h-[calc(100%-1.5rem)] overflow-y-auto overscroll-contain">{children}</div>
+      <div className="mx-auto mt-3 h-1.5 w-12 cursor-grab rounded-full bg-[var(--line)]" aria-hidden />
+      <div className="h-[calc(100%-1.75rem)] overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">{children}</div>
     </motion.div>
   );
 }

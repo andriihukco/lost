@@ -25,19 +25,13 @@ export default function Onboarding({ userId, onSaved }: { userId: string; onSave
   }
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 rounded-t-3xl bg-white/95 p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-2xl backdrop-blur">
-      <h2 className="text-2xl font-bold tracking-tight">Як тебе звати?</h2>
-      <form className="mt-4 flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); void save(); }}>
-        <input
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          maxLength={24}
-          placeholder="Імʼя"
-          autoComplete="nickname"
-          className="rounded-xl bg-neutral-100 px-4 py-3 text-[16px] outline-none ring-1 ring-black/10"
-        />
+    <div className="absolute inset-x-0 bottom-0 z-10 rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-[0_-4px_0_var(--line)]">
+      <div className="mx-auto max-w-md">
+      <h2 className="dl-title text-3xl">Як тебе звати?</h2>
+      <form className="mt-4 flex flex-col gap-5" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+        <input value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={24} placeholder="Імʼя" autoComplete="nickname" className="dl-field" />
         <fieldset>
-          <legend className="mb-2 text-sm text-neutral-500">Обери тварину</legend>
+          <legend className="dl-label mb-3">Обери тварину</legend>
           <div className="grid grid-cols-6 gap-2">
             {AVATARS.map((a) => (
               <button
@@ -46,8 +40,10 @@ export default function Onboarding({ userId, onSaved }: { userId: string; onSave
                 aria-label={a.label}
                 aria-pressed={avatar === a.key}
                 onClick={() => setAvatar(a.key)}
-                className={`grid h-11 w-11 place-items-center rounded-xl text-2xl ${
-                  avatar === a.key ? 'bg-blue-100 ring-2 ring-blue-600' : 'bg-neutral-100'
+                className={`grid aspect-square place-items-center rounded-full border-2 text-2xl transition-transform active:scale-90 ${
+                  avatar === a.key
+                    ? 'border-[var(--green)] bg-[var(--green-soft)] shadow-[0_3px_0_var(--green-deep)]'
+                    : 'border-[var(--line)] bg-[var(--paper)] shadow-[0_3px_0_var(--line)]'
                 }`}
               >
                 {a.emoji}
@@ -55,15 +51,12 @@ export default function Onboarding({ userId, onSaved }: { userId: string; onSave
             ))}
           </div>
         </fieldset>
-        {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={!canSave}
-          className="rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white disabled:opacity-40"
-        >
+        {error && <p role="alert" className="text-sm font-bold text-[var(--danger)]">{error}</p>}
+        <button type="submit" disabled={!canSave} className="dl-btn">
           {busy ? 'Зберігаємо…' : 'Зберегти і відкрити карту'}
         </button>
       </form>
+      </div>
     </div>
   );
 }

@@ -5,15 +5,15 @@ import type { LatLng } from '@/lib/geo';
 
 export type GpsStatus = 'off' | 'searching' | 'ok' | 'denied';
 
-export type GeoState = { pos: LatLng | null; accuracy: number | null; status: GpsStatus };
+export type GeoState = { pos: LatLng | null; accuracy: number | null; status: GpsStatus; course: number | null };
 
 // watchPosition with enableHighAccuracy (spec §3, Task 9). Accuracy passes through; geo.ts handles missing values.
 export function useGeolocation(): GeoState {
-  const [state, setState] = useState<GeoState>({ pos: null, accuracy: null, status: 'searching' });
+  const [state, setState] = useState<GeoState>({ pos: null, accuracy: null, status: 'searching', course: null });
 
   useEffect(() => {
     if (!('geolocation' in navigator)) {
-      setState({ pos: null, accuracy: null, status: 'off' });
+      setState({ pos: null, accuracy: null, status: 'off', course: null });
       return;
     }
     const id = navigator.geolocation.watchPosition(
@@ -22,6 +22,8 @@ export function useGeolocation(): GeoState {
           pos: { lat: p.coords.latitude, lng: p.coords.longitude },
           accuracy: p.coords.accuracy,
           status: 'ok',
+          // GPS course: the direction of travel, only meaningful while moving
+          course: typeof p.coords.heading === 'number' && Number.isFinite(p.coords.heading) ? p.coords.heading : null,
         }),
       (err) =>
         setState((s) => ({

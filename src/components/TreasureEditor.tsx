@@ -15,7 +15,7 @@ type Props = {
   onDeleted: () => void;
 };
 
-const field = 'rounded-xl bg-white px-3 py-2 text-[16px] outline-none ring-1 ring-black/10 w-full';
+const field = 'dl-field';
 
 export default function TreasureEditor({ treasure, names, onChanged, onDeleted }: Props) {
   const [title, setTitle] = useState(treasure.title);
@@ -119,32 +119,32 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
   }
 
   return (
-    <div className="mt-2 flex flex-col gap-3 rounded-2xl bg-white/90 p-4 shadow-sm">
+    <div className="mt-2 flex flex-col gap-3 rounded-2xl dl-card p-4">
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-neutral-500">Назва</span>
+        <span className="text-[var(--muted)]">Назва</span>
         <input className={field} value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-neutral-500">Підказка</span>
+        <span className="text-[var(--muted)]">Підказка</span>
         <textarea className={field} value={hint} rows={2} maxLength={300} onChange={(e) => setHint(e.target.value)} />
       </label>
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-neutral-500">Широта</span>
+          <span className="text-[var(--muted)]">Широта</span>
           <input className={field} inputMode="decimal" value={lat} onChange={(e) => setLat(e.target.value)} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-neutral-500">Довгота</span>
+          <span className="text-[var(--muted)]">Довгота</span>
           <input className={field} inputMode="decimal" value={lng} onChange={(e) => setLng(e.target.value)} />
         </label>
       </div>
-      {errors.map((e) => <p key={e} role="alert" className="text-sm text-red-600">{e}</p>)}
-      <button type="button" disabled={busy} onClick={save} className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-40">
+      {errors.map((e) => <p key={e} role="alert" className="text-sm text-[var(--danger)]">{e}</p>)}
+      <button type="button" disabled={busy} onClick={save} className="dl-btn !w-auto !py-2.5 !text-sm">
         Зберегти зміни
       </button>
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm text-neutral-500">Фото ({photos.length}/{MAX_PHOTOS})</span>
+        <span className="text-sm text-[var(--muted)]">Фото ({photos.length}/{MAX_PHOTOS})</span>
         <div className="flex gap-2 overflow-x-auto">
           {photos.map((p) => (
             <div key={p} className="relative shrink-0">
@@ -159,35 +159,35 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
       </div>
 
       <div className="flex flex-col gap-2 text-sm">
-        <span className="text-neutral-500">Статус</span>
+        <span className="text-[var(--muted)]">Статус</span>
         {treasure.is_found ? (
           <p>Знайдено: <strong>{names[treasure.found_by ?? ''] ?? 'гравець'}</strong>{treasure.found_at ? `, ${new Date(treasure.found_at).toLocaleString('uk-UA')}` : ''}{treasure.found_manual ? ` · вручну: ${treasure.found_note ?? ''}` : ''}</p>
         ) : (
           <p>На карті</p>
         )}
         {treasure.is_found && (
-          <button type="button" disabled={busy} onClick={sendBack} className="self-start text-blue-600 disabled:opacity-40">
+          <button type="button" disabled={busy} onClick={sendBack} className="self-start text-[var(--green-deep)] font-bold disabled:opacity-40">
             Повернути на карту
           </button>
         )}
-        <button type="button" onClick={() => void toggleHistory()} className="self-start text-blue-600">
+        <button type="button" onClick={() => void toggleHistory()} className="self-start text-[var(--green-deep)] font-bold">
           {history ? 'Сховати історію' : 'Історія пошуку'}
         </button>
         {history && (
           <ul className="flex flex-col gap-1 border-l-2 border-neutral-200 pl-3">
-            {history.length === 0 && <li className="text-neutral-500">Подій ще немає</li>}
+            {history.length === 0 && <li className="text-[var(--muted)]">Подій ще немає</li>}
             {history.map((h) => (
               <li key={h.id}>
                 <span className="font-medium">{names[h.user_id] ?? 'гравець'}</span>{' '}
                 {h.action === 'found' ? `знайшов(ла)${h.manual ? ' вручну' : ''}` : 'повернув(ла) на карту'}
-                <span className="text-neutral-500"> · {new Date(h.created_at).toLocaleString('uk-UA')}</span>
+                <span className="text-[var(--muted)]"> · {new Date(h.created_at).toLocaleString('uk-UA')}</span>
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <button type="button" disabled={busy} onClick={remove} className="self-start text-sm font-semibold text-red-600 disabled:opacity-40">
+      <button type="button" disabled={busy} onClick={remove} className="self-start text-sm font-semibold text-[var(--danger)] disabled:opacity-40">
         Видалити скарб
       </button>
       {message && <p role="status" className="text-sm font-medium">{message}</p>}

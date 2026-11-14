@@ -10,44 +10,85 @@ import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import { formatDistance } from '@/lib/geoFormat';
 import type { Treasure } from '@/lib/useTreasures';
 
-export type OtherPlayer = { id: string; nickname: string; avatar: string; lat: number; lng: number; seenAt: number };
+export type OtherPlayer = {
+  id: string;
+  nickname: string;
+  avatar: string;
+  lat: number;
+  lng: number;
+  heading: number | null;
+  seenAt: number;
+};
 
 type Props = {
   treasures: Treasure[]; // only unfound treasures are passed in
   distances: Record<string, number>; // metres from me, by treasure id
   me: LatLng | null;
   meAvatar: string | null;
+  meName: string | null;
+  meHeading: number | null;
   others: OtherPlayer[];
   onSelectTreasure?: (t: Treasure) => void;
 };
 
-// A player marker is their animal emoji, with the nickname as the accessible label.
-function applyAvatar(el: HTMLElement, avatar: string | null, label: string) {
-  el.className = 'grid h-8 w-8 place-items-center text-2xl drop-shadow';
-  el.textContent = avatar ? avatarEmoji(avatar) : '📍';
-  el.setAttribute('aria-label', label);
+// Player: emoji in a circle, a tip that points where the player faces, and the name below.
+function renderPlayer(el: HTMLElement, p: { avatar: string | null; name: string; heading: number | null; me: boolean }) {
+  el.replaceChildren();
+  // Add classes, never overwrite: MapLibre keeps its own 'maplibregl-marker' class on this element.
+  el.classList.add('dl-player');
+  el.classList.toggle('dl-player-me', p.me);
+  el.setAttribute('aria-label', p.name);
+  const root = document.createElement('div');
+  root.className = 'dl-player-root';
+  if (p.heading !== null) {
+    const heading = document.createElement('div');
+    heading.className = 'dl-heading';
+    heading.style.transform = `rotate(${p.heading}deg)`;
+    const tip = document.createElement('div');
+    tip.className = 'dl-heading-tip';
+    heading.append(tip);
+    root.append(heading);
+  }
+  const avatar = document.createElement('div');
+  avatar.className = 'dl-player-avatar';
+  avatar.textContent = p.avatar ? avatarEmoji(p.avatar) : '📍';
+  const name = document.createElement('span');
+  name.className = 'dl-tag dl-player-name';
+  name.textContent = p.me ? 'Ви' : p.name;
+  root.append(avatar, name);
+  el.append(root);
 }
 
-type OtherEntry = {
-  marker: Marker;
-  el: HTMLDivElement;
-  from: LatLng;
-  to: LatLng;
-  startedAt: number;
-  seenAt: number;
-};
+// Pin: a circle centred on the treasure's coordinate, with its distance under it.
+function buildPin(): { el: HTMLButtonElement; label: HTMLSpanElement } {
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.classList.add('dl-pin');
+  const root = document.createElement('div');
+  root.style.cssText = 'position:relative;width:44px;height:44px';
+  const badge = document.createElement('span');
+  badge.className = 'dl-pin-badge';
+  badge.textContent = '🍄';
+  const label = document.createElement('span');
+  label.className = 'dl-tag';
+  label.style.cssText = 'position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px';
+  root.append(badge, label);
+  el.append(root);
+  return { el, label };
+}
 
+type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
 type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, distances, me, meAvatar, others, onSelectTreasure }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
+  const meEl = useRef<HTMLDivElement | null>(null);
   const centered = useRef(false);
   const otherMarkers = useRef(new Map<string, OtherEntry>());
   const pinMap = useRef(new Map<string, PinEntry>());
-  // Read through refs so a new callback identity does not rebuild pins (review finding F1).
-  const selectRef = useRef(onSelectTreasure);
+  const selectRef = useRef(onSelectTreasure); // read through a ref: a new callback must not rebuild pins
   useEffect(() => {
     selectRef.current = onSelectTreasure;
   }, [onSelectTreasure]);
@@ -68,7 +109,7 @@ export default function MapView({ treasures, distances, me, meAvatar, others, on
       console.error('MapLibre failed to start', err);
       return;
     }
-    // Reserve provider: if the primary style cannot load (bad key, quota, network), switch to OpenStreetMap once.
+    // Reserve provider: if the primary style cannot load, switch to OpenStreetMap once.
     let fellBack = false;
     const primaryIsMapTiler = Boolean(process.env.NEXT_PUBLIC_MAPTILER_KEY);
     map.on('error', (e: { error?: { status?: number; message?: string } }) => {
@@ -86,13 +127,14 @@ export default function MapView({ treasures, distances, me, meAvatar, others, on
       map.remove();
       mapRef.current = null;
       meMarker.current = null;
+      meEl.current = null;
       pins.clear();
       others.clear();
       centered.current = false;
     };
   }, []);
 
-  // Pins: keyed by treasure id. Adding or removing a treasure touches only that pin.
+  // Pins are keyed by treasure id: adding or removing one touches only that pin.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -110,17 +152,10 @@ export default function MapView({ treasures, distances, me, meAvatar, others, on
         existing.marker.setLngLat([t.lng, t.lat]);
         continue;
       }
-      const el = document.createElement('button');
-      el.type = 'button';
+      const { el, label } = buildPin();
       el.setAttribute('aria-label', t.title);
-      el.className = 'flex flex-col items-center text-3xl drop-shadow';
-      const mushroom = document.createElement('span');
-      mushroom.textContent = '🍄';
-      const label = document.createElement('span');
-      label.className = 'rounded-full bg-white/90 px-2 text-xs font-semibold tabular-nums shadow';
-      el.append(mushroom, label);
       const entry: PinEntry = {
-        marker: new Marker({ element: el }).setLngLat([t.lng, t.lat]).addTo(map),
+        marker: new Marker({ element: el, anchor: 'center' }).setLngLat([t.lng, t.lat]).addTo(map),
         el,
         label,
         treasure: t,
@@ -130,7 +165,6 @@ export default function MapView({ treasures, distances, me, meAvatar, others, on
     }
   }, [treasures]);
 
-  // Distance labels update without rebuilding any pin.
   useEffect(() => {
     for (const [id, entry] of pinMap.current) {
       const d = distances[id];
@@ -143,16 +177,16 @@ export default function MapView({ treasures, distances, me, meAvatar, others, on
     if (!map || !me) return;
     if (!meMarker.current) {
       const el = document.createElement('div');
-      el.setAttribute('aria-label', 'Ви');
-      meMarker.current = new Marker({ element: el }).setLngLat([me.lng, me.lat]).addTo(map);
+      meEl.current = el;
+      meMarker.current = new Marker({ element: el, anchor: 'center' }).setLngLat([me.lng, me.lat]).addTo(map);
     }
-    applyAvatar(meMarker.current.getElement(), meAvatar, 'Ви');
+    if (meEl.current) renderPlayer(meEl.current, { avatar: meAvatar, name: meName ?? 'Ви', heading: meHeading, me: true });
     meMarker.current.setLngLat([me.lng, me.lat]);
     if (!centered.current) {
       map.jumpTo({ center: [me.lng, me.lat] });
       centered.current = true;
     }
-  }, [me, meAvatar]);
+  }, [me, meAvatar, meName, meHeading]);
 
   // Other players: sync markers to the latest positions; the loop below glides them.
   useEffect(() => {
@@ -166,8 +200,8 @@ export default function MapView({ treasures, distances, me, meAvatar, others, on
       const entry = otherMarkers.current.get(o.id);
       if (!entry) {
         const el = document.createElement('div');
-        applyAvatar(el, o.avatar, o.nickname);
-        const marker = new Marker({ element: el }).setLngLat([to.lng, to.lat]).addTo(map);
+        renderPlayer(el, { avatar: o.avatar, name: o.nickname, heading: o.heading, me: false });
+        const marker = new Marker({ element: el, anchor: 'center' }).setLngLat([to.lng, to.lat]).addTo(map);
         otherMarkers.current.set(o.id, { marker, el, from: to, to, startedAt: now, seenAt: o.seenAt });
       } else {
         const t = Math.min(1, (now - entry.startedAt) / INTERP_MS);
@@ -175,7 +209,7 @@ export default function MapView({ treasures, distances, me, meAvatar, others, on
         entry.to = to;
         entry.startedAt = now;
         entry.seenAt = o.seenAt;
-        applyAvatar(entry.el, o.avatar, o.nickname);
+        renderPlayer(entry.el, { avatar: o.avatar, name: o.nickname, heading: o.heading, me: false });
       }
     }
     for (const [id, entry] of otherMarkers.current) {
@@ -203,8 +237,8 @@ export default function MapView({ treasures, distances, me, meAvatar, others, on
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // MapLibre's stylesheet makes its own container position:relative, which would override "absolute inset-0"
-  // and collapse the map to 0 px. A wrapper keeps the sizing; the map fills it.
+  // MapLibre's stylesheet makes its container position:relative, which would override "absolute inset-0".
+  // A wrapper keeps the sizing; the map fills it.
   return (
     <div className="absolute inset-0">
       <div ref={container} className="h-full w-full" />

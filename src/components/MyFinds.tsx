@@ -11,7 +11,7 @@ const MESSAGES: Record<UnfoundStatus, string> = {
   not_found_state: 'Скарб уже на карті',
 };
 
-// The finder's own finds, with undo for a mistaken "found" (spec: send it back to the map).
+// The finder's own finds, with undo for a mistaken "found".
 export default function MyFinds({ finds, onChanged }: { finds: Treasure[]; onChanged: () => void }) {
   const [message, setMessage] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -30,25 +30,20 @@ export default function MyFinds({ finds, onChanged }: { finds: Treasure[]; onCha
   }
 
   return (
-    <section className="flex flex-col gap-3 p-5">
-      <h2 className="text-2xl font-bold tracking-tight">Мої знахідки</h2>
-      {finds.length === 0 && <p className="text-neutral-500">Поки що немає знахідок</p>}
-      <ul className="flex flex-col gap-2">
+    <section className="mx-auto flex w-full max-w-md flex-col gap-4 px-5 pb-6">
+      <h2 className="dl-title text-3xl">Мої знахідки</h2>
+      {finds.length === 0 && <p className="text-base font-semibold text-[var(--muted)]">Поки що немає знахідок. Знайдіть перший скарб!</p>}
+      <ul className="flex flex-col gap-3">
         {finds.map((t) => (
-          <li key={t.id} className="flex items-center justify-between gap-3 rounded-xl bg-neutral-100 px-4 py-3">
-            <span className="font-medium">{t.title}</span>
-            <button
-              type="button"
-              disabled={busyId === t.id}
-              onClick={() => void undo(t)}
-              className="text-sm font-semibold text-blue-600 disabled:opacity-40"
-            >
-              Повернути на карту
+          <li key={t.id} className="dl-card flex items-center justify-between gap-3 px-4 py-3">
+            <span className="min-w-0 truncate text-base font-extrabold">🍄 {t.title}</span>
+            <button type="button" disabled={busyId === t.id} onClick={() => void undo(t)} className="dl-btn-secondary !w-auto !px-4 !py-2 !text-sm">
+              Повернути
             </button>
           </li>
         ))}
       </ul>
-      {message && <p role="status" className="text-sm">{message}</p>}
+      {message && <p role="status" className="text-sm font-bold text-[var(--green-deep)]">{message}</p>}
     </section>
   );
 }

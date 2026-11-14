@@ -1,109 +1,212 @@
 @import "tailwindcss";
 
-/* Tokens (spec §5.2, §5.5). Light by default; dark follows prefers-color-scheme unless the page pins a theme. */
+/* Duolingo-style system: deep green primary, solid surfaces, 3D buttons, Inter (see layout.tsx). */
 :root {
-  --background: #f2f2f7;
-  --foreground: #1c1c1e;
-  --surface: rgba(255, 255, 255, 0.78);
-  --surface-border: rgba(255, 255, 255, 0.4);
-  --surface-opacity: 0.78;
-  --shadow-deep: 0 12px 32px rgba(0, 0, 0, 0.18);
-  --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.08);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --background: #000000;
-    --foreground: #f2f2f7;
-    --surface: rgba(28, 28, 30, 0.78);
-    --surface-border: rgba(255, 255, 255, 0.12);
-    --shadow-deep: 0 12px 32px rgba(0, 0, 0, 0.6);
-    --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.4);
-  }
-}
-
-:root[data-theme="dark"] {
-  --background: #000000;
-  --foreground: #f2f2f7;
-  --surface: rgba(28, 28, 30, 0.78);
-  --surface-border: rgba(255, 255, 255, 0.12);
-  --shadow-deep: 0 12px 32px rgba(0, 0, 0, 0.6);
-  --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.4);
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+  --green: #58a700;
+  --green-deep: #3f7d00;
+  --green-soft: #d7f5b8;
+  --ink: #1f2b34;
+  --muted: #6b7a86;
+  --line: #e5e5e5;
+  --paper: #ffffff;
+  --page: #f4f7f1;
+  --danger: #ea2b2b;
+  --danger-deep: #b41f1f;
 }
 
 html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  overscroll-behavior: none; /* no pull-to-refresh on sheet or map drags (spec §5.4) */
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  overscroll-behavior: none; /* no pull-to-refresh on sheet or map drags */
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Floating chrome: translucent material with a 0.5px top-edge highlight (spec §5.2). */
-.apple-material-thick {
-  background: var(--surface);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 0.5px solid var(--surface-border);
+/* Solid surfaces only: no translucent panels. */
+.dl-card {
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 4px 0 var(--line);
 }
 
-/* Tactile polish (spec §5.4): instant press feedback, no 300 ms delay, no selection on controls. */
-button,
-[role="button"],
-a,
-.map-marker {
+/* Primary action: deep green with a 3D bottom edge that "presses" on tap. */
+.dl-btn {
+  display: block;
+  width: 100%;
+  background: var(--green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.01em;
+  padding: 14px 16px;
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--green-deep);
+  transition: transform 80ms ease-out, box-shadow 80ms ease-out;
   touch-action: manipulation;
-  -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
-  transition: transform 100ms ease-out;
+}
+.dl-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--green-deep);
+}
+.dl-btn:disabled {
+  background: #cfd8d0;
+  box-shadow: 0 5px 0 #b8c4ba;
+  color: #7b8a7e;
 }
 
-button:active,
-[role="button"]:active {
-  transform: scale(0.97);
+.dl-btn-secondary {
+  display: block;
+  width: 100%;
+  background: var(--paper);
+  color: var(--green);
+  font-weight: 700;
+  font-size: 16px;
+  padding: 14px 16px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 4px 0 var(--line);
+  transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+  touch-action: manipulation;
+  user-select: none;
+}
+.dl-btn-secondary:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--line);
+}
+.dl-btn-secondary:disabled {
+  color: #9aa6a0;
 }
 
-/* Hover only where a fine pointer exists, so taps do not leave a sticky hover state. */
-@media (hover: hover) and (pointer: fine) {
-  button:hover {
-    filter: brightness(1.05);
-  }
+.dl-btn-danger {
+  display: block;
+  width: 100%;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  padding: 14px 16px;
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--danger-deep);
+  touch-action: manipulation;
+}
+.dl-btn-danger:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--danger-deep);
+}
+.dl-btn-danger:disabled {
+  opacity: 0.4;
 }
 
-/* Text stays selectable for coordinates and hints. */
-.selectable {
-  user-select: text;
-  -webkit-user-select: text;
+/* Inputs: solid, 16px minimum (no iOS zoom), green focus ring. */
+.dl-field {
+  width: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 16px;
+  outline: none;
+}
+.dl-field:focus {
+  border-color: var(--green);
 }
 
-/* Reduced transparency: raise the surface to 96% opacity (spec §5.5). */
-@media (prefers-reduced-transparency: reduce) {
-  :root {
-    --surface: rgba(255, 255, 255, 0.96);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --surface: rgba(28, 28, 30, 0.96);
-    }
-  }
-  .apple-material-thick {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
+.dl-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-/* Reduced motion: the Motion spring falls back to a 150 ms fade in BottomSheet (spec §5.5). */
+.dl-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* Map pins: solid circles, centred on their coordinate. */
+.dl-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  touch-action: manipulation;
+}
+.dl-pin-badge {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: var(--paper);
+  border: 3px solid var(--green);
+  box-shadow: 0 4px 0 var(--green-deep);
+  font-size: 24px;
+  line-height: 1;
+}
+.dl-tag {
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Player marker: emoji in a circle, a direction tip rotated by heading, the name below. */
+.dl-player-root {
+  position: relative;
+  width: 42px;
+  height: 42px;
+}
+.dl-player-avatar {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  box-shadow: 0 3px 0 var(--line);
+  font-size: 22px;
+  line-height: 1;
+}
+.dl-player-me .dl-player-avatar {
+  border-color: var(--green);
+}
+.dl-heading {
+  position: absolute;
+  inset: -6px;
+  pointer-events: none;
+  transition: transform 200ms ease-out;
+}
+.dl-heading-tip {
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  margin-left: -7px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 11px solid var(--green);
+}
+.dl-player-name {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  button:active,
-  [role="button"]:active {
-    transform: none;
-  }
+  .dl-btn, .dl-btn-secondary, .dl-btn-danger { transition: none; }
 }

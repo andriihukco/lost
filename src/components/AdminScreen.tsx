@@ -52,7 +52,7 @@ export default function AdminScreen() {
     setView('login');
   }
 
-  if (view === 'loading') return <main className="p-6 text-neutral-500">Завантаження…</main>;
+  if (view === 'loading') return <main className="p-6 text-[var(--muted)]">Завантаження…</main>;
 
   if (view === 'login') {
     return (
@@ -65,7 +65,7 @@ export default function AdminScreen() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
             autoComplete="username"
-            className="rounded-xl bg-white/80 px-4 py-3 text-[16px] outline-none ring-1 ring-black/10"
+            className="dl-field"
           />
           <input
             type="password"
@@ -73,18 +73,18 @@ export default function AdminScreen() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Пароль"
             autoComplete="current-password"
-            className="rounded-xl bg-white/80 px-4 py-3 text-[16px] outline-none ring-1 ring-black/10"
+            className="dl-field"
           />
-          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {error && <p role="alert" className="text-sm text-[var(--danger)]">{error}</p>}
           <button
             type="submit"
             disabled={busy || !email.trim() || !password}
-            className="rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white disabled:opacity-40"
+            className="dl-btn"
           >
             {busy ? 'Входимо…' : 'Увійти'}
           </button>
         </form>
-        <Link href="/" className="text-sm text-blue-600">← На карту</Link>
+        <Link href="/" className="text-sm text-[var(--green-deep)] font-bold">← На карту</Link>
       </main>
     );
   }
@@ -92,8 +92,8 @@ export default function AdminScreen() {
   return (
     <main className="min-h-dvh">
       <div className="flex items-center justify-between px-5 pt-6">
-        <Link href="/" className="text-sm text-blue-600">← На карту</Link>
-        <button type="button" onClick={() => void signOut()} className="text-sm text-neutral-500">Вийти</button>
+        <Link href="/" className="text-sm text-[var(--green-deep)] font-bold">← На карту</Link>
+        <button type="button" onClick={() => void signOut()} className="text-sm text-[var(--muted)]">Вийти</button>
       </div>
       <div className="flex gap-2 px-5 pt-4">
         {(['manage', 'add'] as const).map((t) => (
@@ -101,7 +101,7 @@ export default function AdminScreen() {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-blue-600 text-white' : 'bg-white/80 text-neutral-700'}`}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-[var(--green)] text-white shadow-[0_4px_0_var(--green-deep)]' : 'dl-card text-[var(--ink)]'}`}
           >
             {t === 'manage' ? 'Скарби' : 'Додати скарб'}
           </button>

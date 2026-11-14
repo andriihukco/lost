@@ -15,11 +15,13 @@ import { openGameConnection, type GameConnection, type PresenceUser, type Treasu
 import { getAllPlayers, getPlayer, type Player } from '@/lib/player';
 import { ensureSession } from '@/lib/session';
 import { shouldSend } from '@/lib/sendPolicy';
+import { shouldBroadcastHeading } from '@/lib/heading';
 import { useGeolocation } from '@/lib/useGeolocation';
+import { useHeading } from '@/lib/useHeading';
 import { useTreasures, type Treasure } from '@/lib/useTreasures';
 import { useWakeLock } from '@/lib/useWakeLock';
 
-type Position = LatLng & { seenAt: number };
+type Position = LatLng & { seenAt: number; heading: number | null };
 type Toast = { id: number; text: string };
 type Sheet = { kind: 'treasure'; id: string } | { kind: 'finds' } | null;
 
@@ -35,16 +37,19 @@ export default function Game() {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const geo = useGeolocation();
+  const compass = useHeading();
   const wake = useWakeLock();
   const { treasures, error, reload } = useTreasures();
+  // Compass if the browser has one (phones), otherwise the GPS course while moving.
+  const myHeading = compass.heading ?? geo.course;
   const connRef = useRef<GameConnection | null>(null);
-  const lastSent = useRef<{ pos: LatLng | null; at: number }>({ pos: null, at: -Infinity });
+  const lastSent = useRef<{ pos: LatLng | null; at: number; heading: number | null }>({ pos: null, at: -Infinity, heading: null });
   const lastLogged = useRef<{ pos: LatLng | null; at: number }>({ pos: null, at: -Infinity });
   const names = useRef(new Map<string, { nickname: string; avatar: string }>());
 
   const nameOf = useCallback((id: string) => names.current.get(id)?.nickname ?? 'Гравець', []);
 
-  // Players who joined after the page loaded are looked up once and cached (for notices).
+  // Players who joined after the page loaded are looked up once and cached (for notices and labels).
   const resolveName = useCallback(async (id: string) => {
     if (names.current.has(id)) return nameOf(id);
     const p = await getPlayer(id).catch(() => null);
@@ -55,7 +60,7 @@ export default function Game() {
   const pushToast = useCallback((text: string) => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, text }].slice(-3));
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4500);
   }, []);
 
   useEffect(() => {
@@ -83,7 +88,10 @@ export default function Game() {
     const conn = openGameConnection({
       me: { user_id: player.user_id, nickname: player.nickname, avatar: player.avatar },
       onPosition: (m) =>
-        setPositions((prev) => ({ ...prev, [m.user_id]: { lat: m.lat, lng: m.lng, seenAt: Date.now() } })),
+        setPositions((prev) => ({
+          ...prev,
+          [m.user_id]: { lat: m.lat, lng: m.lng, heading: m.heading ?? null, seenAt: Date.now() },
+        })),
       onOnline: (users) => {
         for (const u of users) names.current.set(u.user_id, { nickname: u.nickname, avatar: u.avatar });
         setPresence(users);
@@ -104,16 +112,18 @@ export default function Game() {
     return () => { conn.close(); connRef.current = null; };
   }, [player, reload, pushToast, resolveName]);
 
-  // Broadcast own position, throttled (spec §3: at most every 2 s, and only after moving more than 2 m).
+  // Broadcast own position and heading. Position: at most every 2 s, after 2 m. Heading: after a 30° turn.
   useEffect(() => {
     const conn = connRef.current;
     if (!conn || !geo.pos) return;
     const now = Date.now();
-    if (shouldSend(lastSent.current.pos, geo.pos, lastSent.current.at, now)) {
-      conn.sendPosition(geo.pos, geo.accuracy);
-      lastSent.current = { pos: geo.pos, at: now };
+    const moved = shouldSend(lastSent.current.pos, geo.pos, lastSent.current.at, now);
+    const turned = shouldBroadcastHeading(lastSent.current.heading, myHeading, lastSent.current.at, now);
+    if (moved || turned) {
+      conn.sendPosition(geo.pos, geo.accuracy, myHeading);
+      lastSent.current = { pos: geo.pos, at: now, heading: myHeading };
     }
-  }, [geo.pos, geo.accuracy, player]);
+  }, [geo.pos, geo.accuracy, myHeading, player]);
 
   // Trail for later path and search history: a point per 10 m moved or per 30 s.
   useEffect(() => {
@@ -135,6 +145,7 @@ export default function Game() {
         avatar: names.current.get(id)?.avatar ?? '',
         lat: p.lat,
         lng: p.lng,
+        heading: p.heading,
         seenAt: p.seenAt,
       }));
   }, [positions, presence, player]);
@@ -161,8 +172,8 @@ export default function Game() {
   const foundCount = treasures.filter((t) => t.is_found).length;
   const allFound = treasures.length > 0 && foundCount === treasures.length;
 
-  if (!ready) return <main className="p-6 text-neutral-500">Завантаження…</main>;
-  if (failed) return <main className="p-6 text-red-600">{failed}</main>;
+  if (!ready) return <main className="p-6 text-[var(--muted)]">Завантаження…</main>;
+  if (failed) return <main className="p-6 font-semibold text-[var(--danger)]">{failed}</main>;
 
   return (
     <main className="relative h-dvh w-full overflow-hidden">
@@ -171,10 +182,13 @@ export default function Game() {
         distances={distances}
         me={geo.pos}
         meAvatar={player?.avatar ?? null}
+        meName={player?.nickname ?? null}
+        meHeading={myHeading}
         others={others}
         onSelectTreasure={selectTreasure}
       />
-      <div className="absolute inset-x-0 top-0 p-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+
+      <div className="absolute inset-x-0 top-0 flex flex-col gap-2 p-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <StatusBar
           title="Lost"
           foundCount={foundCount}
@@ -185,44 +199,55 @@ export default function Game() {
           wakeSupported={wake.supported}
           online={online || !player}
         />
-        {player && (
-          <button
-            type="button"
-            onClick={() => setSheet({ kind: 'finds' })}
-            className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm font-medium text-blue-600"
-          >
-            Мої знахідки ({myFinds.length})
-          </button>
+        <div className="flex flex-wrap gap-2">
+          {player && (
+            <button type="button" onClick={() => setSheet({ kind: 'finds' })} className="dl-tag px-3 py-1.5 text-sm">
+              Мої знахідки ({myFinds.length})
+            </button>
+          )}
+          {compass.status === 'needs-permission' && (
+            <button type="button" onClick={() => void compass.requestPermission()} className="dl-tag px-3 py-1.5 text-sm">
+              Увімкнути компас
+            </button>
+          )}
+        </div>
+        {allFound && <p className="dl-card px-4 py-2 text-sm font-bold">Усі скарби знайдено</p>}
+        {geo.status === 'denied' && (
+          <p className="dl-card px-4 py-2 text-sm font-semibold text-[var(--danger)]">Увімкніть геолокацію, щоб шукати</p>
         )}
-        {allFound && <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm font-semibold">Усі скарби знайдено</p>}
-        {geo.status === 'denied' && <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm">Увімкніть геолокацію, щоб шукати</p>}
-        {error && <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm text-red-600">{error}</p>}
+        {error && <p className="dl-card px-4 py-2 text-sm font-semibold text-[var(--danger)]">{error}</p>}
         {toasts.map((t) => (
-          <p key={t.id} role="status" className="mt-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow">
+          <p key={t.id} role="status" className="rounded-2xl bg-[var(--green)] px-4 py-3 text-sm font-bold text-white shadow-[0_4px_0_var(--green-deep)]">
             {t.text}
           </p>
         ))}
       </div>
+
       {player && nearby && !sheet && (
         <button
           type="button"
           onClick={() => setSheet({ kind: 'treasure', id: nearby.treasure.id })}
-          className="absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] rounded-2xl bg-white/95 px-4 py-3 text-left shadow-xl"
+          className="dl-card absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] flex items-center gap-3 px-4 py-3 text-left"
         >
-          <span className="block text-xs text-neutral-500">Скарб поруч (до {NEARBY_M} м)</span>
-          <span className="font-semibold">{nearby.treasure.title} · {Math.round(nearby.distanceM)} м</span>
+          <span className="dl-pin-badge !h-12 !w-12 shrink-0">🍄</span>
+          <span className="min-w-0">
+            <span className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Скарб поруч (до {NEARBY_M} м)</span>
+            <span className="block truncate text-base font-extrabold">{nearby.treasure.title} · {Math.round(nearby.distanceM)} м</span>
+          </span>
         </button>
       )}
+
       {selected && player && (
         <BottomSheet key={selected.id} initial="half">
-          <div className="flex justify-end px-3">
-            <button type="button" aria-label="Закрити" onClick={() => setSheet(null)} className="px-3 text-xl text-neutral-500">×</button>
+          <div className="flex justify-end px-4 pt-2">
+            <button type="button" aria-label="Закрити" onClick={() => setSheet(null)} className="grid h-10 w-10 place-items-center rounded-full text-2xl text-[var(--muted)]">×</button>
           </div>
           <TreasureSheetContent
             treasure={selected}
             pos={geo.pos}
             accuracy={geo.accuracy}
             distanceM={distances[selected.id] ?? null}
+            heading={myHeading}
             onResult={(status) => {
               void reload();
               if (status === 'won') {
@@ -233,14 +258,16 @@ export default function Game() {
           />
         </BottomSheet>
       )}
+
       {sheet?.kind === 'finds' && player && (
         <BottomSheet key="finds" initial="half">
-          <div className="flex justify-end px-3">
-            <button type="button" aria-label="Закрити" onClick={() => setSheet(null)} className="px-3 text-xl text-neutral-500">×</button>
+          <div className="flex justify-end px-4 pt-2">
+            <button type="button" aria-label="Закрити" onClick={() => setSheet(null)} className="grid h-10 w-10 place-items-center rounded-full text-2xl text-[var(--muted)]">×</button>
           </div>
           <MyFinds finds={myFinds} onChanged={() => { void reload(); }} />
         </BottomSheet>
       )}
+
       {ready && userId && !player && <Onboarding userId={userId} onSaved={setPlayer} />}
     </main>
   );
