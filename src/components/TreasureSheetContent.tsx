@@ -36,8 +36,6 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [revealed, setRevealed] = useState(false); // the photo stays blurred until tapped
   const [arrived, setArrived] = useState(false);
-  const [manual, setManual] = useState(false);
-  const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [camera, setCamera] = useState(false);
@@ -215,26 +213,6 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
 
       {error && (
         <p role="alert" className="rounded-2xl bg-[var(--paper)] p-4 text-[15px] font-semibold text-[var(--danger)] elev-sm">{error}</p>
-      )}
-
-      {!manual ? (
-        <button type="button" onClick={() => setManual(true)} className="min-h-[44px] self-center text-[15px] font-bold text-[var(--green-deep)]">
-          GPS не працює? Підтвердити вручну
-        </button>
-      ) : (
-        <form
-          className="flex flex-col gap-2 rounded-[24px] bg-[var(--paper)] p-4 elev-sm"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (note.trim()) void confirm(note.trim());
-          }}
-        >
-          <label className="dl-label" htmlFor="manual-note">Що ви бачите біля скарбу?</label>
-          <input id="manual-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} className="dl-field" />
-          <button type="submit" disabled={!note.trim() || busy} className="dl-btn-secondary">
-            Підтвердити вручну
-          </button>
-        </form>
       )}
 
       <p className="selectable pb-2 text-center text-xs font-semibold tabular-nums text-[var(--muted)]">
