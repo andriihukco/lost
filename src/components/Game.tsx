@@ -302,7 +302,7 @@ export default function Game() {
           {allFound && <p className="dl-card px-4 py-3 text-[15px] font-bold">Усі скарби знайдено</p>}
           {error && <p className="dl-card px-4 py-3 text-[15px] font-semibold text-[var(--danger)]">{error}</p>}
           {toasts.map((t) => (
-            <p key={t.id} role="status" className="rounded-2xl bg-[var(--green)] px-4 py-3 text-[15px] font-bold text-white shadow-[0_4px_0_var(--green-deep)]">
+            <p key={t.id} role="status" className="rounded-2xl bg-[var(--green)] px-4 py-3 text-[15px] font-bold text-white elev-green">
               {t.text}
             </p>
           ))}

@@ -104,7 +104,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
 function Panel({ icon, title, text }: { icon: IconName; title: string; text: string }) {
   return (
     <>
-      <span className="grid h-32 w-32 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-[var(--green-deep)] shadow-[0_6px_0_var(--green-deep)]">
+      <span className="grid h-32 w-32 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-[var(--green-deep)] elev-md">
         <Icon name={icon} size={64} />
       </span>
       <h1 className="dl-title mt-8 text-[34px]">{title}</h1>

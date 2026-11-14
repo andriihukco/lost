@@ -20,8 +20,8 @@ export default function NicknamePicker({ value, taken, onPick }: { value: Avatar
             onClick={() => onPick(a.key)}
             className={`flex min-h-[64px] items-center gap-3 rounded-2xl border-2 px-3 py-2.5 text-left transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:grayscale ${
               selected
-                ? 'border-[var(--green)] bg-[var(--green-soft)] shadow-[0_3px_0_var(--green-deep)]'
-                : 'border-[var(--line)] bg-[var(--paper)] shadow-[0_3px_0_var(--line)]'
+                ? 'border-[var(--green)] bg-[var(--green-soft)] elev-sm'
+                : 'border-[var(--line)] bg-[var(--paper)] elev-sm'
             }`}
           >
             <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-2xl">{a.emoji}</span>

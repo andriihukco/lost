@@ -23,7 +23,7 @@ export default function InAppGate({ info, url, onContinue }: { info: InApp; url:
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[var(--page)] px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+2rem)]">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center text-center">
-        <span className="grid h-32 w-32 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-6xl shadow-[0_6px_0_var(--green-deep)]">🧭</span>
+        <span className="grid h-32 w-32 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-6xl elev-md">🧭</span>
         <h1 className="dl-title mt-8 text-[30px]">Відкрийте в {browser}</h1>
         <p className="mt-4 text-[17px] leading-relaxed text-[var(--muted)]">
           Lost не може зберегти ваш прогрес {app}: там не працюють геолокація і компас, а сесія живе лише в цьому вікні.

@@ -37,7 +37,7 @@ export default function ProfileTab({ player, onSaved }: { player: Player; onSave
       <h1 className="ios-large-title pt-4">Профіль</h1>
 
       <div className="mt-6 flex flex-col items-center gap-3">
-        <span className="grid h-24 w-24 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-5xl shadow-[0_4px_0_var(--green-deep)]">
+        <span className="grid h-24 w-24 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-5xl elev-green">
           {avatarEmoji(avatar)}
         </span>
         <span className="text-[20px] font-bold">{nicknameFor(avatar) ?? 'Гравець'}</span>

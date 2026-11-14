@@ -61,7 +61,7 @@ export default function BottomSheet({ children, initial = 'peek', bottomOffset =
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ bottom: bottomOffset }}>
       <motion.div
-        className="pointer-events-auto absolute inset-x-0 bottom-0 touch-none rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] shadow-[0_-4px_0_var(--line)]"
+        className="pointer-events-auto absolute inset-x-0 bottom-0 touch-none rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] elev-sheet"
         style={{ height: vh * SNAPS.full, y }}
         drag="y"
         dragConstraints={{ top: 0, bottom: maxOffset }}

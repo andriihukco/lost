@@ -30,7 +30,7 @@ export default function Onboarding({ userId, onSaved }: { userId: string; onSave
   }
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 max-h-[92%] overflow-y-auto rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-[0_-4px_0_var(--line)]">
+    <div className="absolute inset-x-0 bottom-0 z-10 max-h-[92%] overflow-y-auto rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] elev-sheet">
       <div className="mx-auto max-w-md">
         <h2 className="dl-title text-3xl">Обери свій нік</h2>
         <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Кожна тварина має свій нік. Оберіть тварину, і її нік стане вашим.</p>

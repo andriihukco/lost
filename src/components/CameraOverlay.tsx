@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Icon from '@/components/Icon';
 import { clampOpacity, OVERLAY_DEFAULT } from '@/lib/cameraOverlay';
 
 // Full-screen rear camera with the hint photo laid over it. The player slides the opacity and walks
@@ -55,15 +56,28 @@ export default function CameraOverlay({ photoUrls, onClose }: { photoUrls: strin
         <button type="button" onClick={onClose} className="grid h-11 min-w-[44px] place-items-center rounded-full bg-white/90 px-3 text-[15px] font-bold text-[var(--ink)]">
           Закрити
         </button>
-        {photoUrls.length > 1 && (
-          <button
-            type="button"
-            onClick={() => setIndex((i) => (i + 1) % photoUrls.length)}
-            className="grid h-11 min-w-[44px] place-items-center rounded-full bg-white/90 px-3 text-[15px] font-bold text-[var(--ink)]"
-          >
-            Фото {index + 1}/{photoUrls.length}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {photoUrls.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setIndex((i) => (i + 1) % photoUrls.length)}
+              className="grid h-11 min-w-[44px] place-items-center rounded-full bg-white/90 px-3 text-[15px] font-bold text-[var(--ink)]"
+            >
+              Фото {index + 1}/{photoUrls.length}
+            </button>
+          )}
+          {photo && (
+            <a
+              href={photo}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Відкрити фото повністю у новій вкладці"
+              className="grid h-11 w-11 place-items-center rounded-full bg-white/90 text-[var(--ink)]"
+            >
+              <Icon name="open_in_new" size={22} />
+            </a>
+          )}
+        </div>
       </div>
 
       {error && (

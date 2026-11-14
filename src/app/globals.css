@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
-/* Duolingo-style system: deep green primary, solid surfaces, 3D buttons, Inter (see layout.tsx). */
+/* Light only: green primary, solid surfaces, soft blurred shadows, Inter (see layout.tsx). */
 :root {
+  color-scheme: light;
   --green: #58a700;
   --green-deep: #3f7d00;
   --green-soft: #d7f5b8;
@@ -12,22 +13,12 @@
   --page: #f4f7f1;
   --danger: #ea2b2b;
   --danger-deep: #b41f1f;
-}
-
-
-/* Dark mode: same tokens, darker values (skill: semantic tokens, system theme). */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #1b2420;
-    --page: #0f1613;
-    --ink: #eef4ef;
-    --muted: #9aa8a0;
-    --line: #2c3a33;
-    --green-soft: #23402a;
-    --green: #6fcf1f;
-    --green-deep: #58a700;
-    --danger: #ff6b6b;
-  }
+  /* Soft, blurred elevation (no offset edges). */
+  --shadow-sm: 0 2px 10px rgba(20, 30, 40, 0.08);
+  --shadow-md: 0 8px 24px rgba(20, 30, 40, 0.12), 0 2px 6px rgba(20, 30, 40, 0.06);
+  --shadow-lg: 0 16px 40px rgba(20, 30, 40, 0.18), 0 4px 12px rgba(20, 30, 40, 0.08);
+  --shadow-green: 0 8px 22px rgba(88, 167, 0, 0.3), 0 2px 6px rgba(88, 167, 0, 0.18);
+  --shadow-danger: 0 8px 22px rgba(234, 43, 43, 0.28), 0 2px 6px rgba(234, 43, 43, 0.16);
 }
 
 html,
@@ -42,12 +33,12 @@ body {
 /* Solid surfaces only: no translucent panels. */
 .dl-card {
   background: var(--paper);
-  border: 2px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
   border-radius: 20px;
-  box-shadow: 0 4px 0 var(--line);
+  box-shadow: var(--shadow-md);
 }
 
-/* Primary action: deep green with a 3D bottom edge that "presses" on tap. */
+/* Primary action: solid green with a soft green glow; it eases down a little on press. */
 .dl-btn {
   display: block;
   width: 100%;
@@ -58,19 +49,20 @@ body {
   letter-spacing: 0.01em;
   padding: 14px 16px;
   border-radius: 16px;
-  box-shadow: 0 5px 0 var(--green-deep);
-  transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+  box-shadow: var(--shadow-green);
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out, filter 120ms ease-out;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
 }
 .dl-btn:active:not(:disabled) {
-  transform: translateY(4px);
-  box-shadow: 0 1px 0 var(--green-deep);
+  transform: scale(0.98);
+  filter: brightness(0.97);
+  box-shadow: var(--shadow-sm);
 }
 .dl-btn:disabled {
   background: #cfd8d0;
-  box-shadow: 0 5px 0 #b8c4ba;
+  box-shadow: none;
   color: #7b8a7e;
 }
 
@@ -78,20 +70,20 @@ body {
   display: block;
   width: 100%;
   background: var(--paper);
-  color: var(--green);
+  color: var(--green-deep);
   font-weight: 700;
   font-size: 16px;
   padding: 14px 16px;
-  border: 2px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
   border-radius: 16px;
-  box-shadow: 0 4px 0 var(--line);
-  transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+  box-shadow: var(--shadow-sm);
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
   touch-action: manipulation;
   user-select: none;
 }
 .dl-btn-secondary:active:not(:disabled) {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 var(--line);
+  transform: scale(0.98);
+  box-shadow: none;
 }
 .dl-btn-secondary:disabled {
   color: #9aa6a0;
@@ -105,12 +97,12 @@ body {
   font-weight: 700;
   padding: 14px 16px;
   border-radius: 16px;
-  box-shadow: 0 5px 0 var(--danger-deep);
+  box-shadow: var(--shadow-danger);
   touch-action: manipulation;
 }
 .dl-btn-danger:active:not(:disabled) {
-  transform: translateY(4px);
-  box-shadow: 0 1px 0 var(--danger-deep);
+  transform: scale(0.98);
+  box-shadow: var(--shadow-sm);
 }
 .dl-btn-danger:disabled {
   opacity: 0.4;
@@ -161,7 +153,7 @@ body {
   border-radius: 9999px;
   background: var(--paper);
   border: 3px solid var(--green);
-  box-shadow: 0 4px 0 var(--green-deep);
+  box-shadow: var(--shadow-md);
   font-size: 24px;
   line-height: 1;
 }
@@ -191,7 +183,7 @@ body {
   border-radius: 9999px;
   background: var(--paper);
   border: 3px solid var(--ink);
-  box-shadow: 0 3px 0 var(--line);
+  box-shadow: var(--shadow-sm);
   font-size: 22px;
   line-height: 1;
 }
@@ -291,7 +283,7 @@ body {
   border-radius: 9999px;
   background: var(--paper);
   border: 3px solid var(--green);
-  box-shadow: 0 3px 0 var(--green-deep);
+  box-shadow: var(--shadow-sm);
   font-size: 17px;
   line-height: 1;
 }
@@ -306,7 +298,7 @@ body {
   background: #1cb0f6;
   color: #fff;
   border: 3px solid #fff;
-  box-shadow: 0 3px 0 #1586bd;
+  box-shadow: var(--shadow-sm);
   font-size: 14px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -330,7 +322,7 @@ body {
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
-  box-shadow: 0 12px 32px rgba(20, 30, 40, 0.18), 0 2px 6px rgba(20, 30, 40, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-lg);
 }
 .liquid-indicator {
   position: absolute;
@@ -346,7 +338,7 @@ body {
 .md-fab {
   background: var(--paper);
   color: var(--green-deep);
-  box-shadow: 0 2px 6px rgba(20, 30, 40, 0.2), 0 1px 2px rgba(20, 30, 40, 0.14);
+  box-shadow: var(--shadow-md);
   transition: transform 120ms ease;
   touch-action: manipulation;
 }
@@ -385,3 +377,10 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .liquid-indicator { transition: none; }
 }
+
+/* Elevation utilities for components: soft, blurred, no offset edges. */
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.elev-lg { box-shadow: var(--shadow-lg); }
+.elev-green { box-shadow: var(--shadow-green); }
+.elev-sheet { box-shadow: 0 -10px 36px rgba(20, 30, 40, 0.14); }

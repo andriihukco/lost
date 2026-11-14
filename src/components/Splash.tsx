@@ -6,7 +6,7 @@ export default function Splash({ label = 'Завантаження' }: { label?:
     <main role="status" aria-live="polite" className="flex min-h-dvh flex-col items-center justify-center gap-7 bg-[var(--page)] p-6">
       <div className="relative grid h-28 w-28 place-items-center">
         <span aria-hidden className="lost-pulse absolute inset-0 rounded-full bg-[var(--green-soft)]" />
-        <span className="relative grid h-24 w-24 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-[var(--green-deep)] shadow-[0_6px_0_var(--green-deep)]">
+        <span className="relative grid h-24 w-24 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-[var(--green-deep)] elev-md">
           <Icon name="travel_explore" size={44} />
         </span>
       </div>

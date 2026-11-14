@@ -103,27 +103,39 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
       </header>
 
       {photoUrls.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setRevealed(true)}
-          aria-label={revealed ? 'Фото підказки' : 'Показати фото підказки'}
-          className="relative flex gap-2 overflow-x-auto rounded-[20px] border-2 border-[var(--line)]"
-        >
-          {photoUrls.map((url, i) => (
-            <img
-              key={url}
-              src={url}
-              alt={`Підказка ${i + 1}`}
-              style={{ filter: revealed ? 'none' : 'blur(22px)' }}
-              className="h-44 w-auto max-w-[80%] shrink-0 rounded-[18px] object-cover transition-[filter] duration-300"
-            />
-          ))}
-          {!revealed && (
-            <span className="absolute inset-0 grid place-items-center rounded-[18px] bg-[var(--ink)] text-sm font-bold text-white">
+        <div className="relative">
+          <div className="flex gap-2 overflow-x-auto rounded-[20px] border-2 border-[var(--line)] p-1">
+            {photoUrls.map((url, i) => {
+              const img = (
+                <img
+                  src={url}
+                  alt={`Підказка ${i + 1}`}
+                  style={{ filter: revealed ? 'none' : 'blur(22px)' }}
+                  className="h-44 w-auto max-w-[80%] shrink-0 rounded-[16px] object-cover transition-[filter] duration-300"
+                />
+              );
+              // Revealed photos open at full size in a new tab; hidden ones are only a blurred preview.
+              return revealed ? (
+                <a key={url} href={url} target="_blank" rel="noopener noreferrer" aria-label={`Відкрити фото ${i + 1} повністю у новій вкладці`} className="shrink-0">
+                  {img}
+                </a>
+              ) : (
+                <span key={url} className="shrink-0">{img}</span>
+              );
+            })}
+          </div>
+          {!revealed ? (
+            <button
+              type="button"
+              onClick={() => setRevealed(true)}
+              className="absolute inset-0 grid place-items-center rounded-[20px] bg-[var(--ink)]/40 text-sm font-bold text-white backdrop-blur-[2px]"
+            >
               Натисніть, щоб показати
-            </span>
+            </button>
+          ) : (
+            <p className="mt-2 text-center text-xs font-semibold text-[var(--muted)]">Натисніть на фото, щоб відкрити його повністю у новій вкладці.</p>
           )}
-        </button>
+        </div>
       )}
 
       <div className="dl-card flex items-center gap-4 p-4">
