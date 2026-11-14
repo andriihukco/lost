@@ -44,7 +44,8 @@ import { useTreasures, type Treasure } from '@/lib/useTreasures';
 import { useWakeLock } from '@/lib/useWakeLock';
 
 type Position = LatLng & { seenAt: number; heading: number | null };
-type RouteState = { stops: Treasure[]; walk: WalkRoute | null; pending: boolean }; // walk is null until the path is ready
+// walk is null until the path is ready. build numbers each route build, so a new build frames the map again.
+type RouteState = { stops: Treasure[]; walk: WalkRoute | null; pending: boolean; build: number };
 type Toast = { id: number; text: string };
 
 // Three tabs, iOS-style: the map, my finds, my profile. The sheet and the nearby notice sit above the tab bar.
@@ -93,6 +94,7 @@ export default function Game() {
   const { treasures, error, reload } = useTreasures(userId !== null); // after sign-in: RLS hides treasures from anonymous queries
   // Compass if the browser has one (phones), otherwise the GPS course while moving.
   const myHeading = compass.heading ?? geo.course;
+  const routeBuilds = useRef(0); // how many routes were built in this visit
   const connRef = useRef<GameConnection | null>(null);
   const lastSent = useRef<{ pos: LatLng | null; at: number; heading: number | null }>({ pos: null, at: -Infinity, heading: null });
   const lastLogged = useRef<{ pos: LatLng | null; at: number }>({ pos: null, at: -Infinity });
@@ -129,7 +131,7 @@ export default function Game() {
     const pts = ordered.map((t) => ({ lat: t.lat, lng: t.lng }));
     const straight = [start, ...pts];
     // Nothing is drawn until the path along paths is ready; the straight line is only the labelled fallback.
-    setRoute({ stops: ordered, walk: null, pending: true });
+    setRoute({ stops: ordered, walk: null, pending: true, build: ++routeBuilds.current });
     setTab('map');
     setSelectedId(null);
     const walk = await fetchWalkingRoute(straight);
@@ -352,6 +354,7 @@ export default function Game() {
   const nameRecord = Object.fromEntries([...names.current].map(([id, v]) => [id, v.nickname]));
   const routeView: RouteView | null = route
     ? {
+        frame: route.build,
         coords: route.walk?.coords ?? [],
         stops: route.stops.map((t, i) => ({ id: t.id, lat: t.lat, lng: t.lng, index: i + 1 })),
       }

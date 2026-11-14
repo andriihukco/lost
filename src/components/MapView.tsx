@@ -18,7 +18,8 @@ import type { MapMark } from '@/lib/mapMarks';
 import type { GeoJSONSource } from 'maplibre-gl';
 
 export type RouteStop = { id: string; lat: number; lng: number; index: number };
-export type RouteView = { coords: LatLng[]; stops: RouteStop[] };
+// frame: which route build this is. A new build frames the camera again, even for the same stops.
+export type RouteView = { frame: number; coords: LatLng[]; stops: RouteStop[] };
 
 export type OtherPlayer = {
   id: string;
@@ -310,7 +311,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     }
     // The camera frames the route once, when it is built: from me to the farthest stop. The route object is rebuilt on
     // every render (GPS, compass), and the walking path arrives later, so neither may move the camera again.
-    const key = route.stops.map((s) => s.id).join(',');
+    const key = `${route.frame}:${route.stops.map((s) => s.id).join(',')}`;
     if (key === framedRoute.current || route.stops.length === 0) return;
     framedRoute.current = key;
     const me = meRef.current;
