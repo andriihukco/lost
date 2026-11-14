@@ -4,7 +4,19 @@ import { useEffect, useRef } from 'react';
 import { Map as MapLibreMap, Marker, setWorkerUrl, type StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LatLng } from '@/lib/geo';
+import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import type { Treasure } from '@/lib/useTreasures';
+
+export type OtherPlayer = { id: string; nickname: string; color: string; lat: number; lng: number; seenAt: number };
+
+type OtherEntry = {
+  marker: Marker;
+  el: HTMLDivElement;
+  from: LatLng;
+  to: LatLng;
+  startedAt: number;
+  seenAt: number;
+};
 
 // MapTiler streets style when the key is set; otherwise a blank style so the map still renders offline.
 // Public OSM tile servers are not used (spec C5).
@@ -22,15 +34,17 @@ function styleFor(): string | StyleSpecification {
 type Props = {
   treasures: Treasure[];
   me: LatLng | null;
+  others: OtherPlayer[];
   onSelectTreasure?: (t: Treasure) => void;
 };
 
-export default function MapView({ treasures, me, onSelectTreasure }: Props) {
+export default function MapView({ treasures, me, others, onSelectTreasure }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
   const pins = useRef<Marker[]>([]);
   const centered = useRef(false);
+  const otherMarkers = useRef(new Map<string, OtherEntry>());
 
   useEffect(() => {
     if (!container.current) return;
@@ -51,6 +65,7 @@ export default function MapView({ treasures, me, onSelectTreasure }: Props) {
       meMarker.current = null;
       pins.current = [];
       centered.current = false;
+      otherMarkers.current.clear();
     };
   }, []);
 
@@ -86,6 +101,58 @@ export default function MapView({ treasures, me, onSelectTreasure }: Props) {
       centered.current = true;
     }
   }, [me]);
+
+  // Other players: sync markers to the latest positions; the loop below glides them.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const now = performance.now();
+    const ids = new Set<string>();
+    for (const o of others) {
+      ids.add(o.id);
+      const to = { lat: o.lat, lng: o.lng };
+      const entry = otherMarkers.current.get(o.id);
+      if (!entry) {
+        const el = document.createElement('div');
+        el.className = 'h-4 w-4 rounded-full border-2 border-white shadow';
+        el.style.backgroundColor = o.color;
+        el.setAttribute('aria-label', o.nickname);
+        const marker = new Marker({ element: el }).setLngLat([to.lng, to.lat]).addTo(map);
+        otherMarkers.current.set(o.id, { marker, el, from: to, to, startedAt: now, seenAt: o.seenAt });
+      } else {
+        const t = Math.min(1, (now - entry.startedAt) / INTERP_MS);
+        entry.from = lerpLatLng(entry.from, entry.to, t); // start from where the marker is now
+        entry.to = to;
+        entry.startedAt = now;
+        entry.seenAt = o.seenAt;
+        entry.el.style.backgroundColor = o.color;
+        entry.el.setAttribute('aria-label', o.nickname);
+      }
+    }
+    for (const [id, entry] of otherMarkers.current) {
+      if (!ids.has(id)) {
+        entry.marker.remove();
+        otherMarkers.current.delete(id);
+      }
+    }
+  }, [others]);
+
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const now = performance.now();
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      for (const entry of otherMarkers.current.values()) {
+        const t = reduce ? 1 : Math.min(1, (now - entry.startedAt) / INTERP_MS);
+        const p = lerpLatLng(entry.from, entry.to, t);
+        entry.marker.setLngLat([p.lng, p.lat]);
+        entry.el.style.opacity = String(opacityForAge(Date.now() - entry.seenAt));
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   return <div ref={container} className="absolute inset-0" />;
 }
