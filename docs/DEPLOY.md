@@ -96,7 +96,7 @@ Without a key the map shows a blank background (no streets).
    - `http://localhost:3000` (local work)
 3. Copy the key → `NEXT_PUBLIC_MAPTILER_KEY`.
 
-**OpenStreetMap is the reserve.** Without a key, or if MapTiler starts refusing requests (401, 403, 429), the map switches to OpenStreetMap tiles. OSM's public tile servers forbid heavy app traffic, so keep MapTiler as the primary for real use. Attribution is shown on the map.
+**The map shows routes and nature only.** The primary style is MapTiler's *outdoor* style, with business and place layers hidden in the app. Without a key, or if MapTiler refuses requests (401, 403, 429), the map falls back to a blank background with the Waymarked Trails hiking-route overlay (© OpenStreetMap contributors). That reserve has no shops or places. Keep MapTiler as the primary for real use.
 
 ---
 

@@ -210,3 +210,39 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .dl-btn, .dl-btn-secondary, .dl-btn-danger { transition: none; }
 }
+
+/* iOS building blocks: large titles, grouped inset lists, 44 pt rows, safe-area padding. */
+.pt-safe-top {
+  padding-top: calc(env(safe-area-inset-top) + 0.5rem);
+}
+.ios-large-title {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+.ios-section {
+  margin: 0 0 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ios-group {
+  background: var(--paper);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.ios-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 16px;
+  background: var(--paper);
+}
+.ios-row + .ios-row {
+  border-top: 1px solid var(--line);
+}

@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BottomSheet from '@/components/BottomSheet';
+import FindsTab from '@/components/FindsTab';
 import MapView, { type OtherPlayer } from '@/components/MapView';
-import MyFinds from '@/components/MyFinds';
 import Onboarding from '@/components/Onboarding';
+import ProfileTab from '@/components/ProfileTab';
 import StatusBar from '@/components/StatusBar';
+import TabBar, { type Tab } from '@/components/TabBar';
 import TreasureSheetContent from '@/components/TreasureSheetContent';
 import { haversineM, type LatLng } from '@/lib/geo';
 import { nearestWithin, NEARBY_M } from '@/lib/nearby';
@@ -23,18 +25,19 @@ import { useWakeLock } from '@/lib/useWakeLock';
 
 type Position = LatLng & { seenAt: number; heading: number | null };
 type Toast = { id: number; text: string };
-type Sheet = { kind: 'treasure'; id: string } | { kind: 'finds' } | null;
 
-// The one screen for everyone: the map is visible at once; a player without a profile sees onboarding over it.
+// Three tabs, iOS-style: the map, my finds, my profile. The sheet and the nearby notice sit above the tab bar.
 export default function Game() {
   const [userId, setUserId] = useState<string | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>('map');
+  const [tabBarH, setTabBarH] = useState(64);
   const [online, setOnline] = useState(false);
   const [presence, setPresence] = useState<PresenceUser[]>([]);
   const [positions, setPositions] = useState<Record<string, Position>>({});
-  const [sheet, setSheet] = useState<Sheet>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const geo = useGeolocation();
   const compass = useHeading();
@@ -150,7 +153,7 @@ export default function Game() {
       }));
   }, [positions, presence, player]);
 
-  // Found treasures leave the map for everyone; the finder sees them under "Мої знахідки".
+  // Found treasures leave the map for everyone; the finder sees them under the "Знахідки" tab.
   const openTreasures = useMemo(() => treasures.filter((t) => !t.is_found), [treasures]);
   const distances = useMemo(() => {
     const out: Record<string, number> = {};
@@ -164,16 +167,16 @@ export default function Game() {
   );
 
   const selectTreasure = useCallback((t: { id: string }) => {
-    if (player) setSheet({ kind: 'treasure', id: t.id });
+    if (player) setSelectedId(t.id);
   }, [player]);
 
-  const selected: Treasure | null =
-    sheet?.kind === 'treasure' ? treasures.find((t) => t.id === sheet.id) ?? null : null;
+  const selected: Treasure | null = treasures.find((t) => t.id === selectedId) ?? null;
   const foundCount = treasures.filter((t) => t.is_found).length;
   const allFound = treasures.length > 0 && foundCount === treasures.length;
+  const showSheet = tab === 'map' && selected !== null && player !== null;
 
-  if (!ready) return <main className="p-6 text-[var(--muted)]">Завантаження…</main>;
-  if (failed) return <main className="p-6 font-semibold text-[var(--danger)]">{failed}</main>;
+  if (!ready) return <main className="p-6 text-[17px] text-[var(--muted)]">Завантаження…</main>;
+  if (failed) return <main className="p-6 text-[17px] font-semibold text-[var(--danger)]">{failed}</main>;
 
   return (
     <main className="relative h-dvh w-full overflow-hidden">
@@ -188,59 +191,65 @@ export default function Game() {
         onSelectTreasure={selectTreasure}
       />
 
-      <div className="absolute inset-x-0 top-0 flex flex-col gap-2 p-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-        <StatusBar
-          title="Lost"
-          foundCount={foundCount}
-          total={treasures.length}
-          gps={geo.status}
-          accuracy={geo.accuracy}
-          wakeActive={wake.active}
-          wakeSupported={wake.supported}
-          online={online || !player}
-        />
-        <div className="flex flex-wrap gap-2">
-          {player && (
-            <button type="button" onClick={() => setSheet({ kind: 'finds' })} className="dl-tag px-3 py-1.5 text-sm">
-              Мої знахідки ({myFinds.length})
-            </button>
+      {tab !== 'map' && player && (
+        <div className="absolute inset-0 z-20 overflow-y-auto bg-[var(--page)]">
+          {tab === 'finds' ? (
+            <FindsTab finds={myFinds} onChanged={() => { void reload(); }} />
+          ) : (
+            <ProfileTab player={player} onSaved={setPlayer} />
           )}
+        </div>
+      )}
+
+      {tab === 'map' && (
+        <div className="absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-3 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
+          <StatusBar
+            title="Lost"
+            foundCount={foundCount}
+            total={treasures.length}
+            gps={geo.status}
+            accuracy={geo.accuracy}
+            wakeActive={wake.active}
+            wakeSupported={wake.supported}
+            online={online || !player}
+          />
           {compass.status === 'needs-permission' && (
-            <button type="button" onClick={() => void compass.requestPermission()} className="dl-tag px-3 py-1.5 text-sm">
+            <button type="button" onClick={() => void compass.requestPermission()} className="dl-tag self-start px-4 py-2 text-[15px]">
               Увімкнути компас
             </button>
           )}
+          {allFound && <p className="dl-card px-4 py-3 text-[15px] font-bold">Усі скарби знайдено</p>}
+          {geo.status === 'denied' && (
+            <p className="dl-card px-4 py-3 text-[15px] font-semibold text-[var(--danger)]">Увімкніть геолокацію, щоб шукати</p>
+          )}
+          {error && <p className="dl-card px-4 py-3 text-[15px] font-semibold text-[var(--danger)]">{error}</p>}
+          {toasts.map((t) => (
+            <p key={t.id} role="status" className="rounded-2xl bg-[var(--green)] px-4 py-3 text-[15px] font-bold text-white shadow-[0_4px_0_var(--green-deep)]">
+              {t.text}
+            </p>
+          ))}
         </div>
-        {allFound && <p className="dl-card px-4 py-2 text-sm font-bold">Усі скарби знайдено</p>}
-        {geo.status === 'denied' && (
-          <p className="dl-card px-4 py-2 text-sm font-semibold text-[var(--danger)]">Увімкніть геолокацію, щоб шукати</p>
-        )}
-        {error && <p className="dl-card px-4 py-2 text-sm font-semibold text-[var(--danger)]">{error}</p>}
-        {toasts.map((t) => (
-          <p key={t.id} role="status" className="rounded-2xl bg-[var(--green)] px-4 py-3 text-sm font-bold text-white shadow-[0_4px_0_var(--green-deep)]">
-            {t.text}
-          </p>
-        ))}
-      </div>
+      )}
 
-      {player && nearby && !sheet && (
+      {tab === 'map' && player && nearby && !showSheet && (
         <button
           type="button"
-          onClick={() => setSheet({ kind: 'treasure', id: nearby.treasure.id })}
-          className="dl-card absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] flex items-center gap-3 px-4 py-3 text-left"
+          onClick={() => setSelectedId(nearby.treasure.id)}
+          style={{ bottom: `calc(${tabBarH}px + 12px)` }}
+          className="dl-card absolute inset-x-3 z-10 flex min-h-[64px] items-center gap-3 px-4 py-3 text-left"
         >
           <span className="dl-pin-badge !h-12 !w-12 shrink-0">🍄</span>
           <span className="min-w-0">
-            <span className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Скарб поруч (до {NEARBY_M} м)</span>
-            <span className="block truncate text-base font-extrabold">{nearby.treasure.title} · {Math.round(nearby.distanceM)} м</span>
+            <span className="block text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Скарб поруч (до {NEARBY_M} м)</span>
+            <span className="block truncate text-[17px] font-bold">{nearby.treasure.title} · {Math.round(nearby.distanceM)} м</span>
           </span>
         </button>
       )}
 
-      {selected && player && (
-        <BottomSheet key={selected.id} initial="half">
-          <div className="flex justify-end px-4 pt-2">
-            <button type="button" aria-label="Закрити" onClick={() => setSheet(null)} className="grid h-10 w-10 place-items-center rounded-full text-2xl text-[var(--muted)]">×</button>
+      {showSheet && (
+        <BottomSheet key={selected.id} initial="half" bottomOffset={tabBarH}>
+          <div className="flex justify-end px-4 pt-1">
+            <button type="button" aria-label="Закрити" onClick={() => setSelectedId(null)} className="grid h-11 w-11 place-items-center rounded-full text-2xl text-[var(--muted)]">×</button>
           </div>
           <TreasureSheetContent
             treasure={selected}
@@ -251,7 +260,7 @@ export default function Game() {
             onResult={(status) => {
               void reload();
               if (status === 'won') {
-                setSheet(null);
+                setSelectedId(null);
                 pushToast('Знахідку підтверджено! Скарб знято з карти.');
               }
             }}
@@ -259,14 +268,7 @@ export default function Game() {
         </BottomSheet>
       )}
 
-      {sheet?.kind === 'finds' && player && (
-        <BottomSheet key="finds" initial="half">
-          <div className="flex justify-end px-4 pt-2">
-            <button type="button" aria-label="Закрити" onClick={() => setSheet(null)} className="grid h-10 w-10 place-items-center rounded-full text-2xl text-[var(--muted)]">×</button>
-          </div>
-          <MyFinds finds={myFinds} onChanged={() => { void reload(); }} />
-        </BottomSheet>
-      )}
+      {player && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); }} onHeight={setTabBarH} />}
 
       {ready && userId && !player && <Onboarding userId={userId} onSaved={setPlayer} />}
     </main>

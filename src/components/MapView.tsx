@@ -5,7 +5,8 @@ import { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LatLng } from '@/lib/geo';
 import { avatarEmoji } from '@/lib/avatars';
-import { configureMapLibre, mapStyle, osmStyle } from '@/lib/mapSetup';
+import { configureMapLibre, mapStyle, reserveStyle } from '@/lib/mapSetup';
+import { isBusinessLayer } from '@/lib/mapStyle';
 import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import { formatDistance } from '@/lib/geoFormat';
 import type { Treasure } from '@/lib/useTreasures';
@@ -117,9 +118,17 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       const styleFailure = status === 401 || status === 403 || status === 429 || /style/i.test(e.error?.message ?? '');
       if (!fellBack && primaryIsMapTiler && styleFailure) {
         fellBack = true;
-        map.setStyle(osmStyle());
+        map.setStyle(reserveStyle());
       }
     });
+    // Hide businesses and places as soon as a style is ready (primary or reserve).
+    const hideBusinesses = () => {
+      for (const layer of map.getStyle()?.layers ?? []) {
+        const sourceLayer = (layer as { 'source-layer'?: string })['source-layer'];
+        if (isBusinessLayer(layer.id, sourceLayer)) map.setLayoutProperty(layer.id, 'visibility', 'none');
+      }
+    };
+    map.on('style.load', hideBusinesses);
     mapRef.current = map;
     const pins = pinMap.current;
     const others = otherMarkers.current;
@@ -169,6 +178,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     for (const [id, entry] of pinMap.current) {
       const d = distances[id];
       entry.label.textContent = d === undefined ? '' : formatDistance(d);
+      entry.label.style.display = d === undefined ? 'none' : ''; // no empty pill while GPS is unknown
     }
   }, [distances, treasures]);
 

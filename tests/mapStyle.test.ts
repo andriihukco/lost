@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { chooseStyle, OSM_ATTRIBUTION } from '@/lib/mapStyle';
+import { chooseStyle, RESERVE_ATTRIBUTION } from '@/lib/mapStyle';
 
 test('uses MapTiler when a key is set', () => {
   const s = chooseStyle('abc');
@@ -12,5 +12,5 @@ test('falls back to OpenStreetMap when no key is set', () => {
   expect(s.style).toMatchObject({ version: 8 });
 });
 test('OpenStreetMap style carries the required attribution', () => {
-  expect(OSM_ATTRIBUTION).toContain('OpenStreetMap');
+  expect(RESERVE_ATTRIBUTION).toContain('OpenStreetMap');
 });

@@ -1,7 +1,7 @@
 import { setWorkerUrl, type StyleSpecification } from 'maplibre-gl';
-import { chooseStyle, osmStyle } from '@/lib/mapStyle';
+import { chooseStyle, reserveStyle } from '@/lib/mapStyle';
 
-export { osmStyle };
+export { reserveStyle };
 
 // Primary MapTiler when a key is set, otherwise the OpenStreetMap reserve (see mapStyle.ts).
 // Public OSM tiles are used only as a reserve: their usage policy forbids heavy app traffic.

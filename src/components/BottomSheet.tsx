@@ -7,21 +7,22 @@ import { nearestSnap, SNAPS, type SnapName } from '@/lib/sheetSnap';
 const FLICK_PX_PER_S = 800; // faster than this may overshoot slightly (damping 0.82)
 const RUBBER_BAND = 0.25; // resistance above the full snap
 
-type Props = { children: ReactNode; initial?: SnapName };
+type Props = { children: ReactNode; initial?: SnapName; bottomOffset?: number }; // bottomOffset: the tab bar height
 
 // Three-snap sheet (peek 18%, half 50%, full 92%). Follows the finger through Motion's drag,
 // projects the release point from velocity, and springs to the nearest snap (spec §5.3).
-export default function BottomSheet({ children, initial = 'peek' }: Props) {
+export default function BottomSheet({ children, initial = 'peek', bottomOffset = 0 }: Props) {
   const [vh, setVh] = useState(0);
   const y = useMotionValue(0); // 0 = full snap; grows downward
   const anim = useRef<AnimationPlaybackControls | null>(null);
 
   useEffect(() => {
-    const update = () => setVh(window.innerHeight);
+    // The sheet fills the screen above the tab bar.
+    const update = () => setVh(window.innerHeight - bottomOffset);
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, []);
+  }, [bottomOffset]);
 
   const offsetFor = (snap: SnapName) => vh * (SNAPS.full - SNAPS[snap]);
   const maxOffset = vh * (SNAPS.full - SNAPS.peek);
@@ -58,7 +59,7 @@ export default function BottomSheet({ children, initial = 'peek' }: Props) {
   return (
     <motion.div
       className="absolute inset-x-0 bottom-0 touch-none rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] shadow-[0_-4px_0_var(--line)]"
-      style={{ height: vh * SNAPS.full, y }}
+      style={{ height: vh * SNAPS.full, y, bottom: bottomOffset }}
       drag="y"
       dragConstraints={{ top: 0, bottom: maxOffset }}
       dragElastic={{ top: RUBBER_BAND, bottom: 0.05 }} // resistance above full, almost none below peek
