@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BottomSheet from '@/components/BottomSheet';
 import MapView, { type OtherPlayer } from '@/components/MapView';
@@ -13,7 +12,7 @@ import { nearestWithin, NEARBY_M } from '@/lib/nearby';
 import { shouldLogLocation } from '@/lib/locationLog';
 import { saveLocation } from '@/lib/locationStore';
 import { openGameConnection, type GameConnection, type PresenceUser, type TreasureChange } from '@/lib/realtime';
-import { checkIsAdmin, getAllPlayers, getPlayer, type Player } from '@/lib/player';
+import { getAllPlayers, getPlayer, type Player } from '@/lib/player';
 import { ensureSession } from '@/lib/session';
 import { shouldSend } from '@/lib/sendPolicy';
 import { useGeolocation } from '@/lib/useGeolocation';
@@ -28,7 +27,6 @@ type Sheet = { kind: 'treasure'; id: string } | { kind: 'finds' } | null;
 export default function Game() {
   const [userId, setUserId] = useState<string | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
-  const [admin, setAdmin] = useState(false);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
   const [online, setOnline] = useState(false);
@@ -65,12 +63,11 @@ export default function Game() {
     (async () => {
       try {
         const { userId: uid } = await ensureSession();
-        const [p, isAdmin, everyone] = await Promise.all([getPlayer(uid), checkIsAdmin(), getAllPlayers()]);
+        const [p, everyone] = await Promise.all([getPlayer(uid), getAllPlayers()]);
         if (cancelled) return;
         for (const e of everyone) names.current.set(e.user_id, { nickname: e.nickname, avatar: e.avatar });
         setUserId(uid);
         setPlayer(p);
-        setAdmin(isAdmin);
       } catch (e) {
         if (!cancelled) setFailed((e as Error).message);
       } finally {
@@ -200,11 +197,6 @@ export default function Game() {
         {allFound && <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm font-semibold">Усі скарби знайдено</p>}
         {geo.status === 'denied' && <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm">Увімкніть геолокацію, щоб шукати</p>}
         {error && <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm text-red-600">{error}</p>}
-        {admin && (
-          <Link href="/admin" className="mt-2 inline-block rounded-xl bg-white/80 px-3 py-1 text-sm font-medium text-blue-600">
-            Адмін: додати скарб
-          </Link>
-        )}
         {toasts.map((t) => (
           <p key={t.id} role="status" className="mt-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow">
             {t.text}
@@ -231,7 +223,13 @@ export default function Game() {
             pos={geo.pos}
             accuracy={geo.accuracy}
             distanceM={distances[selected.id] ?? null}
-            onResult={() => { void reload(); }}
+            onResult={(status) => {
+              void reload();
+              if (status === 'won') {
+                setSheet(null);
+                pushToast('Знахідку підтверджено! Скарб знято з карти.');
+              }
+            }}
           />
         </BottomSheet>
       )}

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { isFoundable, type LatLng } from '@/lib/geo';
-import { bearingDeg, formatDistance } from '@/lib/geoFormat';
+import { isFoundable, haversineM, type LatLng } from '@/lib/geo';
+import { bearingDeg, cardinal, formatDistance } from '@/lib/geoFormat';
+import { hasArrived, markArrived } from '@/lib/arrival';
 import { markFound, type FoundStatus } from '@/lib/found';
 import { PHOTO_BUCKET } from '@/lib/treasures';
 import { supabase } from '@/lib/supabase';
@@ -16,20 +17,29 @@ type Props = {
   onResult: (status: FoundStatus) => void;
 };
 
-const MESSAGES: Record<FoundStatus, string> = {
-  won: 'Знахідку підтверджено! Скарб знято з карти.',
-  taken: 'Скарб уже знайдено іншим гравцем',
-  not_player: 'Спочатку оберіть імʼя й тварину',
-  not_found: 'Скарб не знайдено',
+const ERROR_TEXT: Record<Exclude<FoundStatus, 'won'>, string> = {
+  taken: 'Цей скарб уже знайшов інший гравець.',
+  not_player: 'Спочатку оберіть імʼя й тварину.',
+  not_found: 'Скарб не знайдено.',
 };
 
+// Two steps: "Я знайшов місце" (you are at the spot), then "Я знайшов скарб" (you have the treasure).
 export default function TreasureSheetContent({ treasure, pos, accuracy, distanceM, onResult }: Props) {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [revealed, setRevealed] = useState(false); // spoiler: photo stays blurred until tapped
+  const [revealed, setRevealed] = useState(false); // spoiler: stays blurred until tapped
+  const [arrived, setArrived] = useState(false);
   const [manual, setManual] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      setArrived(hasArrived(window.localStorage, treasure.id));
+    } catch {
+      setArrived(false);
+    }
+  }, [treasure.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,23 +57,40 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
     return () => { cancelled = true; };
   }, [treasure.photo_paths]);
 
-  const bearing = pos ? bearingDeg(pos, { lat: treasure.lat, lng: treasure.lng }) : null;
-  const canConfirm = distanceM !== null && isFoundable(distanceM, accuracy);
+  const canArrive = distanceM !== null && isFoundable(distanceM, accuracy);
+  const direction = pos ? cardinal(bearingDeg(pos, { lat: treasure.lat, lng: treasure.lng })) : null;
+
+  function arrive() {
+    try {
+      markArrived(window.localStorage, treasure.id);
+    } catch {
+      // storage blocked; the state below still moves the player on
+    }
+    setArrived(true);
+    setError(null);
+  }
 
   async function confirm(manualNote?: string) {
     setBusy(true);
-    setMessage(null);
+    setError(null);
     try {
       const status = await markFound(treasure.id, manualNote);
-      if (status === 'won') navigator.vibrate?.(15);
-      onResult(status);
-      setMessage(MESSAGES[status]);
+      if (status === 'won') {
+        navigator.vibrate?.(15);
+        onResult(status);
+      } else {
+        setError(ERROR_TEXT[status]);
+        onResult(status);
+      }
     } catch (e) {
-      setMessage((e as Error).message);
+      setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
+
+  const bigButton =
+    'w-full rounded-2xl px-4 py-4 text-lg font-semibold text-white shadow-sm disabled:opacity-40';
 
   return (
     <section className="flex flex-col gap-4 p-5">
@@ -85,7 +112,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
               src={url}
               alt={`Підказка ${i + 1}`}
               style={{ filter: revealed ? 'none' : 'blur(22px)' }}
-              className="h-48 w-auto max-w-[80%] shrink-0 rounded-2xl object-cover transition-[filter] duration-300"
+              className="h-44 w-auto max-w-[80%] shrink-0 rounded-2xl object-cover transition-[filter] duration-300"
             />
           ))}
           {!revealed && (
@@ -96,41 +123,40 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
         </button>
       )}
 
-      <dl className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <dt className="text-neutral-500">Відстань</dt>
-          <dd className="text-2xl font-bold tabular-nums">{distanceM !== null ? formatDistance(distanceM) : '—'}</dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Напрямок</dt>
-          <dd className="flex items-center gap-2">
-            <span aria-hidden className="inline-grid h-8 w-8 place-items-center rounded-full bg-neutral-200" style={{ transform: `rotate(${bearing ?? 0}deg)` }}>↑</span>
-            <span className="text-neutral-500">{pos ? 'до скарбу' : 'чекаємо на GPS'}</span>
-          </dd>
-        </div>
-        <div className="col-span-2">
-          <dt className="text-neutral-500">Місце</dt>
-          <dd className="selectable tabular-nums">{treasure.lat.toFixed(5)}, {treasure.lng.toFixed(5)}</dd>
-        </div>
-      </dl>
+      <div className="rounded-2xl bg-neutral-100 px-4 py-3">
+        <p className="text-sm text-neutral-500">До місця</p>
+        <p className="text-4xl font-bold tabular-nums tracking-[-0.02em]">
+          {distanceM !== null ? formatDistance(distanceM) : '—'}
+        </p>
+        <p className="text-sm text-neutral-600">
+          {!pos ? 'Чекаємо на GPS' : direction ? `на ${direction}` : ''}
+        </p>
+      </div>
 
-      {message && <p role="status" className="text-sm font-medium">{message}</p>}
-
-      {!manual ? (
+      {!arrived ? (
         <>
-          <button
-            type="button"
-            disabled={!canConfirm || busy}
-            onClick={() => void confirm()}
-            className="rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white disabled:opacity-40"
-          >
-            Підтвердити знахідку
-          </button>
-          {!canConfirm && <p className="text-xs text-neutral-500">Підійдіть ближче, щоб підтвердити (до 15 м з урахуванням GPS).</p>}
-          <button type="button" onClick={() => setManual(true)} className="text-sm text-blue-600">
-            Підтвердити вручну
+          <p className="text-sm text-neutral-600">
+            {canArrive ? 'Ви біля місця. Натисніть, коли побачите його.' : 'Підійдіть ближче, щоб відмітити місце (до 15 м).'}
+          </p>
+          <button type="button" disabled={!canArrive || busy} onClick={arrive} className={`${bigButton} bg-blue-600`}>
+            Я знайшов місце
           </button>
         </>
+      ) : (
+        <>
+          <p className="text-sm text-neutral-600">Ви на місці. Знайдіть скарб і підтвердіть.</p>
+          <button type="button" disabled={busy} onClick={() => void confirm()} className={`${bigButton} bg-green-600`}>
+            Я знайшов скарб
+          </button>
+        </>
+      )}
+
+      {error && <p role="alert" className="text-sm font-medium text-red-600">{error}</p>}
+
+      {!manual ? (
+        <button type="button" onClick={() => setManual(true)} className="self-center text-sm text-neutral-500">
+          GPS не працює? Підтвердити вручну
+        </button>
       ) : (
         <form
           className="flex flex-col gap-2"
@@ -144,14 +170,17 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
             onChange={(e) => setNote(e.target.value)}
             placeholder="Що ви бачите біля скарбу?"
             maxLength={200}
-            className="rounded-xl bg-white/80 px-4 py-3 text-[16px] outline-none ring-1 ring-black/10"
+            className="rounded-xl bg-white px-4 py-3 text-[16px] outline-none ring-1 ring-black/10"
           />
-          <button type="submit" disabled={!note.trim() || busy}
-            className="rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white disabled:opacity-40">
+          <button type="submit" disabled={!note.trim() || busy} className="rounded-xl bg-neutral-800 px-4 py-3 font-semibold text-white disabled:opacity-40">
             Підтвердити вручну
           </button>
         </form>
       )}
+
+      <p className="selectable text-center text-xs text-neutral-400 tabular-nums">
+        {treasure.lat.toFixed(5)}, {treasure.lng.toFixed(5)}
+      </p>
     </section>
   );
 }

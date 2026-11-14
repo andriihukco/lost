@@ -16,3 +16,11 @@ export function formatDistance(m: number): string {
   if (m < 1000) return `${Math.round(m)} м`;
   return `${(m / 1000).toFixed(1)} км`;
 }
+
+// Compass word for a bearing (0 = north, clockwise), used instead of a rotating arrow.
+const POINTS = ['північ', 'північний схід', 'схід', 'південний схід', 'південь', 'південний захід', 'захід', 'північний захід'];
+
+export function cardinal(deg: number): string {
+  const normalized = ((deg % 360) + 360) % 360;
+  return POINTS[Math.round(normalized / 45) % 8];
+}
