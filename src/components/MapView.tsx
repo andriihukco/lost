@@ -37,13 +37,20 @@ export default function MapView({ treasures, me, others, onSelectTreasure }: Pro
   useEffect(() => {
     if (!container.current) return;
     configureMapLibre();
-    const map = new MapLibreMap({
-      container: container.current,
-      style: mapStyle(),
-      center: [24.0315, 49.8419],
-      zoom: 15,
-      attributionControl: { compact: true },
-    });
+    let map: MapLibreMap;
+    try {
+      map = new MapLibreMap({
+        container: container.current,
+        style: mapStyle(),
+        center: [24.0315, 49.8419],
+        zoom: 15,
+        attributionControl: { compact: true },
+      });
+    } catch (err) {
+      // A map that cannot start (no WebGL, worker failure) must not blank the whole screen.
+      console.error('MapLibre failed to start', err);
+      return;
+    }
     mapRef.current = map;
     return () => {
       map.remove();

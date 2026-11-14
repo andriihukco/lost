@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import JoinForm from '@/components/JoinForm';
 import { ensureSession } from '@/lib/session';
 import { joinRoom, type Room } from '@/lib/rooms';
@@ -15,7 +15,8 @@ type State =
   | { kind: 'error'; message: string }
   | { kind: 'form'; room: Room; userId: string; submitting: boolean; error: string | null };
 
-export default function JoinRoom({ code }: { code: string }) {
+export default function JoinRoom() {
+  const { code } = useParams<{ code: string }>();
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: 'loading' });
 

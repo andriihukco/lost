@@ -1,26 +1,109 @@
 @import "tailwindcss";
 
+/* Tokens (spec §5.2, §5.5). Light by default; dark follows prefers-color-scheme unless the page pins a theme. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f2f2f7;
+  --foreground: #1c1c1e;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-border: rgba(255, 255, 255, 0.4);
+  --surface-opacity: 0.78;
+  --shadow-deep: 0 12px 32px rgba(0, 0, 0, 0.18);
+  --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #000000;
+    --foreground: #f2f2f7;
+    --surface: rgba(28, 28, 30, 0.78);
+    --surface-border: rgba(255, 255, 255, 0.12);
+    --shadow-deep: 0 12px 32px rgba(0, 0, 0, 0.6);
+    --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+}
+
+:root[data-theme="dark"] {
+  --background: #000000;
+  --foreground: #f2f2f7;
+  --surface: rgba(28, 28, 30, 0.78);
+  --surface-border: rgba(255, 255, 255, 0.12);
+  --shadow-deep: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overscroll-behavior: none; /* no pull-to-refresh on sheet or map drags (spec §5.4) */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Floating chrome: translucent material with a 0.5px top-edge highlight (spec §5.2). */
+.apple-material-thick {
+  background: var(--surface);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 0.5px solid var(--surface-border);
+}
+
+/* Tactile polish (spec §5.4): instant press feedback, no 300 ms delay, no selection on controls. */
+button,
+[role="button"],
+a,
+.map-marker {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 100ms ease-out;
+}
+
+button:active,
+[role="button"]:active {
+  transform: scale(0.97);
+}
+
+/* Hover only where a fine pointer exists, so taps do not leave a sticky hover state. */
+@media (hover: hover) and (pointer: fine) {
+  button:hover {
+    filter: brightness(1.05);
+  }
+}
+
+/* Text stays selectable for coordinates and hints. */
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Reduced transparency: raise the surface to 96% opacity (spec §5.5). */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --surface: rgba(255, 255, 255, 0.96);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --surface: rgba(28, 28, 30, 0.96);
+    }
+  }
+  .apple-material-thick {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Reduced motion: the Motion spring falls back to a 150 ms fade in BottomSheet (spec §5.5). */
+@media (prefers-reduced-motion: reduce) {
+  button:active,
+  [role="button"]:active {
+    transform: none;
+  }
 }

@@ -31,7 +31,7 @@ export default function StatusBar({
   return (
     <div
       role="status"
-      className="rounded-2xl bg-white/80 px-4 py-2 text-sm font-medium shadow backdrop-blur"
+      className="apple-material-thick rounded-2xl px-4 py-2 text-sm font-medium shadow-[var(--shadow-soft)]"
     >
       <div className="flex items-center justify-between gap-3">
         <span className="truncate">{roomName}</span>

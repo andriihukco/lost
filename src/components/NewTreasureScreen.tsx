@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import TreasureForm from '@/components/TreasureForm';
 import { joinRoom } from '@/lib/rooms';
 import { ensureSession } from '@/lib/session';
 
 // Only the host may add treasures; RLS enforces it too (migration 0001).
-export default function NewTreasureScreen({ code }: { code: string }) {
+export default function NewTreasureScreen() {
+  const { code } = useParams<{ code: string }>();
   const router = useRouter();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);

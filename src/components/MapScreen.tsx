@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import MapView, { type OtherPlayer } from '@/components/MapView';
 import { ensureSession } from '@/lib/session';
 import { joinRoom, type Room } from '@/lib/rooms';
@@ -21,7 +21,8 @@ import type { LatLng } from '@/lib/geo';
 type Me = { userId: string; nickname: string; color: string };
 type Position = LatLng & { seenAt: number };
 
-export default function MapScreen({ code }: { code: string }) {
+export default function MapScreen() {
+  const { code } = useParams<{ code: string }>();
   const router = useRouter();
   const [room, setRoom] = useState<Room | null>(null);
   const [me, setMe] = useState<Me | null>(null);

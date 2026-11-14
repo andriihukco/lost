@@ -68,7 +68,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, onResult
     <section className="flex flex-col gap-4 p-5">
       <header>
         <h2 className="text-2xl font-bold leading-[1.1] tracking-[-0.02em]">{treasure.title}</h2>
-        {treasure.hint && <p className="mt-1 text-neutral-600">{treasure.hint}</p>}
+        {treasure.hint && <p className="selectable mt-1 text-neutral-600">{treasure.hint}</p>}
       </header>
 
       {photoUrl && (

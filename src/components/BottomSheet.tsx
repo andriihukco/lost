@@ -57,7 +57,7 @@ export default function BottomSheet({ children, initial = 'peek' }: Props) {
 
   return (
     <motion.div
-      className="absolute inset-x-0 bottom-0 touch-none rounded-t-3xl bg-white/90 shadow-2xl backdrop-blur"
+      className="absolute inset-x-0 bottom-0 touch-none apple-material-thick rounded-t-3xl shadow-[var(--shadow-deep)]"
       style={{ height: vh * SNAPS.full, y }}
       drag="y"
       dragConstraints={{ top: 0, bottom: maxOffset }}
