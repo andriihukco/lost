@@ -217,6 +217,9 @@ export default function Game() {
         for (const e of everyone) names.current.set(e.user_id, { nickname: e.nickname, avatar: e.avatar });
         setUserId(uid);
         setPlayer(p);
+        // No player row for this identity (a first visit, or the player was removed by an admin): the whole
+        // onboarding runs again, starting with the welcome intro. The browser's "welcomed" flag alone would skip it.
+        if (!p) setWelcomed(false);
       } catch (e) {
         if (!cancelled) setFailed((e as Error).message);
       } finally {
