@@ -324,7 +324,7 @@ export default function Game() {
                 {route.pending ? 'Прокладаю…' : `${formatDistance(route.walk.distanceM)} · ~${Math.max(1, Math.round(route.walk.durationS / 60))} хв`}
               </p>
               <p className="text-[12px] font-semibold text-[var(--muted)]">
-                {route.walk.source === 'paths' ? 'Стежками й лісовими дорогами' : 'По прямій (маршрут стежками недоступний)'}
+                {route.walk.source === 'paths' ? 'По стежках і дорогах' : 'По прямій (маршрут стежками недоступний)'}
               </p>
             </div>
             <button type="button" onClick={() => setRoute(null)} className="dl-btn-secondary !w-auto !px-4 !py-2 !text-[15px]">

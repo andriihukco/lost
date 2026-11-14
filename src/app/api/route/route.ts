@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
+import { osrmPath, parseOrs, parseOsrm, type RouteLine } from '@/lib/routeParse';
 
-// Walking route along paths and forest roads (OpenRouteService, foot-hiking profile).
-// The key lives on the server only (ORS_API_KEY). Node runtime is the default. Body: { coordinates: [[lng, lat], ...] }, 2 to 50 points.
+// Walking route along paths, tracks and forest roads.
+// 1) OpenRouteService foot-hiking when ORS_API_KEY is set (server-only).
+// 2) Otherwise OSRM's foot profile on the public router (no key).
+// Body: { coordinates: [[lng, lat], ...] }, 2 to 50 points, in visiting order.
+
 const ORS_URL = 'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson';
+const OSRM_BASE = 'https://router.project-osrm.org/route/v1/foot';
+const TIMEOUT_MS = 12_000;
 
 function validCoords(v: unknown): v is [number, number][] {
   if (!Array.isArray(v) || v.length < 2 || v.length > 50) return false;
@@ -15,38 +21,40 @@ function validCoords(v: unknown): v is [number, number][] {
   );
 }
 
-export async function POST(req: Request) {
-  const key = process.env.ORS_API_KEY;
-  if (!key) return NextResponse.json({ error: 'no-key' }, { status: 503 });
+async function viaOrs(coords: [number, number][], key: string): Promise<RouteLine | null> {
+  try {
+    const res = await fetch(ORS_URL, {
+      method: 'POST',
+      headers: { Authorization: key, 'Content-Type': 'application/json', Accept: 'application/geo+json' },
+      body: JSON.stringify({ coordinates: coords }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    return res.ok ? parseOrs(await res.json()) : null;
+  } catch {
+    return null;
+  }
+}
 
+async function viaOsrm(coords: [number, number][]): Promise<RouteLine | null> {
+  try {
+    const url = `${OSRM_BASE}/${osrmPath(coords)}?overview=full&geometries=geojson`;
+    const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    return res.ok ? parseOsrm(await res.json()) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function POST(req: Request) {
   const body = await req.json().catch(() => null) as { coordinates?: unknown } | null;
   if (!body || !validCoords(body.coordinates)) {
     return NextResponse.json({ error: 'bad-request' }, { status: 400 });
   }
+  const coords = body.coordinates;
 
-  let res: Response;
-  try {
-    res = await fetch(ORS_URL, {
-      method: 'POST',
-      headers: { Authorization: key, 'Content-Type': 'application/json', Accept: 'application/geo+json' },
-      body: JSON.stringify({ coordinates: body.coordinates }),
-    });
-  } catch {
-    return NextResponse.json({ error: 'upstream' }, { status: 502 });
-  }
-  if (!res.ok) return NextResponse.json({ error: 'upstream' }, { status: 502 });
+  const key = process.env.ORS_API_KEY;
+  const route = (key ? await viaOrs(coords, key) : null) ?? (await viaOsrm(coords));
+  if (!route) return NextResponse.json({ error: 'upstream' }, { status: 502 });
 
-  const data = (await res.json()) as {
-    features?: { geometry?: { coordinates?: [number, number][] }; properties?: { summary?: { distance?: number; duration?: number } } }[];
-  };
-  const feature = data.features?.[0];
-  const line = feature?.geometry?.coordinates;
-  const summary = feature?.properties?.summary;
-  if (!line || !summary) return NextResponse.json({ error: 'upstream' }, { status: 502 });
-
-  return NextResponse.json({
-    coordinates: line, // [lng, lat] pairs along the path
-    distanceM: summary.distance ?? 0,
-    durationS: summary.duration ?? 0,
-  });
+  return NextResponse.json(route);
 }

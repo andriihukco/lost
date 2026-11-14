@@ -10,8 +10,13 @@ export type WalkRoute = {
 // Straight-line walking estimate: 4.5 km/h, used when no path route is available.
 export const WALK_SPEED_MPS = 4.5 / 3.6;
 
+// Walking time is computed from the distance at a walking pace, whatever the router's own estimate says.
+export function walkSeconds(distanceM: number): number {
+  return distanceM / WALK_SPEED_MPS;
+}
+
 export function straightRoute(points: LatLng[], distanceM: number): WalkRoute {
-  return { coords: points, distanceM, durationS: distanceM / WALK_SPEED_MPS, source: 'straight' };
+  return { coords: points, distanceM, durationS: walkSeconds(distanceM), source: 'straight' };
 }
 
 // Asks the server for a route along paths and forest roads; null when unavailable (no key, offline).
@@ -27,7 +32,7 @@ export async function fetchWalkingRoute(points: LatLng[]): Promise<WalkRoute | n
     return {
       coords: data.coordinates.map(([lng, lat]) => ({ lat, lng })),
       distanceM: data.distanceM,
-      durationS: data.durationS,
+      durationS: walkSeconds(data.distanceM),
       source: 'paths',
     };
   } catch {
