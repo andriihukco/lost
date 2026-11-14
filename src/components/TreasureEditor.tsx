@@ -20,14 +20,14 @@ type Props = {
   onDeleted: () => void;
 };
 
-const field = 'dl-field';
-
 function historyLabel(h: HistoryEvent): string {
   if (h.action === 'place') return 'дійшов(ла) до місця';
   if (h.action === 'found') return `знайшов(ла)${h.manual ? ' вручну' : ''}`;
   return 'повернув(ла) на карту';
 }
 
+// The admin's treasure view, shown in the full-screen treasure modal. Three parts, top to bottom:
+// the details, the photos and status, then the danger zone. The save button is pinned to the bottom.
 export default function TreasureEditor({ treasure, names, onChanged, onDeleted }: Props) {
   const [title, setTitle] = useState(treasure.title);
   const [hint, setHint] = useState(treasure.hint ?? '');
@@ -136,80 +136,107 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
   }
 
   return (
-    <div className="mt-2 flex flex-col gap-3 rounded-2xl dl-card p-4">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-[var(--muted)]">Назва</span>
-        <input className={field} value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-[var(--muted)]">Підказка</span>
-        <textarea className={field} value={hint} rows={2} maxLength={300} onChange={(e) => setHint(e.target.value)} />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-[var(--muted)]">Координати (широта, довгота)</span>
-        <input className={field} inputMode="decimal" value={coords} onChange={(e) => setCoords(e.target.value)} placeholder="49.8419, 24.0315" />
-      </label>
-      {errors.map((e) => <p key={e} role="alert" className="text-sm text-[var(--danger)]">{e}</p>)}
-      <button type="button" disabled={busy} onClick={save} className="dl-btn !w-auto !min-h-[44px] !py-2.5 !text-sm">
-        Зберегти зміни
-      </button>
+    <form className="flex flex-col gap-7 px-5 pb-4 pt-5" onSubmit={(e) => { e.preventDefault(); save(); }}>
+      <section className="flex flex-col gap-4" aria-labelledby="treasure-details">
+        <h3 id="treasure-details" className="text-[13px] font-bold uppercase tracking-wide text-[var(--muted)]">Деталі</h3>
+        <label className="flex flex-col gap-1.5">
+          <span className="dl-label">Назва</span>
+          <input className="dl-field" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="dl-label">Підказка · необов&apos;язково</span>
+          <textarea className="dl-field" value={hint} rows={2} maxLength={300} onChange={(e) => setHint(e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="dl-label">Координати (широта, довгота)</span>
+          <input className="dl-field" inputMode="decimal" value={coords} onChange={(e) => setCoords(e.target.value)} placeholder="49.8419, 24.0315" />
+        </label>
+        {errors.map((e) => <p key={e} role="alert" className="text-sm font-semibold text-[var(--danger)]">{e}</p>)}
+      </section>
 
-      <PinEmojiPicker value={pinEmoji} onChange={setPinEmoji} />
+      <section className="flex flex-col gap-2">
+        <span className="dl-label">Мітка на карті</span>
+        <PinEmojiPicker value={pinEmoji} onChange={setPinEmoji} />
+      </section>
 
-      <div className="flex flex-col gap-2">
-        <span className="text-sm text-[var(--muted)]">Фото ({photos.length}/{MAX_PHOTOS})</span>
-        <div className="flex gap-2 overflow-x-auto">
-          {photos.map((p) => (
-            <div key={p} className="relative shrink-0">
-              {urls[p] ? (
-                <a href={urls[p]} target="_blank" rel="noopener noreferrer" aria-label="Відкрити фото повністю у новій вкладці" className="block">
-                  <img src={urls[p]} alt="Фото" className="h-24 w-24 rounded-xl object-cover" />
-                </a>
-              ) : (
-                <div className="h-24 w-24 rounded-xl bg-[var(--line)]" />
-              )}
-              <button type="button" aria-label="Видалити фото" onClick={() => dropPhoto(p)} disabled={busy} className="absolute right-0 top-0 grid h-11 w-11 place-items-center"><span className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white"><Icon name="close" size={16} /></span></button>
-            </div>
-          ))}
-        </div>
-        {photos.length < MAX_PHOTOS && (
-          <input type="file" accept="image/*" multiple onChange={(e) => addFiles(e.target.files)} className="text-[16px]" />
+      <section className="flex flex-col gap-3" aria-labelledby="treasure-photos">
+        <h3 id="treasure-photos" className="dl-label">Фото · {photos.length} з {MAX_PHOTOS}</h3>
+        {photos.length > 0 && (
+          <ul className="flex gap-2 overflow-x-auto py-1">
+            {photos.map((p, i) => (
+              <li key={p} className="relative shrink-0">
+                {urls[p] ? (
+                  <a href={urls[p]} target="_blank" rel="noopener noreferrer" aria-label={`Відкрити фото ${i + 1} повністю у новій вкладці`} className="block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={urls[p]} alt={`Фото ${i + 1}`} className="h-24 w-24 rounded-2xl object-cover" />
+                  </a>
+                ) : (
+                  <div className="h-24 w-24 rounded-2xl bg-[var(--line)]" />
+                )}
+                <button type="button" aria-label={`Видалити фото ${i + 1}`} onClick={() => dropPhoto(p)} disabled={busy} className="absolute right-0 top-0 grid h-11 w-11 place-items-center disabled:opacity-40">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white"><Icon name="close" size={16} /></span>
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
-      </div>
+        {photos.length < MAX_PHOTOS && (
+          <label className="dl-btn-secondary cursor-pointer text-center">
+            Додати фото
+            <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
+          </label>
+        )}
+        <p className="text-sm text-[var(--muted)]">Можна вставити зображення через Ctrl+V (⌘V).</p>
+      </section>
 
-      <div className="flex flex-col gap-2 text-sm">
-        <span className="text-[var(--muted)]">Статус</span>
-        {treasure.is_found ? (
-          <p>Знайдено: <strong>{names[treasure.found_by ?? ''] ?? 'гравець'}</strong>{treasure.found_at ? `, ${new Date(treasure.found_at).toLocaleString('uk-UA')}` : ''}{treasure.found_manual ? ` · вручну: ${treasure.found_note ?? ''}` : ''}</p>
-        ) : (
-          <p>На карті</p>
+      <section className="flex flex-col gap-3" aria-labelledby="treasure-status">
+        <h3 id="treasure-status" className="dl-label">Статус</h3>
+        <p className="text-[16px] font-semibold">
+          {treasure.is_found ? 'Знайдено' : 'На карті'}
+        </p>
+        {treasure.is_found && (
+          <p className="text-sm text-[var(--muted)]">
+            {names[treasure.found_by ?? ''] ?? 'гравець'}
+            {treasure.found_at ? `, ${new Date(treasure.found_at).toLocaleString('uk-UA')}` : ''}
+            {treasure.found_manual ? ` · вручну: ${treasure.found_note ?? ''}` : ''}
+          </p>
         )}
         {treasure.is_found && (
-          <button type="button" disabled={busy} onClick={sendBack} className="self-start text-[var(--green-deep)] font-bold disabled:opacity-40">
+          <button type="button" disabled={busy} onClick={sendBack} className="dl-btn-secondary">
             Повернути на карту
           </button>
         )}
-        <button type="button" onClick={() => void toggleHistory()} className="self-start text-[var(--green-deep)] font-bold">
+        <button type="button" onClick={() => void toggleHistory()} className="dl-btn-secondary">
           {history ? 'Сховати історію' : 'Історія пошуку'}
         </button>
         {history && (
-          <ul className="flex flex-col gap-1 border-l-2 border-neutral-200 pl-3">
+          <ul className="flex flex-col gap-1.5 border-l-2 border-[var(--line)] pl-3 text-sm">
             {history.length === 0 && <li className="text-[var(--muted)]">Подій ще немає</li>}
             {history.map((h) => (
               <li key={h.id}>
-                <span className="font-medium">{names[h.user_id] ?? 'гравець'}</span>{' '}
+                <span className="font-semibold">{names[h.user_id] ?? 'гравець'}</span>{' '}
                 {historyLabel(h)}
                 <span className="text-[var(--muted)]"> · {new Date(h.created_at).toLocaleString('uk-UA')}</span>
               </li>
             ))}
           </ul>
         )}
-      </div>
+      </section>
 
-      <button type="button" disabled={busy} onClick={remove} className="self-start text-sm font-semibold text-[var(--danger)] disabled:opacity-40">
-        Видалити скарб
-      </button>
-      {message && <p role="status" className="text-sm font-medium">{message}</p>}
-    </div>
+      <section className="flex flex-col gap-2 border-t border-[var(--line)] pt-5" aria-label="Небезпечна зона">
+        <button type="button" disabled={busy} onClick={remove} className="dl-btn-danger">
+          Видалити скарб
+        </button>
+        <p className="text-center text-xs text-[var(--muted)]">Історія і фото теж буде видалено.</p>
+      </section>
+
+      {/* Pinned to the bottom of the modal's scroll area, so the save action is always in reach. */}
+      <div className="sticky bottom-0 -mx-5 mt-2 border-t border-[var(--line)] bg-[var(--paper)]/95 px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-md">
+        {message && <p role="status" className="mb-2 text-center text-sm font-semibold">{message}</p>}
+        <button type="submit" disabled={busy} className="dl-btn">
+          {busy ? 'Зберігаємо…' : 'Зберегти зміни'}
+        </button>
+      </div>
+    </form>
   );
 }
