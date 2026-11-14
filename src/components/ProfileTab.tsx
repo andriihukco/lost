@@ -5,7 +5,7 @@ import NicknamePicker from '@/components/NicknamePicker';
 import { avatarEmoji, nicknameFor, type AvatarKey } from '@/lib/avatars';
 import { getAllPlayers, savePlayer, type Player } from '@/lib/player';
 import OfflineMap from '@/components/OfflineMap';
-import StickyAction from '@/components/StickyAction';
+import { AnimatePresence, motion } from 'motion/react';
 import type { LatLng } from '@/lib/geo';
 
 // "Профіль" tab: the player's animal and nickname. Another free animal can be chosen; its nickname comes with it.
@@ -51,11 +51,26 @@ export default function ProfileTab({ player, onSaved, offlinePoints, bottomInset
         <NicknamePicker value={avatar} taken={taken} onPick={setAvatar} />
       </div>
 
-      <StickyAction bottomOffset={bottomInset}>
-        <button type="button" disabled={!dirty || busy} onClick={() => void save()} className="dl-btn">
-          {busy ? 'Зберігаємо…' : 'Зберегти зміни'}
-        </button>
-      </StickyAction>
+      {/* Shown only when the animal has changed: it slides up from the bottom and goes away once saved. */}
+      <AnimatePresence>
+        {dirty && (
+          <motion.div
+            key="save-bar"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', visualDuration: 0.3, bounce: 0 }}
+            className="fixed inset-x-0 z-40 border-t border-[var(--line)] bg-[var(--paper)]/95 backdrop-blur-md"
+            style={{ bottom: bottomInset }}
+          >
+            <div className="mx-auto w-full max-w-md px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3">
+              <button type="button" disabled={busy} onClick={() => void save()} className="dl-btn">
+                {busy ? 'Зберігаємо…' : 'Зберегти зміни'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {message && <p role="status" className="mt-3 text-center text-[15px] font-semibold text-[var(--green-deep)]">{message}</p>}
 
       <p className="ios-section mt-8">Офлайн</p>
