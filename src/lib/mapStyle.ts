@@ -50,13 +50,13 @@ export function chooseStyle(maptilerKey: string | undefined): ChosenStyle {
   return { provider: 'osm', style: reserveStyle() };
 }
 
-export type MapKind = 'outdoor' | 'satellite' | 'hybrid';
+export type MapKind = 'outdoor' | 'hybrid';
 
 // Free aerial imagery for the keyless build (Esri World Imagery; attribution required).
 export const IMAGERY_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 export const IMAGERY_ATTRIBUTION = 'Зображення © Esri, Maxar, Earthstar Geographics';
 
-// Satellite imagery with an optional hiking-route overlay (no businesses in either case).
+// Aerial imagery with an optional hiking-route overlay (no businesses in either case).
 export function imageryStyle(withRoutes: boolean): StyleSpecification {
   const sources: StyleSpecification['sources'] = {
     imagery: { type: 'raster', tiles: [IMAGERY_URL], tileSize: 256, attribution: IMAGERY_ATTRIBUTION, maxzoom: 19 },
@@ -81,13 +81,13 @@ export function imageryStyle(withRoutes: boolean): StyleSpecification {
   return { version: 8, sources, layers };
 }
 
-// The style for a map kind. With a MapTiler key every kind is a MapTiler style. Without one: outdoor is the trails
-// reserve, satellite is imagery, hybrid is imagery with the trails on top.
+// The style for a map kind. With a MapTiler key both kinds are MapTiler styles. Without one: outdoor is the trails
+// reserve, hybrid is imagery with the trails on top.
 export function styleFor(kind: MapKind, maptilerKey: string | undefined): string | StyleSpecification {
   if (maptilerKey) {
     const name = kind === 'outdoor' ? 'outdoor-v2' : kind;
     return `https://api.maptiler.com/maps/${name}/style.json?key=${maptilerKey}`;
   }
   if (kind === 'outdoor') return reserveStyle();
-  return imageryStyle(kind === 'hybrid');
+  return imageryStyle(true);
 }

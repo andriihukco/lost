@@ -44,7 +44,7 @@ type Props = {
   focusNonce?: number;
   recenterNonce?: number; // changes when the player asks to see their own location
   unlimited?: boolean; // admin view: no movement limit (the player view is limited to the city of Lviv)
-  mapKind?: MapKind; // outdoor, satellite or hybrid; switching keeps pins and the route
+  mapKind?: MapKind; // outdoor or hybrid; switching keeps pins and the route
   marks?: MapMark[]; // admin warnings and notes: emoji pins only (no distance, not treasures)
   onViewChange?: (v: { lat: number; lng: number; zoom: number }) => void; // the centre and zoom, for the map-type previews
   onSelectMark?: (m: MapMark) => void;

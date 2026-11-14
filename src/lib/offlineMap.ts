@@ -5,7 +5,7 @@ import { expandTemplate, OFFLINE_ZOOMS, tilesForPoints, type Tile } from '@/lib/
 // The offline map: every tile, style, font and sprite around the treasures, marks and the player, fetched once.
 // The service worker (public/sw.js) keeps what is fetched, so the map works without a connection afterwards.
 export const OFFLINE_RADIUS_M = 2000;
-const KINDS: MapKind[] = ['outdoor', 'satellite', 'hybrid'];
+const KINDS: MapKind[] = ['outdoor', 'hybrid'];
 // Glyph ranges: Latin, Latin extended, Cyrillic, general punctuation. Enough for the labels in Ukrainian.
 const GLYPH_RANGES = ['0-255', '256-511', '1024-1279', '8192-8447'];
 
@@ -72,7 +72,7 @@ export async function planOfflineUrls(points: LatLng[], maptilerKey: string | un
     } else {
       const templates: string[] = [];
       if (kind === 'outdoor' || kind === 'hybrid') templates.push(ROUTES_URL);
-      if (kind === 'satellite' || kind === 'hybrid') templates.push(IMAGERY_URL);
+      if (kind === 'hybrid') templates.push(IMAGERY_URL);
       for (const template of templates) for (const t of tiles) urls.add(expandTemplate(template, t));
     }
   }

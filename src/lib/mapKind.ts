@@ -1,8 +1,8 @@
 import type { MapKind } from '@/lib/mapStyle';
 
-// The map kind the player chose (outdoor, satellite, hybrid), remembered per browser.
+// The map kind the player chose (outdoor or hybrid), remembered per browser. An old saved value falls back to outdoor.
 const KEY = 'lost.mapKind';
-const KINDS: MapKind[] = ['outdoor', 'satellite', 'hybrid'];
+const KINDS: MapKind[] = ['outdoor', 'hybrid'];
 
 export function loadMapKind(storage: Storage): MapKind {
   try {
