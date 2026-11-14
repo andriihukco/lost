@@ -12,6 +12,7 @@ import { haversineM, type LatLng } from '@/lib/geo';
 import { optimalOrder, pathLengthM } from '@/lib/routePlan';
 import { fetchWalkingRoute, straightRoute, type WalkRoute } from '@/lib/routing';
 import { formatDistance } from '@/lib/geoFormat';
+import { pinOrDefault } from '@/lib/pinEmoji';
 import { nearestWithin, NEARBY_M } from '@/lib/nearby';
 import { shouldLogLocation } from '@/lib/locationLog';
 import { saveLocation } from '@/lib/locationStore';
@@ -312,7 +313,7 @@ export default function Game() {
           style={{ bottom: `calc(${tabBarH}px + 12px)` }}
           className="dl-card absolute inset-x-3 z-10 flex min-h-[64px] items-center gap-3 px-4 py-3 text-left"
         >
-          <span className="dl-pin-badge !h-12 !w-12 shrink-0">🍄</span>
+          <span className="dl-pin-badge !h-12 !w-12 shrink-0">{pinOrDefault(nearby.treasure.pin_emoji)}</span>
           <span className="min-w-0">
             <span className="block text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Скарб поруч (до {NEARBY_M} м)</span>
             <span className="block truncate text-[17px] font-bold">{nearby.treasure.title} · {Math.round(nearby.distanceM)} м</span>

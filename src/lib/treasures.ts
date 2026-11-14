@@ -11,6 +11,7 @@ export type NewTreasure = {
   hint: string | null;
   point: LatLng;
   photos: File[];
+  pinEmoji: string;
 };
 
 // Admin-only (RLS). Insert the row first (its id names the photo folder), then upload photos, then store their paths.
@@ -22,6 +23,7 @@ export async function createTreasure(input: NewTreasure): Promise<Treasure> {
     .from('treasures')
     .insert({
       title: input.title.trim(),
+      pin_emoji: input.pinEmoji.trim() || '🍄',
       hint: input.hint?.trim() || null,
       lat: input.point.lat,
       lng: input.point.lng,

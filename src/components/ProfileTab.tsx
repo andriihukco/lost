@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { AVATARS, avatarEmoji, type AvatarKey } from '@/lib/avatars';
-import { savePlayer, type Player } from '@/lib/player';
+import { useEffect, useState } from 'react';
+import { AVATARS, avatarEmoji, isTaken, type AvatarKey } from '@/lib/avatars';
+import { getAllPlayers, savePlayer, type Player } from '@/lib/player';
 
 // "Профіль" tab: change the nickname and the animal. Grouped list, large title.
 export default function ProfileTab({ player, onSaved }: { player: Player; onSaved: (p: Player) => void }) {
@@ -11,6 +11,11 @@ export default function ProfileTab({ player, onSaved }: { player: Player; onSave
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const dirty = nickname.trim() !== player.nickname || avatar !== player.avatar;
+  const [taken, setTaken] = useState<string[]>([]);
+  useEffect(() => {
+    // Animals chosen by other players are greyed out; my own stays available.
+    getAllPlayers().then((list) => setTaken(list.filter((p) => p.user_id !== player.user_id).map((p) => p.avatar))).catch(() => {});
+  }, [player.user_id]);
 
   async function save() {
     setBusy(true);
@@ -39,7 +44,7 @@ export default function ProfileTab({ player, onSaved }: { player: Player; onSave
 
       <div className="ios-group mt-8">
         <label className="ios-row">
-          <span className="w-24 shrink-0 text-[17px]">Імʼя</span>
+          <span className="w-24 shrink-0 text-[17px]">Нік</span>
           <input
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
@@ -52,20 +57,24 @@ export default function ProfileTab({ player, onSaved }: { player: Player; onSave
 
       <p className="ios-section mt-6">Тварина</p>
       <div className="ios-group grid grid-cols-6 gap-1 p-3">
-        {AVATARS.map((a) => (
-          <button
-            key={a.key}
-            type="button"
-            aria-label={a.label}
-            aria-pressed={avatar === a.key}
-            onClick={() => setAvatar(a.key)}
-            className={`grid aspect-square min-h-[44px] place-items-center rounded-full text-2xl transition-transform active:scale-90 ${
-              avatar === a.key ? 'bg-[var(--green-soft)] ring-2 ring-[var(--green)]' : ''
-            }`}
-          >
-            {a.emoji}
-          </button>
-        ))}
+        {AVATARS.map((a) => {
+          const gone = isTaken(a.key, taken, null); // the list already excludes my own row
+          return (
+            <button
+              key={a.key}
+              type="button"
+              aria-label={gone ? `${a.label} — уже обрано` : a.label}
+              aria-pressed={avatar === a.key}
+              disabled={gone}
+              onClick={() => setAvatar(a.key)}
+              className={`grid aspect-square min-h-[44px] place-items-center rounded-full text-2xl transition-transform active:scale-90 disabled:cursor-not-allowed disabled:grayscale disabled:opacity-30 ${
+                avatar === a.key ? 'bg-[var(--green-soft)] ring-2 ring-[var(--green)]' : ''
+              }`}
+            >
+              {a.emoji}
+            </button>
+          );
+        })}
       </div>
 
       <button type="button" disabled={!dirty || busy || !nickname.trim()} onClick={() => void save()} className="dl-btn mt-6">

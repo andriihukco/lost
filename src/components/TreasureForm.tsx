@@ -6,6 +6,9 @@ import PinPicker from '@/components/PinPicker';
 import { parseCoordinates } from '@/lib/coords';
 import type { LatLng } from '@/lib/geo';
 import { createTreasure, MAX_PHOTOS } from '@/lib/treasures';
+import { DEFAULT_PIN } from '@/lib/pinEmoji';
+import PinEmojiPicker from '@/components/PinEmojiPicker';
+import { validateTreasure } from '@/lib/treasureRules';
 
 export default function TreasureForm() {
   const router = useRouter();
@@ -15,6 +18,7 @@ export default function TreasureForm() {
   const [point, setPoint] = useState<LatLng | null>(null);
   const [coordsError, setCoordsError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
+  const [pinEmoji, setPinEmoji] = useState<string>(DEFAULT_PIN);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,11 +43,12 @@ export default function TreasureForm() {
   async function submit() {
     if (!title.trim()) return setError('Додайте назву скарбу');
     if (!point) return setError('Вкажіть місце на карті або координати');
-    if (photos.length === 0) return setError('Додайте хоча б одну фото');
+    const problems = validateTreasure({ title, hint, lat: point.lat, lng: point.lng, photoCount: photos.length, pinEmoji });
+    if (problems.length > 0) return setError(problems[0]);
     setBusy(true);
     setError(null);
     try {
-      await createTreasure({ title, hint: hint || null, point, photos });
+      await createTreasure({ title, hint: hint || null, point, photos, pinEmoji: pinEmoji.trim() || DEFAULT_PIN });
       router.replace('/');
     } catch (e) {
       setError((e as Error).message);
@@ -77,6 +82,7 @@ export default function TreasureForm() {
         {coordsError && <span role="alert" className="text-sm text-[var(--danger)]">{coordsError}</span>}
       </label>
       <PinPicker value={point} onChange={pickOnMap} />
+      <PinEmojiPicker value={pinEmoji} onChange={setPinEmoji} />
       <label className="flex flex-col gap-1">
         <span className="text-sm text-[var(--muted)]">Фото (від 1 до {MAX_PHOTOS})</span>
         <input type="file" accept="image/*" multiple

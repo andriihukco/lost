@@ -2,6 +2,8 @@
 # Concurrency check: two players claim the same treasure at the same moment.
 # Expect exactly one "won" and one "taken". Requires `supabase start` and a reset database.
 set -euo pipefail
+# Local test data only: start from a clean database (players may use one animal each).
+supabase db reset >/dev/null 2>&1
 API="${API:-http://127.0.0.1:54321}"
 ANON="$(supabase status -o env 2>/dev/null | sed -n 's/^ANON_KEY="\(.*\)"$/\1/p')"
 [ -n "$ANON" ] || { echo "could not read ANON_KEY" >&2; exit 2; }
@@ -22,7 +24,7 @@ for n in 1 2; do
   echo "$TOK" > "$WORK/tok$n"
   curl -sS -o /dev/null -w "player $n onboarding %{http_code}\n" -X POST "$API/rest/v1/players" -H "apikey: $ANON" \
     -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" \
-    -d "{\"user_id\":\"$UID_\",\"nickname\":\"p$n\",\"avatar\":\"fox\"}"
+    -d "{\"user_id\":\"$UID_\",\"nickname\":\"p$n\",\"avatar\":\"$([ $n = 1 ] && echo fox || echo bear)\"}"
 done
 
 claim() { curl -sS -X POST "$API/rest/v1/rpc/mark_found" -H "apikey: $ANON" -H "Authorization: Bearer $(cat "$WORK/tok$1")" \

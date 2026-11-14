@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Rules check for migration 0004: location log, found history, undo. Needs a reset local stack.
 set -euo pipefail
+# Local test data only: start from a clean database (players may use one animal each).
+supabase db reset >/dev/null 2>&1
 API="${API:-http://127.0.0.1:54321}"
 ANON="$(supabase status -o env 2>/dev/null | sed -n 's/^ANON_KEY="\(.*\)"$/\1/p')"
 fail=0

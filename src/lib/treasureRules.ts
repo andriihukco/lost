@@ -7,6 +7,7 @@ export type TreasureDraft = {
   lat: number | null;
   lng: number | null;
   photoCount: number;
+  pinEmoji?: string; // the emoji shown on the map pin (optional; checked when given)
 };
 
 // Returns Ukrainian messages for the first problems found; an empty list means valid.
@@ -23,5 +24,9 @@ export function validateTreasure(d: TreasureDraft): string[] {
   if (!coordsOk) errors.push('Вкажіть координати');
   if (d.photoCount < 1) errors.push('Потрібне принаймні одне фото');
   if (d.photoCount > MAX_PHOTOS) errors.push(`Не більше ${MAX_PHOTOS} фото`);
+  if (d.pinEmoji !== undefined) {
+    const n = [...d.pinEmoji.trim()].length;
+    if (n < 1 || n > 8) errors.push('Оберіть емодзі для мітки');
+  }
   return errors;
 }

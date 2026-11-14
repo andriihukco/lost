@@ -10,6 +10,7 @@ import { isBusinessLayer } from '@/lib/mapStyle';
 import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import { formatDistance } from '@/lib/geoFormat';
 import { edgePoint, type Box } from '@/lib/offscreen';
+import { pinOrDefault } from '@/lib/pinEmoji';
 import type { Treasure } from '@/lib/useTreasures';
 import type { GeoJSONSource } from 'maplibre-gl';
 
@@ -74,7 +75,7 @@ function renderPlayer(el: HTMLElement, p: { avatar: string | null; name: string;
 }
 
 // Pin: a circle centred on the treasure's coordinate, with its distance under it.
-function buildPin(): { el: HTMLButtonElement; label: HTMLSpanElement } {
+function buildPin(emoji: string): { el: HTMLButtonElement; label: HTMLSpanElement; badge: HTMLSpanElement } {
   const el = document.createElement('button');
   el.type = 'button';
   el.classList.add('dl-pin');
@@ -82,17 +83,17 @@ function buildPin(): { el: HTMLButtonElement; label: HTMLSpanElement } {
   root.style.cssText = 'position:relative;width:44px;height:44px';
   const badge = document.createElement('span');
   badge.className = 'dl-pin-badge';
-  badge.textContent = '🍄';
+  badge.textContent = pinOrDefault(emoji);
   const label = document.createElement('span');
   label.className = 'dl-tag';
   label.style.cssText = 'position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px';
   root.append(badge, label);
   el.append(root);
-  return { el, label };
+  return { el, label, badge };
 }
 
 type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
-type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; treasure: Treasure };
+type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; badge: HTMLSpanElement; treasure: Treasure };
 
 export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0 }: Props) {
   const container = useRef<HTMLDivElement>(null);
@@ -270,6 +271,8 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       el.style.transform = `translate(${edge.x}px, ${edge.y}px) translate(-50%, -50%)`;
       const dir = el.querySelector<HTMLElement>('.dl-heading');
       if (dir) dir.style.transform = `rotate(${edge.angle + 90}deg)`;
+      const badgeEl = el.querySelector<HTMLElement>('.dl-edge-badge');
+      if (badgeEl) badgeEl.textContent = pinOrDefault(t.pin_emoji);
       const label = el.querySelector<HTMLElement>('[data-label]');
       const d = distancesRef.current[t.id];
       if (label) label.textContent = d === undefined ? '' : formatDistance(d);
@@ -328,15 +331,17 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       const existing = pinMap.current.get(t.id);
       if (existing) {
         existing.treasure = t;
+        existing.badge.textContent = pinOrDefault(t.pin_emoji);
         existing.marker.setLngLat([t.lng, t.lat]);
         continue;
       }
-      const { el, label } = buildPin();
+      const { el, label, badge } = buildPin(t.pin_emoji);
       el.setAttribute('aria-label', t.title);
       const entry: PinEntry = {
         marker: new Marker({ element: el, anchor: 'center' }).setLngLat([t.lng, t.lat]).addTo(map),
         el,
         label,
+        badge,
         treasure: t,
       };
       el.onclick = () => selectRef.current?.(entry.treasure);

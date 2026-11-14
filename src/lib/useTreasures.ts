@@ -10,6 +10,7 @@ export type Treasure = {
   lat: number;
   lng: number;
   photo_paths: string[];
+  pin_emoji: string;
   is_found: boolean;
   found_by: string | null;
   found_at: string | null;
@@ -23,7 +24,7 @@ export function useTreasures() {
   const reload = useCallback(async () => {
     const { data, error: loadError } = await supabase
       .from('treasures')
-      .select('id, title, hint, lat, lng, photo_paths, is_found, found_by, found_at')
+      .select('id, title, hint, lat, lng, photo_paths, pin_emoji, is_found, found_by, found_at')
       .order('created_at', { ascending: true });
     if (loadError) return setError('Не вдалося завантажити скарби');
     setError(null);

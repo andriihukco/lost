@@ -20,6 +20,9 @@ export async function savePlayer(userId: string, nickname: string, avatar: Avata
     .upsert({ user_id: userId, nickname: nickname.trim(), avatar }, { onConflict: 'user_id' })
     .select('user_id, nickname, avatar')
     .single();
+  if (error && (error.code === '23505' || /avatar taken/.test(error.message ?? ''))) {
+    throw new Error('Цю тварину вже обрано. Оберіть іншу.');
+  }
   if (error || !data) throw new Error('Не вдалося зберегти. Спробуйте ще раз.');
   return data as Player;
 }

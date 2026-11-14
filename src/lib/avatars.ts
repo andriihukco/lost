@@ -26,3 +26,12 @@ export type AvatarKey = (typeof AVATARS)[number]['key'];
 export function avatarEmoji(key: string): string {
   return AVATARS.find((a) => a.key === key)?.emoji ?? '👤';
 }
+
+// An animal is taken when another player has it. My own animal stays available to me.
+export function isTaken(key: string, takenKeys: string[], mine: string | null): boolean {
+  return takenKeys.includes(key) && key !== mine;
+}
+
+export function availableAvatars(takenKeys: string[], mine: string | null) {
+  return AVATARS.filter((a) => !isTaken(a.key, takenKeys, mine));
+}

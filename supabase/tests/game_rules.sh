@@ -2,6 +2,8 @@
 # Rules check against a running local stack (after `supabase db reset`).
 # Covers: players onboard, only admins place treasures, only players claim, first claim wins.
 set -euo pipefail
+# Local test data only: start from a clean database (players may use one animal each).
+supabase db reset >/dev/null 2>&1
 API="${API:-http://127.0.0.1:54321}"
 ANON="$(supabase status -o env 2>/dev/null | sed -n 's/^ANON_KEY="\(.*\)"$/\1/p')"
 fail=0
@@ -27,7 +29,7 @@ check "guest (no player row) cannot claim" "$(code_of "$(req POST /rest/v1/rpc/m
 R=$(req POST /rest/v1/players "$P1_TOK" "{\"user_id\":\"$P1_ID\",\"nickname\":\"Лис\",\"avatar\":\"fox\"}"); check "player saves onboarding" "$(code_of "$R")" "201"
 R=$(req POST /rest/v1/players "$P2_TOK" "{\"user_id\":\"$P2_ID\",\"nickname\":\"Ведмідь\",\"avatar\":\"bear\"}"); check "second player saves onboarding" "$(code_of "$R")" "201"
 R=$(req POST /rest/v1/players "$P1_TOK" "{\"user_id\":\"$P1_ID\",\"nickname\":\"x\",\"avatar\":\"dragon\"}"); check "unknown avatar rejected" "$(code_of "$R")" "400"
-R=$(req POST /rest/v1/players "$P1_TOK" "{\"user_id\":\"$P2_ID\",\"nickname\":\"x\",\"avatar\":\"fox\"}"); check "cannot write another player's row" "$(code_of "$R")" "403"
+R=$(req POST /rest/v1/players "$P1_TOK" "{\"user_id\":\"$P2_ID\",\"nickname\":\"x\",\"avatar\":\"cat\"}"); check "cannot write another player's row" "$(code_of "$R")" "403"
 
 R=$(req POST /rest/v1/treasures "$P1_TOK" '{"title":"x","lat":49.8,"lng":24.0}'); check "player cannot place a treasure" "$(code_of "$R")" "403"
 R=$(req POST /rest/v1/treasures "$ADMIN_TOK" '{"title":"Скарб 1","lat":49.8421,"lng":24.0318}'); check "admin places a treasure" "$(code_of "$R")" "201"

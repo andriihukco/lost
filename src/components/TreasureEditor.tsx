@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { MAX_PHOTOS, validateTreasure } from '@/lib/treasureRules';
+import { pinOrDefault } from '@/lib/pinEmoji';
+import PinEmojiPicker from '@/components/PinEmojiPicker';
 import {
   addPhoto, deleteTreasure, foundHistory, removePhoto, signedPhotoUrl, updateTreasure,
   type AdminTreasure, type HistoryEvent,
@@ -22,6 +24,7 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
   const [hint, setHint] = useState(treasure.hint ?? '');
   const [lat, setLat] = useState<string>(String(treasure.lat));
   const [lng, setLng] = useState<string>(String(treasure.lng));
+  const [pinEmoji, setPinEmoji] = useState<string>(pinOrDefault(treasure.pin_emoji));
   const [photos, setPhotos] = useState<string[]>(treasure.photo_paths);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [history, setHistory] = useState<HistoryEvent[] | null>(null);
@@ -59,6 +62,7 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
       lat: lat.trim() === '' ? null : Number(lat),
       lng: lng.trim() === '' ? null : Number(lng),
       photoCount: photos.length,
+      pinEmoji,
     });
   }
 
@@ -67,7 +71,7 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
     setErrors(errs);
     if (errs.length) return;
     void run('Збережено', async () => {
-      await updateTreasure(treasure.id, { title: title.trim(), hint: hint.trim() || null, lat: Number(lat), lng: Number(lng) });
+      await updateTreasure(treasure.id, { title: title.trim(), hint: hint.trim() || null, lat: Number(lat), lng: Number(lng), pin_emoji: pinEmoji.trim() });
       onChanged();
     });
   }
@@ -142,6 +146,8 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
       <button type="button" disabled={busy} onClick={save} className="dl-btn !w-auto !py-2.5 !text-sm">
         Зберегти зміни
       </button>
+
+      <PinEmojiPicker value={pinEmoji} onChange={setPinEmoji} />
 
       <div className="flex flex-col gap-2">
         <span className="text-sm text-[var(--muted)]">Фото ({photos.length}/{MAX_PHOTOS})</span>

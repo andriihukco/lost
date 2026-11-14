@@ -9,6 +9,7 @@ export type AdminTreasure = {
   lat: number;
   lng: number;
   photo_paths: string[];
+  pin_emoji: string;
   is_found: boolean;
   found_by: string | null;
   found_at: string | null;
@@ -27,7 +28,7 @@ export type HistoryEvent = {
 };
 
 const COLUMNS =
-  'id, title, hint, lat, lng, photo_paths, is_found, found_by, found_at, found_manual, found_note, created_at';
+  'id, title, hint, lat, lng, photo_paths, pin_emoji, is_found, found_by, found_at, found_manual, found_note, created_at';
 
 // Writes must touch a row. RLS can block an update and still answer 200 with no rows (seen during testing).
 function requireRow<T>(rows: T[] | null, error: unknown, message: string): T {
@@ -43,7 +44,7 @@ export async function listTreasures(): Promise<AdminTreasure[]> {
 
 export async function updateTreasure(
   id: string,
-  patch: { title: string; hint: string | null; lat: number; lng: number },
+  patch: { title: string; hint: string | null; lat: number; lng: number; pin_emoji: string },
 ): Promise<AdminTreasure> {
   const { data, error } = await supabase.from('treasures').update(patch).eq('id', id).select(COLUMNS);
   return requireRow(data as AdminTreasure[] | null, error, 'Немає доступу або скарб не знайдено') as AdminTreasure;
