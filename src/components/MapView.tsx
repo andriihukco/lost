@@ -11,6 +11,7 @@ import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import { formatDistance } from '@/lib/geoFormat';
 import { edgePoint, type Box } from '@/lib/offscreen';
 import { pinOrDefault } from '@/lib/pinEmoji';
+import { MAP_PAD_M, viewBounds } from '@/lib/mapBounds';
 import type { Treasure } from '@/lib/useTreasures';
 import type { GeoJSONSource } from 'maplibre-gl';
 
@@ -199,6 +200,18 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
   }, []);
 
 
+
+  // The view is limited to me and the open treasures, plus MAP_PAD_M on each side: the camera cannot pan or zoom past it.
+  const meLat = me?.lat ?? null;
+  const meLng = me?.lng ?? null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const pts: LatLng[] = treasures.map((t) => ({ lat: t.lat, lng: t.lng }));
+    if (meLat !== null && meLng !== null) pts.push({ lat: meLat, lng: meLng });
+    const b = viewBounds(pts, MAP_PAD_M);
+    map.setMaxBounds(b ? [[b.west, b.south], [b.east, b.north]] : null);
+  }, [meLat, meLng, treasures]);
 
   // Walking route: a line along the path and numbered stops. Re-applied after every style load.
   useEffect(() => {
