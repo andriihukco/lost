@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import MapView, { type OtherPlayer } from '@/components/MapView';
 import { listPlayers, type AdminPlayer } from '@/lib/adminPlayers';
 import { listTreasures, type AdminTreasure } from '@/lib/adminTreasures';
+import { listMapMarks, type MapMark } from '@/lib/mapMarks';
 import type { LatLng } from '@/lib/geo';
 
 const REFRESH_MS = 15000;
@@ -14,15 +15,17 @@ export default function AdminMap() {
   const [players, setPlayers] = useState<AdminPlayer[]>([]);
   const [treasures, setTreasures] = useState<AdminTreasure[]>([]);
   const [fitTo, setFitTo] = useState<LatLng[] | undefined>(undefined);
+  const [marks, setMarks] = useState<MapMark[]>([]);
 
   useEffect(() => {
     let alive = true;
     const load = async () => {
       try {
-        const [p, t] = await Promise.all([listPlayers(), listTreasures()]);
+        const [p, t, m] = await Promise.all([listPlayers(), listTreasures(), listMapMarks().catch(() => [] as MapMark[])]);
         if (!alive) return;
         setPlayers(p);
         setTreasures(t);
+        setMarks(m);
         const points: LatLng[] = [
           ...p.filter((x) => x.lat !== null && x.lng !== null).map((x) => ({ lat: x.lat as number, lng: x.lng as number })),
           ...t.map((x) => ({ lat: x.lat, lng: x.lng })),
@@ -70,6 +73,7 @@ export default function AdminMap() {
           meHeading={null}
           others={others}
           bottomInset={24}
+          marks={marks}
           unlimited
           fitTo={fitTo}
         />

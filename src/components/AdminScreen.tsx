@@ -6,6 +6,7 @@ import TreasureManager from '@/components/TreasureManager';
 import PlayersPanel from '@/components/PlayersPanel';
 import AdminMap from '@/components/AdminMap';
 import PillTabBar from '@/components/PillTabBar';
+import MarksPanel from '@/components/MarksPanel';
 import Icon from '@/components/Icon';
 import Splash from '@/components/Splash';
 import { checkIsAdmin } from '@/lib/player';
@@ -21,7 +22,12 @@ export default function AdminScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [section, setSection] = useState<'treasures' | 'players' | 'map'>('treasures');
+  const [section, setSection] = useState<'treasures' | 'players' | 'map' | 'marks'>('treasures');
+  // A link like /admin?s=marks opens that section (used after saving a map mark).
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get('s');
+    if (s === 'treasures' || s === 'players' || s === 'map' || s === 'marks') setSection(s);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -106,6 +112,7 @@ export default function AdminScreen() {
       </header>
       {section === 'treasures' && <TreasureManager />}
       {section === 'players' && <PlayersPanel />}
+      {section === 'marks' && <MarksPanel />}
       {section === 'map' && <AdminMap />}
       <PillTabBar
         navLabel="Розділи адмінки"
@@ -113,6 +120,7 @@ export default function AdminScreen() {
         items={[
           { id: 'treasures', label: 'Скарби', icon: 'travel_explore' },
           { id: 'players', label: 'Гравці', icon: 'group' },
+          { id: 'marks', label: 'Мітки', icon: 'warning' },
           { id: 'map', label: 'Карта', icon: 'map' },
         ]}
         value={section}

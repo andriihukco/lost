@@ -362,6 +362,21 @@ body {
   .lost-bar { transform: none; width: 100%; opacity: 0.5; }
 }
 
+/* Map mark: an admin warning, round with an amber ring. Not a treasure. */
+.dl-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: var(--paper);
+  border: 3px solid #f2a900;
+  box-shadow: var(--shadow-sm);
+  font-size: 20px;
+  line-height: 1;
+  touch-action: manipulation;
+}
+
 /* Map's bottom controls (attribution) sit above the floating tab bar. --map-bottom is set by MapView. */
 .lost-map .maplibregl-ctrl-bottom-left,
 .lost-map .maplibregl-ctrl-bottom-right {

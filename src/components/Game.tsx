@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TreasureModal from '@/components/TreasureModal';
 import MapKindPicker from '@/components/MapKindPicker';
+import { listMapMarks, type MapMark } from '@/lib/mapMarks';
 import { loadMapKind, saveMapKind } from '@/lib/mapKind';
 import type { MapKind } from '@/lib/mapStyle';
 import { AnimatePresence } from 'motion/react';
@@ -63,6 +64,8 @@ export default function Game() {
   const [locPerm, setLocPerm] = useState<LocationPerm>('unknown');
   const [entered, setEntered] = useState(false); // the entry gate was passed in this visit
   const [mapKind, setMapKind] = useState<MapKind>('outdoor');
+  const [marks, setMarks] = useState<MapMark[]>([]); // admin warnings and notes, shown on the map only
+  const [selectedMark, setSelectedMark] = useState<MapMark | null>(null);
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
   const [recenter, setRecenter] = useState(0);
@@ -130,6 +133,16 @@ export default function Game() {
     setInApp(detectInApp(navigator.userAgent));
     setMapKind(loadMapKind(window.localStorage));
   }, []);
+
+  // Map marks load with the page and refresh every minute (they are few and change rarely).
+  useEffect(() => {
+    if (!ready) return;
+    let alive = true;
+    const load = () => { listMapMarks().then((m) => { if (alive) setMarks(m); }).catch(() => {}); };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { alive = false; clearInterval(id); };
+  }, [ready]);
 
   // Location permission as the browser reports it (a returning player who revoked it is sent back to the gate).
   useEffect(() => {
@@ -301,6 +314,8 @@ export default function Game() {
         focusNonce={focus.nonce}
         recenterNonce={recenter}
         mapKind={mapKind}
+        marks={marks}
+        onSelectMark={setSelectedMark}
       />
 
       {tab !== 'map' && player && (
@@ -395,6 +410,25 @@ export default function Game() {
         </div>
       )}
 
+      {tab === 'map' && selectedMark && (
+        <div
+          role="dialog"
+          aria-label={selectedMark.title}
+          style={{ bottom: `calc(${tabBarH}px + 12px)` }}
+          className="dl-card absolute inset-x-3 z-10 flex items-start gap-3 px-4 py-3"
+        >
+          <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-2xl">{selectedMark.emoji}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Мітка на мапі</p>
+            <p className="text-[17px] font-bold">{selectedMark.title}</p>
+            {selectedMark.note && <p className="mt-0.5 text-[15px] text-[var(--muted)]">{selectedMark.note}</p>}
+          </div>
+          <button type="button" aria-label="Закрити" onClick={() => setSelectedMark(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--muted)]">
+            <Icon name="close" size={22} />
+          </button>
+        </div>
+      )}
+
       {tab === 'map' && player && nearby && !showSheet && !route && (
         <button
           type="button"
@@ -432,7 +466,7 @@ export default function Game() {
         )}
       </AnimatePresence>
 
-      {player && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); }} onHeight={setTabBarH} />}
+      {player && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); setSelectedMark(null); }} onHeight={setTabBarH} />}
 
       {gateStep && (
         <Welcome

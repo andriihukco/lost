@@ -13,6 +13,7 @@ import { edgePoint, type Box } from '@/lib/offscreen';
 import { pinOrDefault } from '@/lib/pinEmoji';
 import { MAP_PAD_M, viewBounds } from '@/lib/mapBounds';
 import type { Treasure } from '@/lib/useTreasures';
+import type { MapMark } from '@/lib/mapMarks';
 import type { GeoJSONSource } from 'maplibre-gl';
 
 export type RouteStop = { id: string; lat: number; lng: number; index: number };
@@ -44,6 +45,8 @@ type Props = {
   recenterNonce?: number; // changes when the player asks to see their own location
   unlimited?: boolean; // admin view: no movement limit around me and the treasures
   mapKind?: MapKind; // outdoor, satellite or hybrid; switching keeps pins and the route
+  marks?: MapMark[]; // admin warnings and notes: emoji pins only (no distance, not treasures)
+  onSelectMark?: (m: MapMark) => void;
   fitTo?: LatLng[]; // when this array changes, the camera fits these points once (admin: everyone on the map)
 };
 
@@ -117,7 +120,7 @@ function buildPin(emoji: string): { el: HTMLButtonElement; label: HTMLSpanElemen
 type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
 type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; badge: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0, unlimited = false, fitTo, mapKind = 'outdoor' }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0, unlimited = false, fitTo, mapKind = 'outdoor', marks = [], onSelectMark }: Props) {
   const kindRef = useRef<MapKind>(mapKind); // the kind the map is currently showing
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -227,6 +230,35 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     const b = viewBounds(pts, MAP_PAD_M);
     map.setMaxBounds(b ? [[b.west, b.south], [b.east, b.north]] : null);
   }, [meLat, meLng, treasures, unlimited]);
+
+  // Map marks: emoji pins for admin warnings. Not treasures: no distance, no edge arrow, not in any list.
+  const markEntries = useRef(new Map<string, { marker: Marker; el: HTMLButtonElement }>());
+  const markSelectRef = useRef(onSelectMark);
+  useEffect(() => {
+    markSelectRef.current = onSelectMark;
+  }, [onSelectMark]);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const wanted = new Set(marks.map((m) => m.id));
+    for (const [id, entry] of markEntries.current) {
+      if (!wanted.has(id)) {
+        entry.marker.remove();
+        markEntries.current.delete(id);
+      }
+    }
+    for (const m of marks) {
+      if (markEntries.current.has(m.id)) continue;
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'dl-mark';
+      el.textContent = m.emoji;
+      el.setAttribute('aria-label', m.title);
+      el.onclick = () => markSelectRef.current?.(m);
+      const marker = new Marker({ element: el, anchor: 'center' }).setLngLat([m.lng, m.lat]).addTo(map);
+      markEntries.current.set(m.id, { marker, el });
+    }
+  }, [marks]);
 
   // Switch the map kind: a new style keeps the pins (DOM markers) and the route is re-applied on style.load.
   useEffect(() => {
