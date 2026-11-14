@@ -22,7 +22,7 @@ const MESSAGES: Record<FoundStatus, string> = {
 };
 
 export default function TreasureSheetContent({ treasure, pos, accuracy, onResult }: Props) {
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [manual, setManual] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -30,17 +30,18 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, onResult
 
   useEffect(() => {
     let cancelled = false;
-    const first = treasure.photo_paths[0];
-    if (!first) {
-      setPhotoUrl(null);
+    if (treasure.photo_paths.length === 0) {
+      setPhotoUrls([]);
       return;
     }
-    supabase.storage
-      .from(PHOTO_BUCKET)
-      .createSignedUrl(first, 3600)
-      .then(({ data }) => {
-        if (!cancelled) setPhotoUrl(data?.signedUrl ?? null);
-      });
+    // Every hint photo, not only the first (review finding: photos 2–3 were uploaded but never shown).
+    Promise.all(
+      treasure.photo_paths.map((path) =>
+        supabase.storage.from(PHOTO_BUCKET).createSignedUrl(path, 3600).then(({ data }) => data?.signedUrl ?? null),
+      ),
+    ).then((urls) => {
+      if (!cancelled) setPhotoUrls(urls.filter((u): u is string => u !== null));
+    });
     return () => { cancelled = true; };
   }, [treasure.photo_paths]);
 
@@ -71,8 +72,12 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, onResult
         {treasure.hint && <p className="selectable mt-1 text-neutral-600">{treasure.hint}</p>}
       </header>
 
-      {photoUrl && (
-        <img src={photoUrl} alt="Підказка" className="max-h-64 w-full rounded-2xl object-cover" />
+      {photoUrls.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto">
+          {photoUrls.map((url, i) => (
+            <img key={url} src={url} alt={`Підказка ${i + 1}`} className="h-48 w-auto max-w-[80%] shrink-0 rounded-2xl object-cover" />
+          ))}
+        </div>
       )}
 
       <div className="flex items-center gap-4">

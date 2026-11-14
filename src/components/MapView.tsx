@@ -32,6 +32,11 @@ export default function MapView({ treasures, me, others, onSelectTreasure }: Pro
   const meMarker = useRef<Marker | null>(null);
   const pins = useRef<Marker[]>([]);
   const centered = useRef(false);
+  // Read through a ref so a new callback identity does not rebuild every pin (review finding F1).
+  const selectRef = useRef(onSelectTreasure);
+  useEffect(() => {
+    selectRef.current = onSelectTreasure;
+  }, [onSelectTreasure]);
   const otherMarkers = useRef(new Map<string, OtherEntry>());
 
   useEffect(() => {
@@ -73,10 +78,10 @@ export default function MapView({ treasures, me, others, onSelectTreasure }: Pro
       el.className = `h-5 w-5 rounded-full border-2 border-white shadow ${
         t.is_found ? 'bg-neutral-400' : 'bg-orange-500'
       }`;
-      el.onclick = () => onSelectTreasure?.(t);
+      el.onclick = () => selectRef.current?.(t);
       return new Marker({ element: el }).setLngLat([t.lng, t.lat]).addTo(map);
     });
-  }, [treasures, onSelectTreasure]);
+  }, [treasures]);
 
   useEffect(() => {
     const map = mapRef.current;
