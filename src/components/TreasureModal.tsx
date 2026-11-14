@@ -29,7 +29,7 @@ export default function TreasureModal({ title, onClose, children }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 flex flex-col bg-[var(--page)]"
+      className="fixed inset-0 z-50 flex flex-col bg-[var(--page)] md:items-center md:justify-center md:bg-[var(--ink)]/35 md:p-6"
       initial={{ y: '100%' }}
       animate={{ y: 0 }}
       exit={{ y: '100%' }}
@@ -42,6 +42,8 @@ export default function TreasureModal({ title, onClose, children }: Props) {
       dragMomentum={false}
       onDragEnd={onDragEnd}
     >
+      {/* On a phone the view is full screen; on a wide screen it is a centred panel over the dimmed map. */}
+      <div className="flex min-h-0 flex-1 flex-col md:h-[min(760px,calc(100dvh-48px))] md:w-full md:max-w-xl md:flex-none md:overflow-hidden md:rounded-[28px] md:bg-[var(--page)] md:elev-lg">
       <header
         onPointerDown={(e) => controls.start(e)}
         className="shrink-0 cursor-grab touch-none select-none border-b border-[var(--line)] bg-[var(--paper)] px-5 pb-3 pt-[calc(env(safe-area-inset-top)+0.5rem)]"
@@ -62,6 +64,7 @@ export default function TreasureModal({ title, onClose, children }: Props) {
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y' }}>
         {children}
+      </div>
       </div>
     </motion.div>
   );

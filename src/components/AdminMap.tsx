@@ -61,7 +61,7 @@ export default function AdminMap() {
   const open = useMemo(() => treasures.filter((t) => !t.is_found), [treasures]);
 
   return (
-    <section className="flex flex-col gap-2 px-4 pb-6">
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 pb-6">
       <p className="text-sm font-semibold text-[var(--muted)]">Гравців на мапі: {others.length} · скарбів на мапі: {open.length}</p>
       <div className="relative h-[calc(100dvh-14rem)] overflow-hidden rounded-[24px] border-2 border-[var(--line)]">
         <MapView

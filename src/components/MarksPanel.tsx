@@ -41,7 +41,7 @@ export default function MarksPanel() {
   }
 
   return (
-    <section className="flex flex-col gap-4 px-4 pb-32">
+    <section className="mx-auto w-full max-w-3xl flex flex-col gap-4 px-4 pb-32">
       <div className="flex items-end justify-between pt-2">
         <div>
           <h1 className="dl-title text-[30px]">Мітки</h1>

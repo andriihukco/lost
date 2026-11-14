@@ -46,7 +46,7 @@ export default function TreasureManager() {
   const shown = items.filter((t) => (filter === 'all' ? true : filter === 'active' ? !t.is_found : t.is_found));
 
   return (
-    <section className="flex flex-col gap-4 px-4 pb-32">
+    <section className="mx-auto w-full max-w-3xl flex flex-col gap-4 px-4 pb-32">
       <div className="flex items-end justify-between pt-2">
         <div>
           <h1 className="dl-title text-[30px]">Скарби</h1>

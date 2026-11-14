@@ -52,7 +52,7 @@ export default function PlayersPanel() {
   const onlineCount = players.filter((p) => p.seen_at && now - Date.parse(p.seen_at) < ONLINE_MS).length;
 
   return (
-    <section className="flex flex-col gap-3 px-4 pb-32">
+    <section className="mx-auto w-full max-w-3xl flex flex-col gap-3 px-4 pb-32">
       <div className="flex items-end justify-between pt-1">
         <div>
           <h1 className="dl-title text-[30px]">Гравці</h1>

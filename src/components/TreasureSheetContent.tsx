@@ -11,6 +11,7 @@ import { hasArrived, markArrived } from '@/lib/arrival';
 import { markFound, markPlace, type FoundStatus } from '@/lib/found';
 import { PHOTO_BUCKET } from '@/lib/treasures';
 import { supabase } from '@/lib/supabase';
+import { useIsPhone } from '@/lib/useIsPhone';
 import type { Treasure } from '@/lib/useTreasures';
 
 type Props = {
@@ -40,6 +41,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [camera, setCamera] = useState(false);
+  const phone = useIsPhone(); // the camera overlay is for standing at the spot with a phone
 
   useEffect(() => {
     try {
@@ -103,7 +105,8 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
     : canArrive
       ? 'Ви біля місця. Натисніть, коли побачите його.'
       : 'Підійдіть ближче, щоб відмітити місце (до 15 м).';
-  const secondaryCount = (onRoute ? 1 : 0) + (photoUrls.length > 0 ? 1 : 0);
+  const showCamera = phone && photoUrls.length > 0;
+  const secondaryCount = (onRoute ? 1 : 0) + (showCamera ? 1 : 0);
 
   return (
     <section className="mx-auto flex min-h-full w-full max-w-md flex-col gap-4 px-5 pt-1">
@@ -184,7 +187,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
               </span>
             </button>
           )}
-          {photoUrls.length > 0 && (
+          {showCamera && (
             <button type="button" onClick={() => setCamera(true)} className="dl-btn-secondary">
               <span className="inline-flex items-center justify-center gap-2">
                 <Icon name="photo_camera" size={22} />

@@ -19,6 +19,7 @@ import Icon from '@/components/Icon';
 import Splash from '@/components/Splash';
 import { compassPermOf, firstGateStep, type LocationPerm } from '@/lib/entryGate';
 import { effectiveCompass, effectiveLocation, readGrants, rememberGrant, type Grant } from '@/lib/grants';
+import { useIsPhone } from '@/lib/useIsPhone';
 import ProfileTab from '@/components/ProfileTab';
 import TabBar, { type Tab } from '@/components/TabBar';
 import TreasureSheetContent from '@/components/TreasureSheetContent';
@@ -76,11 +77,17 @@ export default function Game() {
   const [recenter, setRecenter] = useState(0);
   const geo = useGeolocation(welcomed === true);
   const compass = useHeading();
+  const phone = useIsPhone();
   // The entry gate: a first visit, or a returning player with a missing permission, must pass it before the map.
   // A permission granted before is not asked for again (until the site's data is cleared).
   const gateStep = welcomed === null || entered
     ? null
-    : firstGateStep(welcomed, effectiveLocation(locPerm, !!grants.location), effectiveCompass(compassPermOf(compass.status), !!grants.compass));
+    : firstGateStep(
+        welcomed,
+        effectiveLocation(locPerm, !!grants.location),
+        // On a computer there is no compass to ask for: the step is skipped.
+        phone ? effectiveCompass(compassPermOf(compass.status), !!grants.compass) : 'unavailable',
+      );
   const wake = useWakeLock();
   const { treasures, error, reload } = useTreasures();
   // Compass if the browser has one (phones), otherwise the GPS course while moving.

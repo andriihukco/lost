@@ -101,14 +101,17 @@ export default function AdminScreen() {
 
   return (
     <main className="min-h-dvh bg-[var(--page)] pb-28">
-      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-[var(--page)]/90 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-md">
-        <Link href="/" aria-label="На карту" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--ink)] elev-sm">
-          <Icon name="arrow_back" size={22} />
-        </Link>
-        <p className="text-[15px] font-bold">Адмін</p>
-        <button type="button" onClick={() => void signOut()} aria-label="Вийти" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--muted)] elev-sm">
-          <Icon name="logout" size={22} />
-        </button>
+      <header className="sticky top-0 z-20 bg-[var(--page)]/90 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
+
+          <Link href="/" aria-label="На карту" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--ink)] elev-sm">
+            <Icon name="arrow_back" size={22} />
+          </Link>
+          <p className="text-[15px] font-bold">Адмін</p>
+          <button type="button" onClick={() => void signOut()} aria-label="Вийти" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--muted)] elev-sm">
+            <Icon name="logout" size={22} />
+          </button>
+        </div>
       </header>
       {section === 'treasures' && <TreasureManager />}
       {section === 'players' && <PlayersPanel />}
