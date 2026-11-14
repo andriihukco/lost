@@ -11,7 +11,7 @@ import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import { formatDistance } from '@/lib/geoFormat';
 import { edgePoint, type Box } from '@/lib/offscreen';
 import { pinOrDefault } from '@/lib/pinEmoji';
-import { MAP_PAD_M, viewBounds } from '@/lib/mapBounds';
+import { CITY_BOUNDS, viewBounds } from '@/lib/mapBounds';
 import type { Treasure } from '@/lib/useTreasures';
 import type { MapMark } from '@/lib/mapMarks';
 import type { GeoJSONSource } from 'maplibre-gl';
@@ -43,7 +43,7 @@ type Props = {
   focusId?: string | null;
   focusNonce?: number;
   recenterNonce?: number; // changes when the player asks to see their own location
-  unlimited?: boolean; // admin view: no movement limit around me and the treasures
+  unlimited?: boolean; // admin view: no movement limit (the player view is limited to the city of Lviv)
   mapKind?: MapKind; // outdoor, satellite or hybrid; switching keeps pins and the route
   marks?: MapMark[]; // admin warnings and notes: emoji pins only (no distance, not treasures)
   onViewChange?: (v: { lat: number; lng: number; zoom: number }) => void; // the centre and zoom, for the map-type previews
@@ -54,6 +54,9 @@ type Props = {
 // Room kept clear at the top for the status card and chips.
 const TOP_INSET = 72;
 const SIDE_INSET = 16;
+
+// The city limit as MapLibre takes it: [[west, south], [east, north]].
+const CITY_LIMIT: [[number, number], [number, number]] = [[CITY_BOUNDS.west, CITY_BOUNDS.south], [CITY_BOUNDS.east, CITY_BOUNDS.north]];
 
 const CONE_SVG = `<svg viewBox="0 0 160 160" width="160" height="160" aria-hidden="true">
   <defs>
@@ -127,6 +130,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     viewRef.current = onViewChange;
   }, [onViewChange]);
   const kindRef = useRef<MapKind>(mapKind); // the kind the map is currently showing
+  const unlimitedRef = useRef(unlimited);
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
@@ -169,6 +173,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
         center: [24.0315, 49.8419],
         zoom: 15,
         attributionControl: false, // attributions are logged to the console instead of shown on the map
+        maxBounds: unlimitedRef.current ? undefined : CITY_LIMIT, // set here too: a remounted map (strict mode) must keep the limit
       });
     } catch (err) {
       console.error('MapLibre failed to start', err);
@@ -226,32 +231,11 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
 
 
 
-  // The view is limited to me and the open treasures, plus MAP_PAD_M on each side: the camera cannot pan or zoom past it.
-  const meLat = me?.lat ?? null;
-  const meLng = me?.lng ?? null;
-  // The last limit applied. A limit is set only when it really changes: a fresh one on every GPS tick made the
-  // camera re-adjust over and over (the slow zoom-out while a route was shown).
-  const appliedBounds = useRef<string>('');
+  // The player's view is limited to the city of Lviv (CITY_BOUNDS). Admin (unlimited) has no limit.
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    if (unlimited) {
-      if (appliedBounds.current !== 'none') {
-        map.setMaxBounds(null);
-        appliedBounds.current = 'none';
-      }
-      return;
-    }
-    const pts: LatLng[] = treasures.map((t) => ({ lat: t.lat, lng: t.lng }));
-    if (meLat !== null && meLng !== null) pts.push({ lat: meLat, lng: meLng });
-    // The route is inside the limit too, so the camera never has to pull it back.
-    for (const c of route?.coords ?? []) pts.push(c);
-    const b = viewBounds(pts, MAP_PAD_M);
-    const key = b ? `${b.west.toFixed(6)},${b.south.toFixed(6)},${b.east.toFixed(6)},${b.north.toFixed(6)}` : 'none';
-    if (key === appliedBounds.current) return;
-    appliedBounds.current = key;
-    map.setMaxBounds(b ? [[b.west, b.south], [b.east, b.north]] : null);
-  }, [meLat, meLng, treasures, unlimited, route]);
+    unlimitedRef.current = unlimited;
+    mapRef.current?.setMaxBounds(unlimited ? null : CITY_LIMIT);
+  }, [unlimited]);
 
   // Map marks: emoji pins for admin warnings. Not treasures: no distance, no edge arrow, not in any list.
   const markEntries = useRef(new Map<string, { marker: Marker; el: HTMLButtonElement }>());

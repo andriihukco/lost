@@ -5,6 +5,10 @@ export const MAP_PAD_M = 2500;
 
 export type ViewBounds = { west: number; south: number; east: number; north: number };
 
+// The player's map is limited to the city of Lviv only (a box around its boundary, from OpenStreetMap / Nominatim).
+// Fixed: it does not follow my position or the treasures, so zooming out is not capped at my locations.
+export const CITY_BOUNDS: ViewBounds = { west: 23.8980549, south: 49.7681748, east: 24.1334136, north: 49.9037122 };
+
 const M_PER_DEG_LAT = 111_320;
 
 // The box around the given points, padded by padM metres on every side. Null when there are no points.
