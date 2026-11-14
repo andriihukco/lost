@@ -13,6 +13,7 @@ import { useGeolocation } from '@/lib/useGeolocation';
 import { useWakeLock } from '@/lib/useWakeLock';
 import StatusBar from '@/components/StatusBar';
 import TreasureSheetContent from '@/components/TreasureSheetContent';
+import BottomSheet from '@/components/BottomSheet';
 import type { Treasure } from '@/lib/useTreasures';
 import { useTreasures } from '@/lib/useTreasures';
 import type { LatLng } from '@/lib/geo';
@@ -113,18 +114,17 @@ export default function MapScreen({ code }: { code: string }) {
     <main className="relative h-dvh w-full overflow-hidden">
       <MapView treasures={treasures} me={geo.pos} others={others} onSelectTreasure={(t) => setSelectedId(t.id)} />
       {selected && (
-        <div className="absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] rounded-3xl bg-white/90 shadow-xl backdrop-blur">
-          <div className="flex justify-end p-2">
+        <BottomSheet key={selected.id} initial="half">
+          <div className="flex justify-end px-3">
             <button type="button" aria-label="Закрити" onClick={() => setSelectedId(null)} className="px-3 text-xl text-neutral-500">×</button>
           </div>
           <TreasureSheetContent
-            key={selected.id}
             treasure={selected}
             pos={geo.pos}
             accuracy={geo.accuracy}
             onResult={() => void reload()}
           />
-        </div>
+        </BottomSheet>
       )}
       {!selected && room && me && room.host_id === me.userId && (
         <Link
