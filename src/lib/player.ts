@@ -29,3 +29,10 @@ export async function checkIsAdmin(): Promise<boolean> {
   const { data, error } = await supabase.rpc('is_admin');
   return !error && data === true;
 }
+
+// Names and avatars of all players, for notifications and the marker labels.
+export async function getAllPlayers(): Promise<Player[]> {
+  const { data, error } = await supabase.from('players').select('user_id, nickname, avatar');
+  if (error) return [];
+  return (data ?? []) as Player[];
+}

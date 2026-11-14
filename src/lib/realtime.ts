@@ -6,11 +6,15 @@ import type { LatLng } from '@/lib/geo';
 
 export type PosMessage = { user_id: string; lat: number; lng: number; accuracy: number | null; ts: number };
 export type PresenceUser = { user_id: string; nickname: string; avatar: string };
+export type TreasureChange = {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new: { id?: string; title?: string; is_found?: boolean; found_by?: string | null };
+};
 
 type Handlers = {
   onPosition: (m: PosMessage) => void;
   onOnline: (users: PresenceUser[]) => void;
-  onTreasuresChanged: () => void;
+  onTreasuresChanged: (change: TreasureChange) => void;
   onStatus: (connected: boolean) => void;
 };
 
@@ -40,7 +44,9 @@ export function openGameConnection(opts: Handlers & { me: PresenceUser }): GameC
         const state = ch.presenceState<PresenceUser>();
         opts.onOnline(Object.values(state).flat());
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'treasures' }, () => opts.onTreasuresChanged())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'treasures' }, (payload) =>
+        opts.onTreasuresChanged({ eventType: payload.eventType as TreasureChange['eventType'], new: (payload.new ?? {}) as TreasureChange['new'] }),
+      )
       .subscribe(async (status) => {
         if (ch !== channel) return; // a replaced channel reports its own close
         if (status === 'SUBSCRIBED') {

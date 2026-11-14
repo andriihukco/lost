@@ -24,6 +24,7 @@ The schema lives in `supabase/migrations/`:
 | `0001_init.sql` | First schema (rooms model). Superseded by 0003. |
 | `0002_hardening.sql` | Hardening of the rooms model. Superseded by 0003. |
 | `0003_admin_global.sql` | **Global game:** drops rooms, adds `admins` and `players`, admin-only treasures, photo rules. |
+| `0004_history_undo.sql` | Location trail (`location_log`), found history (`found_events`), undo for a mistaken find (`unmark_found`). Additive. |
 
 Run them from the repo folder:
 
@@ -43,8 +44,8 @@ select table_name from information_schema.tables
 where table_schema = 'public' order by 1;
 -- expect: admins, players, treasures
 
-select proname from pg_proc where proname in ('is_admin', 'mark_found') order by 1;
--- expect: is_admin, mark_found
+select proname from pg_proc where proname in ('is_admin', 'mark_found', 'unmark_found') order by 1;
+-- expect: is_admin, mark_found, unmark_found
 
 select id, file_size_limit from storage.buckets where id = 'treasure-photos';
 -- expect: treasure-photos, 5242880
@@ -95,7 +96,7 @@ Without a key the map shows a blank background (no streets).
    - `http://localhost:3000` (local work)
 3. Copy the key → `NEXT_PUBLIC_MAPTILER_KEY`.
 
-Public OSM tile servers are **not** used, on purpose: their usage policy forbids heavy app traffic.
+**OpenStreetMap is the reserve.** Without a key, or if MapTiler starts refusing requests (401, 403, 429), the map switches to OpenStreetMap tiles. OSM's public tile servers forbid heavy app traffic, so keep MapTiler as the primary for real use. Attribution is shown on the map.
 
 ---
 

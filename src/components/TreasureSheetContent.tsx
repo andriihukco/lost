@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { haversineM, isFoundable, type LatLng } from '@/lib/geo';
+import { isFoundable, type LatLng } from '@/lib/geo';
 import { bearingDeg, formatDistance } from '@/lib/geoFormat';
 import { markFound, type FoundStatus } from '@/lib/found';
 import { PHOTO_BUCKET } from '@/lib/treasures';
@@ -12,18 +12,20 @@ type Props = {
   treasure: Treasure;
   pos: LatLng | null;
   accuracy: number | null;
+  distanceM: number | null;
   onResult: (status: FoundStatus) => void;
 };
 
 const MESSAGES: Record<FoundStatus, string> = {
-  won: 'Знахідку підтверджено!',
-  taken: 'Скарб уже знайдено',
-  not_player: 'Спочатку оберіть імʼя й аватар',
+  won: 'Знахідку підтверджено! Скарб знято з карти.',
+  taken: 'Скарб уже знайдено іншим гравцем',
+  not_player: 'Спочатку оберіть імʼя й тварину',
   not_found: 'Скарб не знайдено',
 };
 
-export default function TreasureSheetContent({ treasure, pos, accuracy, onResult }: Props) {
+export default function TreasureSheetContent({ treasure, pos, accuracy, distanceM, onResult }: Props) {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [revealed, setRevealed] = useState(false); // spoiler: photo stays blurred until tapped
   const [manual, setManual] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -35,7 +37,6 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, onResult
       setPhotoUrls([]);
       return;
     }
-    // Every hint photo, not only the first (review finding: photos 2–3 were uploaded but never shown).
     Promise.all(
       treasure.photo_paths.map((path) =>
         supabase.storage.from(PHOTO_BUCKET).createSignedUrl(path, 3600).then(({ data }) => data?.signedUrl ?? null),
@@ -46,10 +47,8 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, onResult
     return () => { cancelled = true; };
   }, [treasure.photo_paths]);
 
-  const here = pos ? { lat: treasure.lat, lng: treasure.lng } : null;
-  const distance = pos && here ? haversineM(pos, here) : null;
-  const bearing = pos && here ? bearingDeg(pos, here) : null;
-  const canConfirm = !treasure.is_found && distance !== null && isFoundable(distance, accuracy);
+  const bearing = pos ? bearingDeg(pos, { lat: treasure.lat, lng: treasure.lng }) : null;
+  const canConfirm = distanceM !== null && isFoundable(distanceM, accuracy);
 
   async function confirm(manualNote?: string) {
     setBusy(true);
@@ -74,33 +73,50 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, onResult
       </header>
 
       {photoUrls.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => setRevealed(true)}
+          aria-label={revealed ? 'Фото підказки' : 'Показати фото підказки'}
+          className="relative flex gap-2 overflow-x-auto rounded-2xl"
+        >
           {photoUrls.map((url, i) => (
-            <img key={url} src={url} alt={`Підказка ${i + 1}`} className="h-48 w-auto max-w-[80%] shrink-0 rounded-2xl object-cover" />
+            <img
+              key={url}
+              src={url}
+              alt={`Підказка ${i + 1}`}
+              style={{ filter: revealed ? 'none' : 'blur(22px)' }}
+              className="h-48 w-auto max-w-[80%] shrink-0 rounded-2xl object-cover transition-[filter] duration-300"
+            />
           ))}
-        </div>
+          {!revealed && (
+            <span className="absolute inset-0 grid place-items-center rounded-2xl bg-black/20 text-sm font-semibold text-white">
+              Торкніться, щоб показати
+            </span>
+          )}
+        </button>
       )}
 
-      <div className="flex items-center gap-4">
-        <div
-          aria-hidden
-          className="grid h-12 w-12 place-items-center rounded-full bg-neutral-200"
-          style={{ transform: `rotate(${bearing ?? 0}deg)` }}
-        >
-          ↑
+      <dl className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <dt className="text-neutral-500">Відстань</dt>
+          <dd className="text-2xl font-bold tabular-nums">{distanceM !== null ? formatDistance(distanceM) : '—'}</dd>
         </div>
         <div>
-          <p className="text-3xl font-bold tracking-[-0.02em] tabular-nums">
-            {distance !== null ? formatDistance(distance) : '—'}
-          </p>
-          <p className="text-sm text-neutral-500">{pos ? 'до скарбу' : 'Чекаємо на GPS'}</p>
+          <dt className="text-neutral-500">Напрямок</dt>
+          <dd className="flex items-center gap-2">
+            <span aria-hidden className="inline-grid h-8 w-8 place-items-center rounded-full bg-neutral-200" style={{ transform: `rotate(${bearing ?? 0}deg)` }}>↑</span>
+            <span className="text-neutral-500">{pos ? 'до скарбу' : 'чекаємо на GPS'}</span>
+          </dd>
         </div>
-      </div>
+        <div className="col-span-2">
+          <dt className="text-neutral-500">Місце</dt>
+          <dd className="selectable tabular-nums">{treasure.lat.toFixed(5)}, {treasure.lng.toFixed(5)}</dd>
+        </div>
+      </dl>
 
-      {treasure.is_found && !message && <p className="text-sm font-medium text-neutral-500">Скарб уже знайдено</p>}
       {message && <p role="status" className="text-sm font-medium">{message}</p>}
 
-      {treasure.is_found ? null : !manual ? (
+      {!manual ? (
         <>
           <button
             type="button"
@@ -110,6 +126,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, onResult
           >
             Підтвердити знахідку
           </button>
+          {!canConfirm && <p className="text-xs text-neutral-500">Підійдіть ближче, щоб підтвердити (до 15 м з урахуванням GPS).</p>}
           <button type="button" onClick={() => setManual(true)} className="text-sm text-blue-600">
             Підтвердити вручну
           </button>

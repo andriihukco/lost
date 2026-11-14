@@ -5,11 +5,21 @@ import { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LatLng } from '@/lib/geo';
 import { avatarEmoji } from '@/lib/avatars';
-import { configureMapLibre, mapStyle } from '@/lib/mapSetup';
+import { configureMapLibre, mapStyle, osmStyle } from '@/lib/mapSetup';
 import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
+import { formatDistance } from '@/lib/geoFormat';
 import type { Treasure } from '@/lib/useTreasures';
 
 export type OtherPlayer = { id: string; nickname: string; avatar: string; lat: number; lng: number; seenAt: number };
+
+type Props = {
+  treasures: Treasure[]; // only unfound treasures are passed in
+  distances: Record<string, number>; // metres from me, by treasure id
+  me: LatLng | null;
+  meAvatar: string | null;
+  others: OtherPlayer[];
+  onSelectTreasure?: (t: Treasure) => void;
+};
 
 // A player marker is their animal emoji, with the nickname as the accessible label.
 function applyAvatar(el: HTMLElement, avatar: string | null, label: string) {
@@ -27,26 +37,20 @@ type OtherEntry = {
   seenAt: number;
 };
 
-type Props = {
-  treasures: Treasure[];
-  me: LatLng | null;
-  meAvatar: string | null;
-  others: OtherPlayer[];
-  onSelectTreasure?: (t: Treasure) => void;
-};
+type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, me, meAvatar, others, onSelectTreasure }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, others, onSelectTreasure }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
-  const pins = useRef<Marker[]>([]);
   const centered = useRef(false);
-  // Read through a ref so a new callback identity does not rebuild every pin (review finding F1).
+  const otherMarkers = useRef(new Map<string, OtherEntry>());
+  const pinMap = useRef(new Map<string, PinEntry>());
+  // Read through refs so a new callback identity does not rebuild pins (review finding F1).
   const selectRef = useRef(onSelectTreasure);
   useEffect(() => {
     selectRef.current = onSelectTreasure;
   }, [onSelectTreasure]);
-  const otherMarkers = useRef(new Map<string, OtherEntry>());
 
   useEffect(() => {
     if (!container.current) return;
@@ -61,36 +65,78 @@ export default function MapView({ treasures, me, meAvatar, others, onSelectTreas
         attributionControl: { compact: true },
       });
     } catch (err) {
-      // A map that cannot start (no WebGL, worker failure) must not blank the whole screen.
       console.error('MapLibre failed to start', err);
       return;
     }
+    // Reserve provider: if the primary style cannot load (bad key, quota, network), switch to OpenStreetMap once.
+    let fellBack = false;
+    const primaryIsMapTiler = Boolean(process.env.NEXT_PUBLIC_MAPTILER_KEY);
+    map.on('error', (e: { error?: { status?: number; message?: string } }) => {
+      const status = e.error?.status;
+      const styleFailure = status === 401 || status === 403 || status === 429 || /style/i.test(e.error?.message ?? '');
+      if (!fellBack && primaryIsMapTiler && styleFailure) {
+        fellBack = true;
+        map.setStyle(osmStyle());
+      }
+    });
     mapRef.current = map;
+    const pins = pinMap.current;
+    const others = otherMarkers.current;
     return () => {
       map.remove();
       mapRef.current = null;
       meMarker.current = null;
-      pins.current = [];
+      pins.clear();
+      others.clear();
       centered.current = false;
-      otherMarkers.current.clear();
     };
   }, []);
 
+  // Pins: keyed by treasure id. Adding or removing a treasure touches only that pin.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    pins.current.forEach((m) => m.remove());
-    pins.current = treasures.map((t) => {
+    const wanted = new Set(treasures.map((t) => t.id));
+    for (const [id, entry] of pinMap.current) {
+      if (!wanted.has(id)) {
+        entry.marker.remove();
+        pinMap.current.delete(id);
+      }
+    }
+    for (const t of treasures) {
+      const existing = pinMap.current.get(t.id);
+      if (existing) {
+        existing.treasure = t;
+        existing.marker.setLngLat([t.lng, t.lat]);
+        continue;
+      }
       const el = document.createElement('button');
       el.type = 'button';
       el.setAttribute('aria-label', t.title);
-      el.className = `h-5 w-5 rounded-full border-2 border-white shadow ${
-        t.is_found ? 'bg-neutral-400' : 'bg-orange-500'
-      }`;
-      el.onclick = () => selectRef.current?.(t);
-      return new Marker({ element: el }).setLngLat([t.lng, t.lat]).addTo(map);
-    });
+      el.className = 'flex flex-col items-center text-3xl drop-shadow';
+      const mushroom = document.createElement('span');
+      mushroom.textContent = '🍄';
+      const label = document.createElement('span');
+      label.className = 'rounded-full bg-white/90 px-2 text-xs font-semibold tabular-nums shadow';
+      el.append(mushroom, label);
+      const entry: PinEntry = {
+        marker: new Marker({ element: el }).setLngLat([t.lng, t.lat]).addTo(map),
+        el,
+        label,
+        treasure: t,
+      };
+      el.onclick = () => selectRef.current?.(entry.treasure);
+      pinMap.current.set(t.id, entry);
+    }
   }, [treasures]);
+
+  // Distance labels update without rebuilding any pin.
+  useEffect(() => {
+    for (const [id, entry] of pinMap.current) {
+      const d = distances[id];
+      entry.label.textContent = d === undefined ? '' : formatDistance(d);
+    }
+  }, [distances, treasures]);
 
   useEffect(() => {
     const map = mapRef.current;
