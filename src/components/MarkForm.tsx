@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import PinEmojiPicker from '@/components/PinEmojiPicker';
 import PinPicker from '@/components/PinPicker';
+import StickyAction from '@/components/StickyAction';
 import { parseCoordinates } from '@/lib/coords';
 import type { LatLng } from '@/lib/geo';
 import { createMapMark, type MapMark, type MarkInput, updateMapMark } from '@/lib/mapMarks';
@@ -57,7 +58,7 @@ export default function MarkForm({ initial, onSaved }: { initial?: MapMark | nul
   const canSubmit = !busy && title.trim().length > 0 && point !== null;
 
   return (
-    <form className="flex flex-col gap-5 px-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-4" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
+    <form className="flex flex-col gap-5 px-5 pb-40 pt-4" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
       <label className="flex flex-col gap-1.5">
         <span className="dl-label">Назва</span>
         <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} className="dl-field" placeholder="Наприклад, Небезпечна собака" />
@@ -82,9 +83,11 @@ export default function MarkForm({ initial, onSaved }: { initial?: MapMark | nul
       </section>
 
       {error && <p role="alert" className="text-sm font-semibold text-[var(--danger)]">{error}</p>}
-      <button type="submit" disabled={!canSubmit} className="dl-btn">
-        {busy ? 'Зберігаємо…' : initial ? 'Зберегти зміни' : 'Додати мітку на мапу'}
-      </button>
+      <StickyAction>
+        <button type="submit" disabled={!canSubmit} className="dl-btn">
+          {busy ? 'Зберігаємо…' : initial ? 'Зберегти зміни' : 'Додати мітку на мапу'}
+        </button>
+      </StickyAction>
     </form>
   );
 }

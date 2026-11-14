@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import NicknamePicker from '@/components/NicknamePicker';
+import StickyAction from '@/components/StickyAction';
 import { isTaken, nicknameFor, type AvatarKey } from '@/lib/avatars';
 import { getAllPlayers, type Player, savePlayer } from '@/lib/player';
 
@@ -36,12 +37,14 @@ export default function Onboarding({ userId, onSaved }: { userId: string; onSave
       <div className="mx-auto max-w-md">
         <h2 className="dl-title text-3xl">Обери свій нік</h2>
         <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Кожна тварина має свій нік. Оберіть тварину, і її нік стане вашим.</p>
-        <form className="mt-5 flex flex-col gap-5" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+        <form className="mt-5 flex flex-col gap-5 pb-24" onSubmit={(e) => { e.preventDefault(); void save(); }}>
           <NicknamePicker value={avatar} taken={taken} onPick={setAvatar} />
           {error && <p role="alert" className="text-sm font-bold text-[var(--danger)]">{error}</p>}
-          <button type="submit" disabled={!canSave} className="dl-btn">
-            {busy ? 'Зберігаємо…' : 'Зберегти і відкрити карту'}
-          </button>
+          <StickyAction>
+            <button type="submit" disabled={!canSave} className="dl-btn">
+              {busy ? 'Зберігаємо…' : 'Зберегти і відкрити карту'}
+            </button>
+          </StickyAction>
         </form>
       </div>
     </div>

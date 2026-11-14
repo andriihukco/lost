@@ -404,7 +404,7 @@ export default function Game() {
             />
           )}
           {tab === 'rating' && <RatingTab myId={player.user_id} />}
-          {tab === 'profile' && <ProfileTab player={player} onSaved={setPlayer} offlinePoints={offlinePoints} />}
+          {tab === 'profile' && <ProfileTab player={player} onSaved={setPlayer} offlinePoints={offlinePoints} bottomInset={tabBarH} />}
         </div>
       )}
 

@@ -5,10 +5,11 @@ import NicknamePicker from '@/components/NicknamePicker';
 import { avatarEmoji, nicknameFor, type AvatarKey } from '@/lib/avatars';
 import { getAllPlayers, savePlayer, type Player } from '@/lib/player';
 import OfflineMap from '@/components/OfflineMap';
+import StickyAction from '@/components/StickyAction';
 import type { LatLng } from '@/lib/geo';
 
 // "Профіль" tab: the player's animal and nickname. Another free animal can be chosen; its nickname comes with it.
-export default function ProfileTab({ player, onSaved, offlinePoints }: { player: Player; onSaved: (p: Player) => void; offlinePoints: LatLng[] }) {
+export default function ProfileTab({ player, onSaved, offlinePoints, bottomInset = 0 }: { player: Player; onSaved: (p: Player) => void; offlinePoints: LatLng[]; bottomInset?: number }) {
   const [avatar, setAvatar] = useState<AvatarKey>(player.avatar);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -50,9 +51,11 @@ export default function ProfileTab({ player, onSaved, offlinePoints }: { player:
         <NicknamePicker value={avatar} taken={taken} onPick={setAvatar} />
       </div>
 
-      <button type="button" disabled={!dirty || busy} onClick={() => void save()} className="dl-btn mt-6">
-        {busy ? 'Зберігаємо…' : 'Зберегти зміни'}
-      </button>
+      <StickyAction bottomOffset={bottomInset}>
+        <button type="button" disabled={!dirty || busy} onClick={() => void save()} className="dl-btn">
+          {busy ? 'Зберігаємо…' : 'Зберегти зміни'}
+        </button>
+      </StickyAction>
       {message && <p role="status" className="mt-3 text-center text-[15px] font-semibold text-[var(--green-deep)]">{message}</p>}
 
       <p className="ios-section mt-8">Офлайн</p>
