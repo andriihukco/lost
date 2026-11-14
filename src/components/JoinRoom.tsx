@@ -68,13 +68,13 @@ export default function JoinRoom() {
   async function submit(nickname: string, color: string) {
     setState({ kind: 'form', room, userId, submitting: true, error: null });
     try {
-      const { error: insertError } = await supabase.from('participants').insert({
-        room_id: room.id,
-        user_id: userId,
-        nickname,
-        color,
+      // Joining is one RPC: it checks the code and writes the participant row (migration 0002, F4).
+      const { data, error: joinError } = await supabase.rpc('join_room_as', {
+        p_code: room.code,
+        p_nickname: nickname,
+        p_color: color,
       });
-      if (insertError) throw insertError;
+      if (joinError || !(data as unknown[] | null)?.length) throw joinError ?? new Error('not joined');
       try { localStorage.setItem(NICK_KEY, nickname); } catch { /* storage may be blocked */ }
       router.replace(`/r/${room.code}/map`);
     } catch {

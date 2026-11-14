@@ -39,6 +39,7 @@ export default function TreasureForm({ roomId, code }: { roomId: string; code: s
   async function submit() {
     if (!title.trim()) return setError('Додайте назву скарбу');
     if (!point) return setError('Вкажіть місце на карті або координати');
+    if (photos.length === 0) return setError('Додайте хоча б одну фото');
     setBusy(true);
     setError(null);
     try {
@@ -77,7 +78,7 @@ export default function TreasureForm({ roomId, code }: { roomId: string; code: s
       </label>
       <PinPicker value={point} onChange={pickOnMap} />
       <label className="flex flex-col gap-1">
-        <span className="text-sm text-neutral-500">Фото (до {MAX_PHOTOS})</span>
+        <span className="text-sm text-neutral-500">Фото (від 1 до {MAX_PHOTOS})</span>
         <input type="file" accept="image/*" multiple
           onChange={(e) => setPhotos(Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS))}
           className="text-[16px]" />

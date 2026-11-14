@@ -26,10 +26,10 @@ ROOM_ID=$(curl -sS -X POST "$API/rest/v1/rooms" -H "apikey: $ANON" -H "$(auth "$
   | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["id"])')
 
 for pair in "$HOST_TOK:$HOST_ID" "$P1_TOK:$P1_ID" "$P2_TOK:$P2_ID"; do
-  tok=${pair%%:*}; uid=${pair##*:}
-  curl -sS -o /dev/null -w "participant %{http_code}\n" -X POST "$API/rest/v1/participants" \
+  tok=${pair%%:*}
+  curl -sS -o /dev/null -w "participant %{http_code}\n" -X POST "$API/rest/v1/rpc/join_room_as" \
     -H "apikey: $ANON" -H "$(auth "$tok")" -H "Content-Type: application/json" \
-    -d "{\"room_id\":\"$ROOM_ID\",\"user_id\":\"$uid\",\"nickname\":\"p\",\"color\":\"#ff8800\"}"
+    -d "{\"p_code\":\"$CODE\",\"p_nickname\":\"p\",\"p_color\":\"#ff8800\"}"
 done
 
 TREASURE_ID=$(curl -sS -X POST "$API/rest/v1/treasures" -H "apikey: $ANON" -H "$(auth "$HOST_TOK")" \

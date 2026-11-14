@@ -53,6 +53,7 @@ export async function createTreasure(input: NewTreasure): Promise<Treasure> {
     if (updateError || !updated) throw updateError ?? new Error('update failed');
     return updated as Treasure;
   } catch {
+    if (paths.length > 0) await supabase.storage.from(PHOTO_BUCKET).remove(paths); // no orphan photos (F5)
     await supabase.from('treasures').delete().eq('id', row.id);
     throw new Error('Не вдалося завантажити фото. Скарб не збережено.');
   }

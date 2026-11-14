@@ -66,7 +66,10 @@ export function openRoomConnection(
     attempt += 1;
     retryTimer = setTimeout(() => {
       retryTimer = null;
-      if (channel) supabase.removeChannel(channel);
+      // Detach before removing: the old channel's CLOSED callback must not schedule another retry (F7).
+      const old = channel;
+      channel = null;
+      if (old) supabase.removeChannel(old);
       connect();
     }, delay);
   }

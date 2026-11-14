@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import MapView, { type OtherPlayer } from '@/components/MapView';
@@ -33,6 +33,27 @@ export default function MapScreen() {
   const geo = useGeolocation();
   const wake = useWakeLock();
   const { treasures, error, reload } = useTreasures(room?.id ?? null);
+  const [copied, setCopied] = useState(false);
+
+  // Re-read the room so a finished game shows up (spec §6.4, D10).
+  const refreshRoom = useCallback(async () => {
+    const found = await joinRoom(code).catch(() => null);
+    if (found) setRoom(found);
+  }, [code]);
+  const refreshAll = useCallback(() => {
+    void reload();
+    void refreshRoom();
+  }, [reload, refreshRoom]);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/r/${code}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const connRef = useRef<RoomConnection | null>(null);
   const names = useRef(new Map<string, PresenceUser>()); // keeps a name after its presence leaves
@@ -76,12 +97,12 @@ export default function MapScreen() {
         for (const u of users) names.current.set(u.user_id, u);
         setPresence(users);
       },
-      onTreasuresChanged: () => { void reload(); },
+      onTreasuresChanged: () => { void refreshAll(); },
       onStatus: setOnline,
     });
     connRef.current = conn;
     return () => { conn.close(); connRef.current = null; };
-  }, [room, me, reload]);
+  }, [room, me, refreshAll]);
 
   // Broadcast own position, throttled (spec §3: once per 2–3 s, only after moving more than 2 m).
   useEffect(() => {
@@ -123,7 +144,7 @@ export default function MapScreen() {
             treasure={selected}
             pos={geo.pos}
             accuracy={geo.accuracy}
-            onResult={() => void reload()}
+            onResult={() => refreshAll()}
           />
         </BottomSheet>
       )}
@@ -147,6 +168,21 @@ export default function MapScreen() {
           online={online || !room}
         />
         {error && <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm text-red-600">{error}</p>}
+        {room?.status === 'finished' && (
+          <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm font-semibold">Гру завершено</p>
+        )}
+        {geo.status === 'denied' && (
+          <p className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm">Увімкніть геолокацію, щоб шукати</p>
+        )}
+        {room && me && room.host_id === me.userId && (
+          <button
+            type="button"
+            onClick={() => void copyLink()}
+            className="mt-2 rounded-xl bg-white/80 px-3 py-1 text-sm font-medium text-blue-600"
+          >
+            {copied ? 'Скопійовано' : 'Скопіювати посилання'}
+          </button>
+        )}
       </div>
     </main>
   );
