@@ -36,7 +36,7 @@ export default function Onboarding({ userId, onSaved }: { userId: string; onSave
       <form className="mt-4 flex flex-col gap-5" onSubmit={(e) => { e.preventDefault(); void save(); }}>
         <input value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={24} placeholder="Нік" autoComplete="nickname" className="dl-field" />
         <fieldset>
-          <legend className="dl-label mb-3">Обери тварину</legend>
+          <legend className="dl-label mb-3">Обери тотем</legend>
           <div className="grid grid-cols-6 gap-2">
             {AVATARS.map((a) => {
               const gone = isTaken(a.key, taken, null);
