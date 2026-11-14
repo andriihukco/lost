@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import CameraOverlay from '@/components/CameraOverlay';
 import { isFoundable, type LatLng } from '@/lib/geo';
 import { bearingDeg, cardinal, formatDistance } from '@/lib/geoFormat';
 import { relativeBearing } from '@/lib/heading';
@@ -35,6 +37,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [camera, setCamera] = useState(false);
 
   useEffect(() => {
     try {
@@ -156,6 +159,14 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
           </button>
         </>
       )}
+
+      {photoUrls.length > 0 && (
+        <button type="button" onClick={() => setCamera(true)} className="dl-btn-secondary">
+          Камера: знайти місце
+        </button>
+      )}
+      {/* Portal: the sheet's transform would otherwise trap the full-screen camera inside it. */}
+      {camera && createPortal(<CameraOverlay photoUrls={photoUrls} onClose={() => setCamera(false)} />, document.body)}
 
       {onRoute && (
         <button type="button" disabled={!pos} onClick={onRoute} className="dl-btn-secondary">
