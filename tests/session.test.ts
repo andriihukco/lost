@@ -23,7 +23,7 @@ test('keeps a valid stored session', async () => {
 
 test('drops a stale session (user no longer exists) and signs in again', async () => {
   auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'old' } } }, error: null });
-  auth.getUser.mockResolvedValue({ data: { user: null }, error: { message: 'User from sub claim does not exist' } });
+  auth.getUser.mockResolvedValue({ data: { user: null }, error: { message: 'User from sub claim does not exist', status: 403 } });
   auth.signOut.mockResolvedValue({ error: null });
   auth.signInAnonymously.mockResolvedValue({ data: { user: { id: 'new' } }, error: null });
   expect(await ensureSession()).toEqual({ userId: 'new' });
@@ -40,4 +40,12 @@ test('reports a clear error when anonymous sign-in fails', async () => {
   auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
   auth.signInAnonymously.mockResolvedValue({ data: { user: null }, error: { message: 'rate limit' } });
   await expect(ensureSession()).rejects.toThrow('Не вдалося створити сесію');
+});
+
+test('a failed check with no server answer (offline) keeps the identity', async () => {
+  auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'old' } } }, error: null });
+  auth.getUser.mockResolvedValue({ data: { user: null }, error: { message: 'Failed to fetch' } });
+  auth.signOut.mockClear();
+  expect(await ensureSession()).toEqual({ userId: 'old' });
+  expect(auth.signOut).not.toHaveBeenCalled();
 });

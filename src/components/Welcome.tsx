@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Icon from '@/components/Icon';
 import type { IconName } from '@/components/iconPaths';
 import { compassPermOf, firstGateStep } from '@/lib/entryGate';
+import { rememberGrant } from '@/lib/grants';
 import { WELCOME_STEPS, type WelcomeStep } from '@/lib/welcome';
 import type { HeadingStatus } from '@/lib/useHeading';
 
@@ -34,6 +35,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
     }
     navigator.geolocation.getCurrentPosition(
       () => {
+        rememberGrant(window.localStorage, 'location');
         setBusy(false);
         setBlocked(null);
         // After location, the compass is next only if it still needs a tap; otherwise the player is in.
@@ -55,6 +57,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
     const result = await onCompass();
     setBusy(false);
     if (firstGateStep(true, 'granted', compassPermOf(result)) === null) {
+      if (result === 'listening') rememberGrant(window.localStorage, 'compass');
       setBlocked(null);
       onDone();
     } else {

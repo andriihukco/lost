@@ -18,6 +18,7 @@ import { isWelcomed, markWelcomed } from '@/lib/welcome';
 import Icon from '@/components/Icon';
 import Splash from '@/components/Splash';
 import { compassPermOf, firstGateStep, type LocationPerm } from '@/lib/entryGate';
+import { effectiveCompass, effectiveLocation, readGrants, rememberGrant, type Grant } from '@/lib/grants';
 import ProfileTab from '@/components/ProfileTab';
 import TabBar, { type Tab } from '@/components/TabBar';
 import TreasureSheetContent from '@/components/TreasureSheetContent';
@@ -65,6 +66,7 @@ export default function Game() {
   const [locPerm, setLocPerm] = useState<LocationPerm>('unknown');
   const [entered, setEntered] = useState(false); // the entry gate was passed in this visit
   const [mapKind, setMapKind] = useState<MapKind>('outdoor');
+  const [grants, setGrants] = useState<Partial<Record<Grant, boolean>>>({}); // permissions granted in this browser before
   const [marks, setMarks] = useState<MapMark[]>([]); // admin warnings and notes, shown on the map only
   const [mapView, setMapView] = useState({ lat: 49.8419, lng: 24.0315, zoom: 15 }); // the area in view, for the map-type previews
   const [selectedMark, setSelectedMark] = useState<MapMark | null>(null);
@@ -75,7 +77,10 @@ export default function Game() {
   const geo = useGeolocation(welcomed === true);
   const compass = useHeading();
   // The entry gate: a first visit, or a returning player with a missing permission, must pass it before the map.
-  const gateStep = welcomed === null || entered ? null : firstGateStep(welcomed, locPerm, compassPermOf(compass.status));
+  // A permission granted before is not asked for again (until the site's data is cleared).
+  const gateStep = welcomed === null || entered
+    ? null
+    : firstGateStep(welcomed, effectiveLocation(locPerm, !!grants.location), effectiveCompass(compassPermOf(compass.status), !!grants.compass));
   const wake = useWakeLock();
   const { treasures, error, reload } = useTreasures();
   // Compass if the browser has one (phones), otherwise the GPS course while moving.
@@ -135,6 +140,7 @@ export default function Game() {
     setWelcomed(isWelcomed(window.localStorage));
     setInApp(detectInApp(navigator.userAgent));
     setMapKind(loadMapKind(window.localStorage));
+    setGrants(readGrants(window.localStorage));
   }, []);
 
   // Map marks load with the page and refresh every minute (they are few and change rarely).
@@ -176,6 +182,29 @@ export default function Game() {
     }
     setOfflinePrompt(false);
   }, []);
+
+  // Remember what works: a location fix and a compass reading mean the permission is granted in this browser.
+  useEffect(() => {
+    if (geo.status !== 'ok') return;
+    rememberGrant(window.localStorage, 'location');
+    setGrants((g) => ({ ...g, location: true }));
+  }, [geo.status]);
+  useEffect(() => {
+    if (compass.status !== 'listening') return;
+    rememberGrant(window.localStorage, 'compass');
+    setGrants((g) => ({ ...g, compass: true }));
+  }, [compass.status]);
+
+  // iOS asks for the compass only from a tap, on every visit. When it was granted before, the first tap
+  // anywhere on the screen turns it on: no button, no prompt. (Apple does not allow asking without a tap.)
+  const enableCompassRef = useRef(compass.requestPermission);
+  enableCompassRef.current = compass.requestPermission;
+  useEffect(() => {
+    if (!grants.compass || compass.status !== 'needs-permission') return;
+    const onTap = () => { void enableCompassRef.current(); };
+    window.addEventListener('pointerdown', onTap, { once: true });
+    return () => window.removeEventListener('pointerdown', onTap);
+  }, [grants.compass, compass.status]);
 
   // Location permission as the browser reports it (a returning player who revoked it is sent back to the gate).
   useEffect(() => {
