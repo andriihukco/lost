@@ -3,7 +3,7 @@
 import { type CSSProperties, useEffect, useRef } from 'react';
 import { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { LatLng } from '@/lib/geo';
+import { haversineM, type LatLng } from '@/lib/geo';
 import { avatarEmoji } from '@/lib/avatars';
 import { configureMapLibre, reserveStyle } from '@/lib/mapSetup';
 import { isBusinessLayer, type MapKind, styleFor } from '@/lib/mapStyle';
@@ -287,6 +287,8 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     if (b) map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 40, duration: 0 });
   }, [fitTo]);
 
+  // The route key the camera last framed (see the route effect). Reset when the route is closed.
+  const framedRoute = useRef<string | null>(null);
   // Walking route: a line along the path and numbered stops. Re-applied after every style load.
   useEffect(() => {
     routeRef.current = route;
@@ -295,7 +297,10 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     if (!map) return;
     for (const m of stopEls.current.values()) m.remove();
     stopEls.current.clear();
-    if (!route) return;
+    if (!route) {
+      framedRoute.current = null;
+      return;
+    }
     for (const st of route.stops) {
       const el = document.createElement('div');
       el.className = 'dl-stop';
@@ -303,17 +308,24 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       el.setAttribute('aria-label', `Точка ${st.index}`);
       stopEls.current.set(st.id, new Marker({ element: el, anchor: 'center' }).setLngLat([st.lng, st.lat]).addTo(map));
     }
-    if (route.coords.length > 1) {
-      let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-      for (const c of route.coords) {
-        minLng = Math.min(minLng, c.lng); maxLng = Math.max(maxLng, c.lng);
-        minLat = Math.min(minLat, c.lat); maxLat = Math.max(maxLat, c.lat);
-      }
-      map.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
-        padding: { top: TOP_INSET + 24, bottom: insetRef.current + 24, left: 40, right: 40 },
-        duration: 600,
-      });
+    // The camera frames the route once, when it is built: from me to the farthest stop. The route object is rebuilt on
+    // every render (GPS, compass), and the walking path arrives later, so neither may move the camera again.
+    const key = route.stops.map((s) => s.id).join(',');
+    if (key === framedRoute.current || route.stops.length === 0) return;
+    framedRoute.current = key;
+    const me = meRef.current;
+    let points: LatLng[] = route.stops;
+    if (me) {
+      const farthest = route.stops.reduce((best, s) => (haversineM(me, s) > haversineM(me, best) ? s : best), route.stops[0]);
+      points = [me, farthest];
     }
+    const b = viewBounds(points, 0);
+    if (!b) return;
+    map.fitBounds([[b.west, b.south], [b.east, b.north]], {
+      padding: { top: TOP_INSET + 24, bottom: insetRef.current + 24, left: 40, right: 40 },
+      maxZoom: 17,
+      duration: 600,
+    });
   }, [route]);
 
   applyRouteRef.current = () => {
