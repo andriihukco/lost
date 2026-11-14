@@ -11,6 +11,10 @@ import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import { formatDistance } from '@/lib/geoFormat';
 import { edgePoint, type Box } from '@/lib/offscreen';
 import type { Treasure } from '@/lib/useTreasures';
+import type { GeoJSONSource } from 'maplibre-gl';
+
+export type RouteStop = { id: string; lat: number; lng: number; index: number };
+export type RouteView = { coords: LatLng[]; stops: RouteStop[] };
 
 export type OtherPlayer = {
   id: string;
@@ -32,10 +36,13 @@ type Props = {
   others: OtherPlayer[];
   onSelectTreasure?: (t: Treasure) => void;
   bottomInset?: number; // px covered by the tab bar and the nearby notice
+  route?: RouteView | null;
+  focusId?: string | null;
+  focusNonce?: number;
 };
 
 // Room kept clear at the top for the status card and chips.
-const TOP_INSET = 170;
+const TOP_INSET = 72;
 const SIDE_INSET = 16;
 
 // Player: emoji in a circle, a tip that points where the player faces, and the name below.
@@ -87,7 +94,7 @@ function buildPin(): { el: HTMLButtonElement; label: HTMLSpanElement } {
 type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
 type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96 }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
@@ -101,6 +108,9 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
   const distancesRef = useRef(distances);
   const insetRef = useRef(bottomInset);
   const updateRef = useRef<() => void>(() => {});
+  const routeRef = useRef<RouteView | null>(route);
+  const applyRouteRef = useRef<() => void>(() => {});
+  const stopEls = useRef(new Map<string, Marker>());
   const selectRef = useRef(onSelectTreasure); // read through a ref: a new callback must not rebuild pins
   useEffect(() => {
     selectRef.current = onSelectTreasure;
@@ -147,6 +157,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       }
     };
     map.on('style.load', hideBusinesses);
+    map.on('style.load', () => applyRouteRef.current()); // a new style drops our route layers
     // Off-screen treasures are re-placed while the map moves.
     map.on('move', () => updateRef.current());
     map.on('resize', () => updateRef.current());
@@ -164,6 +175,71 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     };
   }, []);
 
+
+
+  // Walking route: a line along the path and numbered stops. Re-applied after every style load.
+  useEffect(() => {
+    routeRef.current = route;
+    applyRouteRef.current();
+    const map = mapRef.current;
+    if (!map) return;
+    for (const m of stopEls.current.values()) m.remove();
+    stopEls.current.clear();
+    if (!route) return;
+    for (const st of route.stops) {
+      const el = document.createElement('div');
+      el.className = 'dl-stop';
+      el.textContent = String(st.index);
+      el.setAttribute('aria-label', `Точка ${st.index}`);
+      stopEls.current.set(st.id, new Marker({ element: el, anchor: 'center' }).setLngLat([st.lng, st.lat]).addTo(map));
+    }
+    if (route.coords.length > 1) {
+      let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+      for (const c of route.coords) {
+        minLng = Math.min(minLng, c.lng); maxLng = Math.max(maxLng, c.lng);
+        minLat = Math.min(minLat, c.lat); maxLat = Math.max(maxLat, c.lat);
+      }
+      map.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
+        padding: { top: TOP_INSET + 24, bottom: insetRef.current + 24, left: 40, right: 40 },
+        duration: 600,
+      });
+    }
+  }, [route]);
+
+  applyRouteRef.current = () => {
+    const map = mapRef.current;
+    if (!map || !map.getStyle()) return;
+    const r = routeRef.current;
+    const data = {
+      type: 'FeatureCollection' as const,
+      features: r && r.coords.length > 1
+        ? [{ type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: r.coords.map((c) => [c.lng, c.lat]) } }]
+        : [],
+    };
+    const src = map.getSource('route') as GeoJSONSource | undefined;
+    if (src) {
+      src.setData(data);
+    } else {
+      map.addSource('route', { type: 'geojson', data });
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#1cb0f6', 'line-width': 6, 'line-opacity': 0.95 },
+      });
+    }
+  };
+
+  // Show a treasure from the Знахідки tab: fly the map to it.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focusId) return;
+    const pin = pinMap.current.get(focusId);
+    if (!pin) return;
+    const { lng, lat } = pin.treasure;
+    map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 16), duration: 700, padding: { top: TOP_INSET, bottom: insetRef.current, left: 0, right: 0 } });
+  }, [focusNonce, focusId]);
 
   // Off-screen treasures: a marker on the screen edge, turned toward the treasure, with its distance.
   // Visible treasures are not drawn here; their pins are on the map.

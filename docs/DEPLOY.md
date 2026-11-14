@@ -138,6 +138,14 @@ Notes:
 
 ---
 
+## 5a. Routes along paths (OpenRouteService, optional)
+
+Walking routes along paths and forest roads use OpenRouteService's *foot-hiking* profile. The key is **server-only**: it is read by `src/app/api/route/route.ts` and never sent to the browser.
+
+1. Create a free account at https://openrouteservice.org → Dashboard → create a token.
+2. Add it as `ORS_API_KEY` (no `NEXT_PUBLIC_` prefix) in Vercel (Production and Preview) and in `.env.local` for local work.
+3. Redeploy. Without the key, routes still work as straight lines, and the route card says so.
+
 ## 6. Check the live site
 
 Use real phones over the HTTPS URL:

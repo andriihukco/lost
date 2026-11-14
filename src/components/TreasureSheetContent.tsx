@@ -17,6 +17,7 @@ type Props = {
   distanceM: number | null;
   heading: number | null;
   onResult: (status: FoundStatus) => void;
+  onRoute?: () => void; // build a walking route to this treasure
 };
 
 const ERROR_TEXT: Record<Exclude<FoundStatus, 'won'>, string> = {
@@ -26,7 +27,7 @@ const ERROR_TEXT: Record<Exclude<FoundStatus, 'won'>, string> = {
 };
 
 // Two steps: "Я знайшов місце" (you are at the spot), then "Я знайшов скарб" (you have the treasure).
-export default function TreasureSheetContent({ treasure, pos, accuracy, distanceM, heading, onResult }: Props) {
+export default function TreasureSheetContent({ treasure, pos, accuracy, distanceM, heading, onResult, onRoute }: Props) {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [revealed, setRevealed] = useState(false); // spoiler: stays blurred until tapped
   const [arrived, setArrived] = useState(false);
@@ -154,6 +155,12 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
             Я знайшов скарб
           </button>
         </>
+      )}
+
+      {onRoute && (
+        <button type="button" disabled={!pos} onClick={onRoute} className="dl-btn-secondary">
+          {pos ? 'Маршрут сюди' : 'Потрібен GPS для маршруту'}
+        </button>
       )}
 
       {error && <p role="alert" className="text-sm font-bold text-[var(--danger)]">{error}</p>}

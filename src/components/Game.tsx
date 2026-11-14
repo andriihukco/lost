@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BottomSheet from '@/components/BottomSheet';
 import FindsTab from '@/components/FindsTab';
-import MapView, { type OtherPlayer } from '@/components/MapView';
+import MapView, { type OtherPlayer, type RouteView } from '@/components/MapView';
 import Onboarding from '@/components/Onboarding';
 import ProfileTab from '@/components/ProfileTab';
-import StatusBar from '@/components/StatusBar';
 import TabBar, { type Tab } from '@/components/TabBar';
 import TreasureSheetContent from '@/components/TreasureSheetContent';
 import { haversineM, type LatLng } from '@/lib/geo';
+import { optimalOrder, pathLengthM } from '@/lib/routePlan';
+import { fetchWalkingRoute, straightRoute, type WalkRoute } from '@/lib/routing';
+import { formatDistance } from '@/lib/geoFormat';
 import { nearestWithin, NEARBY_M } from '@/lib/nearby';
 import { shouldLogLocation } from '@/lib/locationLog';
 import { saveLocation } from '@/lib/locationStore';
@@ -24,6 +26,7 @@ import { useTreasures, type Treasure } from '@/lib/useTreasures';
 import { useWakeLock } from '@/lib/useWakeLock';
 
 type Position = LatLng & { seenAt: number; heading: number | null };
+type RouteState = { stops: Treasure[]; walk: WalkRoute; pending: boolean };
 type Toast = { id: number; text: string };
 
 // Three tabs, iOS-style: the map, my finds, my profile. The sheet and the nearby notice sit above the tab bar.
@@ -38,6 +41,8 @@ export default function Game() {
   const [presence, setPresence] = useState<PresenceUser[]>([]);
   const [positions, setPositions] = useState<Record<string, Position>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [route, setRoute] = useState<RouteState | null>(null);
+  const [focus, setFocus] = useState<{ id: string | null; nonce: number }>({ id: null, nonce: 0 });
   const [toasts, setToasts] = useState<Toast[]>([]);
   const geo = useGeolocation();
   const compass = useHeading();
@@ -64,6 +69,33 @@ export default function Game() {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, text }].slice(-3));
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4500);
+  }, []);
+
+  // Best order for the chosen treasures from where I am, then the walk along paths (straight line as fallback).
+  const planRoute = useCallback(async (ids: string[], list: Treasure[]) => {
+    if (!geo.pos) {
+      pushToast('Потрібен GPS, щоб побудувати маршрут');
+      return;
+    }
+    const chosen = list.filter((t) => ids.includes(t.id));
+    if (chosen.length === 0) return;
+    const start = geo.pos;
+    const order = optimalOrder(start, chosen.map((t) => ({ lat: t.lat, lng: t.lng })));
+    const ordered = order.map((i) => chosen[i]);
+    const pts = ordered.map((t) => ({ lat: t.lat, lng: t.lng }));
+    const straight = [start, ...pts];
+    setRoute({ stops: ordered, walk: straightRoute(straight, pathLengthM(start, pts)), pending: true });
+    setTab('map');
+    setSelectedId(null);
+    const walk = await fetchWalkingRoute(straight);
+    setRoute((prev) => (prev && prev.stops === ordered ? { ...prev, walk: walk ?? prev.walk, pending: false } : prev));
+  }, [geo.pos, pushToast]);
+
+  // Show a treasure on the map (from the Знахідки tab): switch to the map and fly to it.
+  const showOnMap = useCallback((id: string) => {
+    setTab('map');
+    setSelectedId(null);
+    setFocus((f) => ({ id, nonce: f.nonce + 1 }));
   }, []);
 
   useEffect(() => {
@@ -178,6 +210,15 @@ export default function Game() {
   if (!ready) return <main className="p-6 text-[17px] text-[var(--muted)]">Завантаження…</main>;
   if (failed) return <main className="p-6 text-[17px] font-semibold text-[var(--danger)]">{failed}</main>;
 
+  const nameRecord = Object.fromEntries([...names.current].map(([id, v]) => [id, v.nickname]));
+  const routeView: RouteView | null = route
+    ? {
+        coords: route.walk.coords,
+        stops: route.stops.map((t, i) => ({ id: t.id, lat: t.lat, lng: t.lng, index: i + 1 })),
+      }
+    : null;
+  const gpsOk = geo.status === 'ok';
+
   return (
     <main className="relative h-dvh w-full overflow-hidden">
       <MapView
@@ -190,12 +231,24 @@ export default function Game() {
         others={others}
         onSelectTreasure={selectTreasure}
         bottomInset={tabBarH + 12}
+        route={routeView}
+        focusId={focus.id}
+        focusNonce={focus.nonce}
       />
 
       {tab !== 'map' && player && (
         <div className="absolute inset-0 z-20 overflow-y-auto bg-[var(--page)]">
           {tab === 'finds' ? (
-            <FindsTab finds={myFinds} onChanged={() => { void reload(); }} />
+            <FindsTab
+              treasures={treasures}
+              myId={player.user_id}
+              names={nameRecord}
+              distances={distances}
+              gpsReady={gpsOk}
+              onShow={showOnMap}
+              onRoute={(ids) => void planRoute(ids, treasures)}
+              onChanged={() => { void reload(); }}
+            />
           ) : (
             <ProfileTab player={player} onSaved={setPlayer} />
           )}
@@ -203,26 +256,18 @@ export default function Game() {
       )}
 
       {tab === 'map' && (
-        <div className="absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-3 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
-          <StatusBar
-            title="Lost"
-            foundCount={foundCount}
-            total={treasures.length}
-            gps={geo.status}
-            accuracy={geo.accuracy}
-            wakeActive={wake.active}
-            wakeSupported={wake.supported}
-            online={online || !player}
-          />
+        <div className="absolute inset-x-0 top-0 z-10 flex flex-col items-start gap-2 p-3 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
+          {!gpsOk && (
+            <span className="dl-tag px-3 py-1.5 text-[13px]">
+              {geo.status === 'denied' ? 'GPS вимкнено · увімкніть геолокацію' : 'GPS: шукаю сигнал…'}
+            </span>
+          )}
           {compass.status === 'needs-permission' && (
-            <button type="button" onClick={() => void compass.requestPermission()} className="dl-tag self-start px-4 py-2 text-[15px]">
+            <button type="button" onClick={() => void compass.requestPermission()} className="dl-tag px-4 py-2 text-[15px]">
               Увімкнути компас
             </button>
           )}
           {allFound && <p className="dl-card px-4 py-3 text-[15px] font-bold">Усі скарби знайдено</p>}
-          {geo.status === 'denied' && (
-            <p className="dl-card px-4 py-3 text-[15px] font-semibold text-[var(--danger)]">Увімкніть геолокацію, щоб шукати</p>
-          )}
           {error && <p className="dl-card px-4 py-3 text-[15px] font-semibold text-[var(--danger)]">{error}</p>}
           {toasts.map((t) => (
             <p key={t.id} role="status" className="rounded-2xl bg-[var(--green)] px-4 py-3 text-[15px] font-bold text-white shadow-[0_4px_0_var(--green-deep)]">
@@ -232,7 +277,35 @@ export default function Game() {
         </div>
       )}
 
-      {tab === 'map' && player && nearby && !showSheet && (
+      {tab === 'map' && route && (
+        <div style={{ bottom: `calc(${tabBarH}px + 12px)` }} className="dl-card absolute inset-x-3 z-10 flex flex-col gap-2 px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">
+                Маршрут · {route.stops.length} {route.stops.length === 1 ? 'точка' : 'точок'}
+              </p>
+              <p className="text-[17px] font-extrabold tabular-nums">
+                {route.pending ? 'Прокладаю…' : `${formatDistance(route.walk.distanceM)} · ~${Math.max(1, Math.round(route.walk.durationS / 60))} хв`}
+              </p>
+              <p className="text-[12px] font-semibold text-[var(--muted)]">
+                {route.walk.source === 'paths' ? 'Стежками й лісовими дорогами' : 'По прямій (маршрут стежками недоступний)'}
+              </p>
+            </div>
+            <button type="button" onClick={() => setRoute(null)} className="dl-btn-secondary !w-auto !px-4 !py-2 !text-[15px]">
+              Закрити
+            </button>
+          </div>
+          <ol className="flex flex-wrap gap-2 text-[13px] font-semibold">
+            {route.stops.map((t, i) => (
+              <li key={t.id}>
+                <button type="button" onClick={() => showOnMap(t.id)} className="dl-tag px-2.5 py-1">{i + 1}. {t.title}</button>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {tab === 'map' && player && nearby && !showSheet && !route && (
         <button
           type="button"
           onClick={() => setSelectedId(nearby.treasure.id)}
@@ -258,6 +331,7 @@ export default function Game() {
             accuracy={geo.accuracy}
             distanceM={distances[selected.id] ?? null}
             heading={myHeading}
+            onRoute={() => void planRoute([selected.id], treasures)}
             onResult={(status) => {
               void reload();
               if (status === 'won') {
