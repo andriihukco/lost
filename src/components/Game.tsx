@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TreasureModal from '@/components/TreasureModal';
 import MapKindPicker from '@/components/MapKindPicker';
 import { listMapMarks, type MapMark } from '@/lib/mapMarks';
+import OfflineMap from '@/components/OfflineMap';
 import { loadMapKind, saveMapKind } from '@/lib/mapKind';
 import type { MapKind } from '@/lib/mapStyle';
 import { AnimatePresence } from 'motion/react';
@@ -67,6 +68,7 @@ export default function Game() {
   const [marks, setMarks] = useState<MapMark[]>([]); // admin warnings and notes, shown on the map only
   const [mapView, setMapView] = useState({ lat: 49.8419, lng: 24.0315, zoom: 15 }); // the area in view, for the map-type previews
   const [selectedMark, setSelectedMark] = useState<MapMark | null>(null);
+  const [offlinePrompt, setOfflinePrompt] = useState(false); // first login: offer to save the map for offline use
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
   const [recenter, setRecenter] = useState(0);
@@ -144,6 +146,36 @@ export default function Game() {
     const id = setInterval(load, 60_000);
     return () => { alive = false; clearInterval(id); };
   }, [ready]);
+
+  // The places the offline map must cover: treasures, marks, and where the player is now.
+  const offlinePoints = useMemo(
+    () => [
+      ...treasures.map((t) => ({ lat: t.lat, lng: t.lng })),
+      ...marks.map((m) => ({ lat: m.lat, lng: m.lng })),
+      ...(geo.pos ? [geo.pos] : []),
+    ],
+    [treasures, marks, geo.pos],
+  );
+  const offlineCount = offlinePoints.length;
+
+  // Once per browser, after the first sign-in, the map is offered for offline use.
+  useEffect(() => {
+    if (!player || !ready || offlineCount === 0) return;
+    try {
+      if (window.localStorage.getItem('lost.offlinePrompted') === '1') return;
+    } catch {
+      // storage blocked: the offer shows again next visit
+    }
+    setOfflinePrompt(true);
+  }, [player, ready, offlineCount]);
+  const dismissOfflinePrompt = useCallback(() => {
+    try {
+      window.localStorage.setItem('lost.offlinePrompted', '1');
+    } catch {
+      // storage blocked
+    }
+    setOfflinePrompt(false);
+  }, []);
 
   // Location permission as the browser reports it (a returning player who revoked it is sent back to the gate).
   useEffect(() => {
@@ -336,7 +368,7 @@ export default function Game() {
             />
           )}
           {tab === 'rating' && <RatingTab myId={player.user_id} />}
-          {tab === 'profile' && <ProfileTab player={player} onSaved={setPlayer} />}
+          {tab === 'profile' && <ProfileTab player={player} onSaved={setPlayer} offlinePoints={offlinePoints} />}
         </div>
       )}
 
@@ -410,6 +442,12 @@ export default function Game() {
               </li>
             ))}
           </ol>
+        </div>
+      )}
+
+      {offlinePrompt && tab === 'map' && (
+        <div style={{ bottom: `calc(${tabBarH}px + 12px)` }} className="dl-card absolute inset-x-3 z-30">
+          <OfflineMap points={offlinePoints} variant="prompt" onDone={dismissOfflinePrompt} onLater={dismissOfflinePrompt} />
         </div>
       )}
 

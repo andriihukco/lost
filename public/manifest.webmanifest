@@ -1,0 +1,12 @@
+{
+  "name": "Lost",
+  "short_name": "Lost",
+  "description": "Спільний пошук схованих скарбів",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f7f1",
+  "theme_color": "#f4f7f1",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

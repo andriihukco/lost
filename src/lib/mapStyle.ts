@@ -6,6 +6,9 @@ import type { StyleSpecification } from 'maplibre-gl';
 // clinics, so they are not used here.
 export const RESERVE_ATTRIBUTION = 'Маршрути: Waymarked Trails · © OpenStreetMap contributors';
 
+// The hiking-route overlay (raster tiles, routes only).
+export const ROUTES_URL = 'https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png';
+
 const BUSINESS = /poi|shop|amenity|office|retail|commercial|transit|station|stop|cafe|restaurant|bank|hospital|school|parking|fuel|pharmacy|hotel|place/i;
 
 // True for layers that show businesses or places (shops, cafés, offices, transit, city and town labels).
@@ -26,7 +29,7 @@ export function reserveStyle(): StyleSpecification {
     sources: {
       routes: {
         type: 'raster',
-        tiles: ['https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png'],
+        tiles: [ROUTES_URL],
         tileSize: 256,
         attribution: RESERVE_ATTRIBUTION,
         maxzoom: 18,
@@ -60,12 +63,15 @@ export function imageryStyle(withRoutes: boolean): StyleSpecification {
   };
   const layers: StyleSpecification['layers'] = [
     { id: 'background', type: 'background', paint: { 'background-color': '#dfe6dc' } },
-    { id: 'imagery', type: 'raster', source: 'imagery' },
+    // The hybrid view gets a little more contrast, so roads and field edges read better over the imagery.
+    withRoutes
+      ? { id: 'imagery', type: 'raster', source: 'imagery', paint: { 'raster-contrast': 0.3, 'raster-saturation': 0.1 } }
+      : { id: 'imagery', type: 'raster', source: 'imagery' },
   ];
   if (withRoutes) {
     sources.routes = {
       type: 'raster',
-      tiles: ['https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png'],
+      tiles: [ROUTES_URL],
       tileSize: 256,
       attribution: RESERVE_ATTRIBUTION,
       maxzoom: 18,

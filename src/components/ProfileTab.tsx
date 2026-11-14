@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import NicknamePicker from '@/components/NicknamePicker';
 import { avatarEmoji, nicknameFor, type AvatarKey } from '@/lib/avatars';
 import { getAllPlayers, savePlayer, type Player } from '@/lib/player';
+import OfflineMap from '@/components/OfflineMap';
+import type { LatLng } from '@/lib/geo';
 
 // "Профіль" tab: the player's animal and nickname. Another free animal can be chosen; its nickname comes with it.
-export default function ProfileTab({ player, onSaved }: { player: Player; onSaved: (p: Player) => void }) {
+export default function ProfileTab({ player, onSaved, offlinePoints }: { player: Player; onSaved: (p: Player) => void; offlinePoints: LatLng[] }) {
   const [avatar, setAvatar] = useState<AvatarKey>(player.avatar);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -52,6 +54,11 @@ export default function ProfileTab({ player, onSaved }: { player: Player; onSave
         {busy ? 'Зберігаємо…' : 'Зберегти зміни'}
       </button>
       {message && <p role="status" className="mt-3 text-center text-[15px] font-semibold text-[var(--green-deep)]">{message}</p>}
+
+      <p className="ios-section mt-8">Офлайн</p>
+      <div className="dl-card mt-2 p-4">
+        <OfflineMap points={offlinePoints} variant="card" />
+      </div>
     </div>
   );
 }
