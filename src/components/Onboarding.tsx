@@ -56,11 +56,11 @@ export default function Onboarding({
       <div className={sheet}>
         <div className={panel}>
           <div className="mx-auto max-w-md">
-            <p className="text-[13px] font-bold uppercase tracking-wide text-[var(--muted)]">Крок 2 з 2</p>
-            <h2 className="dl-title mt-1 text-3xl">Майже готово</h2>
-            <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">
-              Збережіть мапу, щоб бачити скарби й шлях без зв&apos;язку. Можна зробити це й пізніше, у профілі.
-            </p>
+            <div role="img" aria-label="Крок 2 з 2" className="flex gap-1.5">
+              <span className="h-1 flex-1 rounded-full bg-[var(--green)]" />
+              <span className="h-1 flex-1 rounded-full bg-[var(--green)]" />
+            </div>
+            <h2 className="dl-title mt-5 text-3xl">Майже готово</h2>
             <div className="dl-card mt-5">
               <OfflineMap points={points} variant="prompt" onDone={onFinish} onLater={onFinish} />
             </div>
@@ -76,8 +76,11 @@ export default function Onboarding({
     <div className={sheet}>
       <div className={panel}>
         <div className="mx-auto max-w-md">
-          <p className="text-[13px] font-bold uppercase tracking-wide text-[var(--muted)]">Крок 1 з 2</p>
-          <h2 className="dl-title mt-1 text-3xl">Обери свій нік</h2>
+          <div role="img" aria-label="Крок 1 з 2" className="flex gap-1.5">
+            <span className="h-1 flex-1 rounded-full bg-[var(--green)]" />
+            <span className="h-1 flex-1 rounded-full bg-[var(--line)]" />
+          </div>
+          <h2 className="dl-title mt-5 text-3xl">Обери свій нік</h2>
           <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Кожна тварина має свій нік. Оберіть тварину, і її нік стане вашим.</p>
           <form className="mt-5 flex flex-col gap-5 pb-24" onSubmit={(e) => { e.preventDefault(); void save(); }}>
             <NicknamePicker value={avatar} taken={taken} onPick={setAvatar} />
