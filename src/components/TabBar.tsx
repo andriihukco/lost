@@ -7,7 +7,7 @@ export type Tab = 'map' | 'finds' | 'rating' | 'profile';
 
 const ITEMS: PillItem<Tab>[] = [
   { id: 'map', label: 'Карта', icon: 'map' },
-  { id: 'finds', label: 'Знахідки', icon: 'diamond_shine' },
+  { id: 'finds', label: 'Знахідки', icon: 'map_pin_heart' },
   { id: 'rating', label: 'Рейтинг', icon: 'trophy' },
   { id: 'profile', label: 'Профіль', icon: 'person' },
 ];
