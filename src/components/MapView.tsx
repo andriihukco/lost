@@ -203,5 +203,11 @@ export default function MapView({ treasures, distances, me, meAvatar, others, on
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  return <div ref={container} className="absolute inset-0" />;
+  // MapLibre's stylesheet makes its own container position:relative, which would override "absolute inset-0"
+  // and collapse the map to 0 px. A wrapper keeps the sizing; the map fills it.
+  return (
+    <div className="absolute inset-0">
+      <div ref={container} className="h-full w-full" />
+    </div>
+  );
 }
