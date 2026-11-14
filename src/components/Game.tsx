@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TreasureModal from '@/components/TreasureModal';
 import MapKindPicker from '@/components/MapKindPicker';
 import { listMapMarks, type MapMark } from '@/lib/mapMarks';
-import OfflineMap from '@/components/OfflineMap';
 import { loadMapKind, saveMapKind } from '@/lib/mapKind';
 import type { MapKind } from '@/lib/mapStyle';
 import { AnimatePresence } from 'motion/react';
@@ -71,7 +70,7 @@ export default function Game() {
   const [marks, setMarks] = useState<MapMark[]>([]); // admin warnings and notes, shown on the map only
   const [mapView, setMapView] = useState({ lat: 49.8419, lng: 24.0315, zoom: 15 }); // the area in view, for the map-type previews
   const [selectedMark, setSelectedMark] = useState<MapMark | null>(null);
-  const [offlinePrompt, setOfflinePrompt] = useState(false); // first login: offer to save the map for offline use
+  const [onboardingMap, setOnboardingMap] = useState(false); // after the nickname: the offline-map step of onboarding
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
   const [recenter, setRecenter] = useState(0);
@@ -169,26 +168,7 @@ export default function Game() {
     ],
     [treasures, marks, geo.pos],
   );
-  const offlineCount = offlinePoints.length;
 
-  // Once per browser, after the first sign-in, the map is offered for offline use.
-  useEffect(() => {
-    if (!player || !ready || offlineCount === 0) return;
-    try {
-      if (window.localStorage.getItem('lost.offlinePrompted') === '1') return;
-    } catch {
-      // storage blocked: the offer shows again next visit
-    }
-    setOfflinePrompt(true);
-  }, [player, ready, offlineCount]);
-  const dismissOfflinePrompt = useCallback(() => {
-    try {
-      window.localStorage.setItem('lost.offlinePrompted', '1');
-    } catch {
-      // storage blocked
-    }
-    setOfflinePrompt(false);
-  }, []);
 
   // Remember what works: a location fix and a compass reading mean the permission is granted in this browser.
   useEffect(() => {
@@ -481,11 +461,6 @@ export default function Game() {
         </div>
       )}
 
-      {offlinePrompt && tab === 'map' && (
-        <div style={{ bottom: `calc(${tabBarH}px + 12px)` }} className="dl-card absolute inset-x-3 z-30">
-          <OfflineMap points={offlinePoints} variant="prompt" onDone={dismissOfflinePrompt} onLater={dismissOfflinePrompt} />
-        </div>
-      )}
 
       {tab === 'map' && selectedMark && (
         <div
@@ -558,7 +533,16 @@ export default function Game() {
         />
       )}
 
-      {ready && userId && !player && welcomed === true && <Onboarding userId={userId} onSaved={setPlayer} />}
+      {/* New identity (first visit, or the player was removed by an admin): nickname, then the offline map. */}
+      {ready && userId && welcomed === true && (!player || onboardingMap) && (
+        <Onboarding
+          userId={userId}
+          player={player}
+          points={offlinePoints}
+          onSaved={(p) => { setPlayer(p); setOnboardingMap(true); }}
+          onFinish={() => setOnboardingMap(false)}
+        />
+      )}
     </main>
   );
 }
