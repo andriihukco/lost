@@ -90,23 +90,33 @@ export default function TreasureManager() {
           const open = selectedId === t.id;
           return (
             <li key={t.id} className="dl-card overflow-hidden">
-              <button
-                type="button"
-                aria-expanded={open}
-                onClick={() => setSelectedId(open ? null : t.id)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left"
-              >
-                <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-2xl">{pinOrDefault(t.pin_emoji)}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[16px] font-bold">{t.title}</span>
-                  <span className="block truncate text-[13px] font-semibold text-[var(--muted)]">
-                    {t.is_found ? `Знайдено: ${names[t.found_by ?? ''] ?? 'гравець'}${t.found_manual ? ' · вручну' : ''}` : 'На карті'}
+              <div className="flex items-center gap-2 p-2">
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  onClick={() => setSelectedId(open ? null : t.id)}
+                  className="flex min-h-[56px] min-w-0 flex-1 items-center gap-3 rounded-2xl px-2 py-1 text-left"
+                >
+                  <span aria-hidden className="grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-[var(--green)] bg-[var(--paper)] text-2xl">
+                    {pinOrDefault(t.pin_emoji)}
                   </span>
-                </span>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${t.is_found ? 'bg-[var(--line)] text-[var(--muted)]' : 'bg-[var(--green-soft)] text-[var(--green-deep)]'}`}>
-                  {t.is_found ? 'знайдено' : 'активний'}
-                </span>
-              </button>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[16px] font-bold leading-tight">{t.title}</span>
+                    <span className={`mt-0.5 block truncate text-[13px] font-semibold ${t.is_found ? 'text-[var(--muted)]' : 'text-[var(--green-deep)]'}`}>
+                      {t.is_found ? `Знайдено: ${names[t.found_by ?? ''] ?? 'гравець'}${t.found_manual ? ' · вручну' : ''}` : 'На карті'}
+                    </span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Редагувати «${t.title}»`}
+                  aria-expanded={open}
+                  onClick={() => setSelectedId(open ? null : t.id)}
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-[var(--green-deep)]"
+                >
+                  <Icon name="edit" size={20} />
+                </button>
+              </div>
               {open && (
                 <div className="border-t border-[var(--line)] px-4 pb-4">
                   <TreasureEditor
