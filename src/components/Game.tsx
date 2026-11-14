@@ -189,6 +189,7 @@ export default function Game() {
         meHeading={myHeading}
         others={others}
         onSelectTreasure={selectTreasure}
+        bottomInset={tabBarH + 12}
       />
 
       {tab !== 'map' && player && (

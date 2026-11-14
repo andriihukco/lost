@@ -9,6 +9,7 @@ import { configureMapLibre, mapStyle, reserveStyle } from '@/lib/mapSetup';
 import { isBusinessLayer } from '@/lib/mapStyle';
 import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import { formatDistance } from '@/lib/geoFormat';
+import { edgePoint, type Box } from '@/lib/offscreen';
 import type { Treasure } from '@/lib/useTreasures';
 
 export type OtherPlayer = {
@@ -30,7 +31,12 @@ type Props = {
   meHeading: number | null;
   others: OtherPlayer[];
   onSelectTreasure?: (t: Treasure) => void;
+  bottomInset?: number; // px covered by the tab bar and the nearby notice
 };
+
+// Room kept clear at the top for the status card and chips.
+const TOP_INSET = 170;
+const SIDE_INSET = 16;
 
 // Player: emoji in a circle, a tip that points where the player faces, and the name below.
 function renderPlayer(el: HTMLElement, p: { avatar: string | null; name: string; heading: number | null; me: boolean }) {
@@ -81,7 +87,7 @@ function buildPin(): { el: HTMLButtonElement; label: HTMLSpanElement } {
 type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
 type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
@@ -89,10 +95,22 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
   const centered = useRef(false);
   const otherMarkers = useRef(new Map<string, OtherEntry>());
   const pinMap = useRef(new Map<string, PinEntry>());
+  const overlay = useRef<HTMLDivElement | null>(null);
+  const edgeEls = useRef(new Map<string, HTMLButtonElement>());
+  const treasuresRef = useRef(treasures);
+  const distancesRef = useRef(distances);
+  const insetRef = useRef(bottomInset);
+  const updateRef = useRef<() => void>(() => {});
   const selectRef = useRef(onSelectTreasure); // read through a ref: a new callback must not rebuild pins
   useEffect(() => {
     selectRef.current = onSelectTreasure;
   }, [onSelectTreasure]);
+  useEffect(() => {
+    treasuresRef.current = treasures;
+    distancesRef.current = distances;
+    insetRef.current = bottomInset;
+    updateRef.current();
+  }, [treasures, distances, bottomInset]);
 
   useEffect(() => {
     if (!container.current) return;
@@ -129,6 +147,9 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       }
     };
     map.on('style.load', hideBusinesses);
+    // Off-screen treasures are re-placed while the map moves.
+    map.on('move', () => updateRef.current());
+    map.on('resize', () => updateRef.current());
     mapRef.current = map;
     const pins = pinMap.current;
     const others = otherMarkers.current;
@@ -142,6 +163,79 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       centered.current = false;
     };
   }, []);
+
+
+  // Off-screen treasures: a marker on the screen edge, turned toward the treasure, with its distance.
+  // Visible treasures are not drawn here; their pins are on the map.
+  const updateEdges = () => {
+    const map = mapRef.current;
+    const layer = overlay.current;
+    if (!map || !layer) return;
+    const { clientWidth: w, clientHeight: h } = map.getContainer();
+    const box: Box = {
+      minX: SIDE_INSET,
+      minY: TOP_INSET,
+      maxX: w - SIDE_INSET,
+      maxY: h - insetRef.current - SIDE_INSET,
+    };
+    const origin = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
+    const seen = new Set<string>();
+    for (const t of treasuresRef.current) {
+      const p = map.project([t.lng, t.lat]);
+      const edge = edgePoint({ x: p.x, y: p.y }, origin, box);
+      if (!edge) continue;
+      seen.add(t.id);
+      let el = edgeEls.current.get(t.id);
+      if (!el) {
+        el = buildEdge(t.id);
+        layer.append(el);
+        edgeEls.current.set(t.id, el);
+      }
+      el.style.transform = `translate(${edge.x}px, ${edge.y}px) translate(-50%, -50%)`;
+      const dir = el.querySelector<HTMLElement>('.dl-heading');
+      if (dir) dir.style.transform = `rotate(${edge.angle + 90}deg)`;
+      const label = el.querySelector<HTMLElement>('[data-label]');
+      const d = distancesRef.current[t.id];
+      if (label) label.textContent = d === undefined ? '' : formatDistance(d);
+    }
+    for (const [id, el] of edgeEls.current) {
+      if (!seen.has(id)) {
+        el.remove();
+        edgeEls.current.delete(id);
+      }
+    }
+  };
+  updateRef.current = updateEdges;
+
+  function buildEdge(id: string): HTMLButtonElement {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'dl-edge';
+    el.setAttribute('aria-label', 'Скарб поза екраном');
+    el.onclick = () => {
+      const t = treasuresRef.current.find((x) => x.id === id);
+      if (t) selectRef.current?.(t);
+    };
+    const core = document.createElement('span');
+    core.className = 'dl-edge-core';
+    const wrap = document.createElement('span');
+    wrap.className = 'dl-edge-wrap';
+    const dir = document.createElement('span');
+    dir.className = 'dl-heading';
+    const tip = document.createElement('span');
+    tip.className = 'dl-heading-tip';
+    dir.append(tip);
+    const badge = document.createElement('span');
+    badge.className = 'dl-edge-badge';
+    badge.textContent = '🍄';
+    wrap.append(dir, badge);
+    const label = document.createElement('span');
+    label.className = 'dl-tag';
+    label.setAttribute('data-label', '');
+    core.append(wrap, label);
+    el.append(core);
+    return el;
+  }
 
   // Pins are keyed by treasure id: adding or removing one touches only that pin.
   useEffect(() => {
@@ -252,6 +346,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
   return (
     <div className="absolute inset-0">
       <div ref={container} className="h-full w-full" />
+      <div ref={overlay} className="pointer-events-none absolute inset-0 overflow-hidden" />
     </div>
   );
 }

@@ -246,3 +246,36 @@ body {
 .ios-row + .ios-row {
   border-top: 1px solid var(--line);
 }
+
+/* Off-screen treasure: a small badge on the screen edge; the tip turns toward the treasure. */
+.dl-edge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  will-change: transform;
+}
+.dl-edge-core {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.dl-edge-wrap {
+  position: relative;
+  display: block;
+  width: 36px;
+  height: 36px;
+}
+.dl-edge-badge {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--paper);
+  border: 3px solid var(--green);
+  box-shadow: 0 3px 0 var(--green-deep);
+  font-size: 17px;
+  line-height: 1;
+}
