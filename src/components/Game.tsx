@@ -306,6 +306,7 @@ export default function Game() {
               onShow={showOnMap}
               onRoute={(ids) => void planRoute(ids, treasures)}
               onChanged={() => { void reload(); }}
+              bottomInset={tabBarH}
             />
           )}
           {tab === 'rating' && <RatingTab myId={player.user_id} />}

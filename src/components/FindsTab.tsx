@@ -25,10 +25,11 @@ type Props = {
   onShow: (id: string) => void;
   onRoute: (ids: string[]) => void;
   onChanged: () => void;
+  bottomInset: number; // the tab bar height: floating actions sit above it
 };
 
 // "Знахідки" tab: every treasure by status. Tap one to see it on the map. Select open treasures to build a route.
-export default function FindsTab({ treasures, myId, names, distances, gpsReady, onShow, onRoute, onChanged }: Props) {
+export default function FindsTab({ treasures, myId, names, distances, gpsReady, onShow, onRoute, onChanged, bottomInset }: Props) {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -167,7 +168,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
       )}
 
       {picked.size > 0 && (
-        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+68px)] z-30 px-4">
+        <div style={{ bottom: `calc(${bottomInset}px + 12px)` }} className="fixed inset-x-0 z-20 px-4">
           <button type="button" disabled={!gpsReady} onClick={() => onRoute([...picked])} className="dl-btn">
             {gpsReady ? `Маршрут до ${picked.size} ${picked.size === 1 ? 'точки' : 'точок'}` : 'Потрібен GPS для маршруту'}
           </button>
