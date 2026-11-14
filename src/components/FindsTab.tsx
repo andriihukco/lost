@@ -170,7 +170,10 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
       {picked.size > 0 && (
         <div style={{ bottom: `calc(${bottomInset}px + 12px)` }} className="fixed inset-x-0 z-20 px-4">
           <button type="button" disabled={!gpsReady} onClick={() => onRoute([...picked])} className="dl-btn">
-            {gpsReady ? `Маршрут до ${picked.size} ${picked.size === 1 ? 'точки' : 'точок'}` : 'Потрібен GPS для маршруту'}
+            <span className="inline-flex items-center justify-center gap-2">
+              <Icon name="route" size={22} />
+              {gpsReady ? `Маршрут до ${picked.size} ${picked.size === 1 ? 'точки' : 'точок'}` : 'Потрібен GPS для маршруту'}
+            </span>
           </button>
         </div>
       )}

@@ -155,9 +155,11 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
       </div>
 
       {photoUrls.length > 0 && (
-        <button type="button" onClick={() => setCamera(true)} className="dl-btn-secondary flex items-center justify-center gap-2">
-          <Icon name="photo_camera" size={22} />
-          Камера: знайти місце
+        <button type="button" onClick={() => setCamera(true)} className="dl-btn-secondary">
+          <span className="inline-flex items-center justify-center gap-2">
+            <Icon name="photo_camera" size={22} />
+            Камера: знайти місце
+          </span>
         </button>
       )}
       {/* Portal: the sheet's transform would otherwise trap the full-screen camera inside it. */}
@@ -165,7 +167,10 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
 
       {onRoute && (
         <button type="button" disabled={!pos} onClick={onRoute} className="dl-btn-secondary">
-          {pos ? 'Маршрут сюди' : 'Потрібен GPS для маршруту'}
+          <span className="inline-flex items-center justify-center gap-2">
+            <Icon name="route" size={22} />
+            {pos ? 'Маршрут сюди' : 'Потрібен GPS для маршруту'}
+          </span>
         </button>
       )}
 
