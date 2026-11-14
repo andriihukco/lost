@@ -14,6 +14,12 @@ const NAMED: [RegExp, string][] = [
   [/Snapchat/i, 'Snapchat'],
   [/LinkedInApp/i, 'LinkedIn'],
   [/BytedanceWebview|musical_ly|TikTok/i, 'TikTok'],
+  [/Viber/i, 'Viber'],
+  [/WhatsApp/i, 'WhatsApp'],
+  [/Pinterest/i, 'Pinterest'],
+  [/KAKAOTALK/i, 'KakaoTalk'],
+  [/Outlook/i, 'Outlook'],
+  [/\bGSA\//, 'Google'], // the Google app's web view (Google Search App)
 ];
 
 export function detectInApp(ua: string): InApp {

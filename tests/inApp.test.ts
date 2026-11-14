@@ -25,6 +25,12 @@ test('Instagram and Facebook are in-app', () => {
   expect(detectInApp(INSTAGRAM_IOS).name).toBe('Instagram');
   expect(detectInApp(FACEBOOK_ANDROID).name).toBe('Facebook');
 });
+test('Viber, WhatsApp, Pinterest and the Google app are in-app', () => {
+  expect(detectInApp(`${IOS_WEBVIEW_NO_SAFARI} Viber/20.1.0`).name).toBe('Viber');
+  expect(detectInApp(`${IOS_WEBVIEW_NO_SAFARI} WhatsApp/2.24`).name).toBe('WhatsApp');
+  expect(detectInApp(`${IOS_WEBVIEW_NO_SAFARI} Pinterest/for iOS`).name).toBe('Pinterest');
+  expect(detectInApp(`${IOS_SAFARI} GSA/300.0.0 Mobile`).name).toBe('Google');
+});
 test('an iOS web view without Safari in its user agent is in-app', () => {
   expect(detectInApp(IOS_WEBVIEW_NO_SAFARI).inApp).toBe(true);
 });
