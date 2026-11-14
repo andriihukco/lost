@@ -1,6 +1,5 @@
-// The emoji shown on a treasure's map pin. Admins pick one of these or type their own.
+// The emoji shown on a treasure's map pin. Admins type any emoji they like; the default applies when it is empty.
 export const DEFAULT_PIN = '🍄';
-export const PIN_PRESETS = ['🍄', '🌳', '🏰', '💎', '🗝️', '🪙', '🎁', '🦉', '🌲', '🪨', '🐞', '🍀', '🧭', '⛲'] as const;
 
 export function pinOrDefault(e: string | null | undefined): string {
   const t = (e ?? '').trim();

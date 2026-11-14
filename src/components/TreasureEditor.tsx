@@ -10,6 +10,7 @@ import {
   type AdminTreasure, type HistoryEvent,
 } from '@/lib/adminTreasures';
 import { unmarkFound } from '@/lib/found';
+import { parseCoordinates } from '@/lib/coords';
 import { usePasteImages } from '@/lib/usePasteImages';
 
 type Props = {
@@ -24,8 +25,7 @@ const field = 'dl-field';
 export default function TreasureEditor({ treasure, names, onChanged, onDeleted }: Props) {
   const [title, setTitle] = useState(treasure.title);
   const [hint, setHint] = useState(treasure.hint ?? '');
-  const [lat, setLat] = useState<string>(String(treasure.lat));
-  const [lng, setLng] = useState<string>(String(treasure.lng));
+  const [coords, setCoords] = useState<string>(`${treasure.lat.toFixed(6)}, ${treasure.lng.toFixed(6)}`);
   const [pinEmoji, setPinEmoji] = useState<string>(pinOrDefault(treasure.pin_emoji));
   const [photos, setPhotos] = useState<string[]>(treasure.photo_paths);
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -58,11 +58,12 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
   }
 
   function draftErrors(): string[] {
+    const point = parseCoordinates(coords);
     return validateTreasure({
       title,
       hint,
-      lat: lat.trim() === '' ? null : Number(lat),
-      lng: lng.trim() === '' ? null : Number(lng),
+      lat: point?.lat ?? null,
+      lng: point?.lng ?? null,
       photoCount: photos.length,
       pinEmoji,
     });
@@ -71,9 +72,10 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
   function save() {
     const errs = draftErrors();
     setErrors(errs);
-    if (errs.length) return;
+    const point = parseCoordinates(coords);
+    if (errs.length || !point) return;
     void run('Збережено', async () => {
-      await updateTreasure(treasure.id, { title: title.trim(), hint: hint.trim() || null, lat: Number(lat), lng: Number(lng), pin_emoji: pinEmoji.trim() });
+      await updateTreasure(treasure.id, { title: title.trim(), hint: hint.trim() || null, lat: point.lat, lng: point.lng, pin_emoji: pinEmoji.trim() });
       onChanged();
     });
   }
@@ -137,16 +139,10 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
         <span className="text-[var(--muted)]">Підказка</span>
         <textarea className={field} value={hint} rows={2} maxLength={300} onChange={(e) => setHint(e.target.value)} />
       </label>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-[var(--muted)]">Широта</span>
-          <input className={field} inputMode="decimal" value={lat} onChange={(e) => setLat(e.target.value)} />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-[var(--muted)]">Довгота</span>
-          <input className={field} inputMode="decimal" value={lng} onChange={(e) => setLng(e.target.value)} />
-        </label>
-      </div>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-[var(--muted)]">Координати (широта, довгота)</span>
+        <input className={field} inputMode="decimal" value={coords} onChange={(e) => setCoords(e.target.value)} placeholder="49.8419, 24.0315" />
+      </label>
       {errors.map((e) => <p key={e} role="alert" className="text-sm text-[var(--danger)]">{e}</p>)}
       <button type="button" disabled={busy} onClick={save} className="dl-btn !w-auto !min-h-[44px] !py-2.5 !text-sm">
         Зберегти зміни
