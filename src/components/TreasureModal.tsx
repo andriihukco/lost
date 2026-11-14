@@ -29,7 +29,7 @@ export default function TreasureModal({ title, onClose, children }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 flex flex-col bg-[var(--page)] md:items-center md:justify-center md:bg-[var(--ink)]/35 md:p-6"
+      className="fixed inset-x-0 top-0 z-50 flex h-dvh flex-col bg-[var(--page)] md:items-center md:justify-center md:bg-[var(--ink)]/35 md:p-6"
       initial={{ y: '100%' }}
       animate={{ y: 0 }}
       exit={{ y: '100%' }}

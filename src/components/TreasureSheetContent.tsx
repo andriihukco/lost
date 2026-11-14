@@ -109,7 +109,8 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
   const secondaryCount = (onRoute ? 1 : 0) + (showCamera ? 1 : 0);
 
   return (
-    <section className="mx-auto flex min-h-full w-full max-w-md flex-col gap-4 px-5 pt-1">
+    <div className="flex min-h-full w-full flex-col">
+    <section className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-5 pt-1">
       {photoUrls.length > 0 && (
         <div className="relative overflow-hidden rounded-[24px] bg-[var(--line)] elev-sm">
           <div className="flex snap-x snap-mandatory overflow-x-auto" style={{ touchAction: 'pan-x' }}>
@@ -228,8 +229,11 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
         {treasure.lat.toFixed(5)}, {treasure.lng.toFixed(5)}
       </p>
 
-      {/* The primary action stays at the bottom of the screen, above the scrolled content. */}
-      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-[var(--line)] bg-[var(--paper)]/95 px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-md">
+    </section>
+
+    {/* The primary action: a full-width bar at the bottom, its contents in the same column as the page. */}
+    <div className="sticky bottom-0 mt-auto w-full border-t border-[var(--line)] bg-[var(--paper)]/95 backdrop-blur-md">
+      <div className="mx-auto w-full max-w-md px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3">
         <p className="mb-2.5 text-center text-[14px] font-medium text-[var(--muted)]">{status}</p>
         {!arrived ? (
           <button type="button" disabled={!canArrive || busy} onClick={arrive} className="dl-btn">
@@ -241,6 +245,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
           </button>
         )}
       </div>
-    </section>
+    </div>
+    </div>
   );
 }
