@@ -210,7 +210,10 @@ export default function Game() {
     return () => { if (perm) perm.onchange = null; };
   }, []);
 
+  // No account is created inside an in-app browser (Telegram, Instagram…) until the player chooses to continue there.
+  // A player who opens the page in Safari or Chrome gets their account there, so nothing is split between browsers.
   useEffect(() => {
+    if (inApp === null || (inApp.inApp && !inAppOk)) return;
     let cancelled = false;
     (async () => {
       try {
@@ -230,7 +233,7 @@ export default function Game() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [inApp, inAppOk]);
 
   // Whether this browser's session is an admin's (the database decides; the player app only shows the action).
   useEffect(() => {
