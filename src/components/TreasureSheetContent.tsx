@@ -97,10 +97,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
 
   return (
     <section className="mx-auto flex w-full max-w-md flex-col gap-4 px-5 pb-6">
-      <header>
-        <h2 className="dl-title text-3xl">{treasure.title}</h2>
-        {treasure.hint && <p className="selectable mt-2 text-base text-[var(--muted)]">{treasure.hint}</p>}
-      </header>
+      {treasure.hint && <p className="selectable text-base text-[var(--muted)]">{treasure.hint}</p>}
 
       {photoUrls.length > 0 && (
         <div className="relative">

@@ -368,10 +368,19 @@ export default function Game() {
       )}
 
       {showSheet && (
-        <BottomSheet key={selected.id} initial="half" bottomOffset={tabBarH}>
-          <div className="flex justify-end px-4 pt-1">
-            <button type="button" aria-label="Закрити" onClick={() => setSelectedId(null)} className="grid h-11 w-11 place-items-center rounded-full text-[var(--muted)]"><Icon name="close" size={24} /></button>
-          </div>
+        <BottomSheet
+          key={selected.id}
+          initial="half"
+          bottomOffset={tabBarH}
+          header={
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="dl-title min-w-0 truncate text-[26px]">{selected.title}</h2>
+              <button type="button" aria-label="Закрити" onClick={() => setSelectedId(null)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--page)] text-[var(--muted)]">
+                <Icon name="close" size={22} />
+              </button>
+            </div>
+          }
+        >
           <TreasureSheetContent
             treasure={selected}
             pos={geo.pos}
