@@ -80,8 +80,8 @@ export default function Onboarding({
             <span className="h-1 flex-1 rounded-full bg-[var(--green)]" />
             <span className="h-1 flex-1 rounded-full bg-[var(--line)]" />
           </div>
-          <h2 className="dl-title mt-5 text-3xl">Обери свій нік</h2>
-          <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Кожна тварина має свій нік. Оберіть тварину, і її нік стане вашим.</p>
+          <h2 className="dl-title mt-5 text-3xl">Оберіть свій нік</h2>
+          <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Кожна тварина має свій нік. Оберіть тварину: її нік стане вашим.</p>
           <form className="mt-5 flex flex-col gap-5 pb-24" onSubmit={(e) => { e.preventDefault(); void save(); }}>
             <NicknamePicker value={avatar} taken={taken} onPick={setAvatar} />
             {error && <p role="alert" className="text-sm font-bold text-[var(--danger)]">{error}</p>}

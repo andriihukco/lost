@@ -28,7 +28,7 @@ type Props = {
 };
 
 const ERROR_TEXT: Record<Exclude<FoundStatus, 'won'>, string> = {
-  taken: 'Цей скарб уже знайшов інший гравець.',
+  taken: 'Цей скарб вже знайшов інший гравець.',
   not_player: 'Спочатку оберіть нік.',
   not_found: 'Скарб не знайдено.',
 };
@@ -120,7 +120,7 @@ export default function TreasureSheetContent({ treasure, pos, accuracy, distance
     try {
       const s = await unmarkFound(treasure.id);
       if (s === 'unfound') onUnmarked?.();
-      else setError(s === 'not_yours' ? 'Повернути може лише той, хто знайшов, або адміністратор.' : 'Скарб уже на карті.');
+      else setError(s === 'not_yours' ? 'Повернути може лише той, хто знайшов, або адміністратор.' : 'Скарб вже на карті.');
     } catch (e) {
       setError((e as Error).message);
     } finally {

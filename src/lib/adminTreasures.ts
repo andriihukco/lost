@@ -79,7 +79,7 @@ export async function removePhoto(treasure: AdminTreasure, path: string): Promis
 // Removes the treasure, its history (cascade) and its photo files.
 export async function deleteTreasure(treasure: AdminTreasure): Promise<void> {
   const { data, error } = await supabase.from('treasures').delete().eq('id', treasure.id).select('id');
-  requireRow(data, error, 'Немає доступу або скарб уже видалено');
+  requireRow(data, error, 'Немає доступу або скарб вже видалено');
   if (treasure.photo_paths.length > 0) await supabase.storage.from(PHOTO_BUCKET).remove(treasure.photo_paths);
 }
 

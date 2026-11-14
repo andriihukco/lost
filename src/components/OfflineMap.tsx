@@ -70,7 +70,7 @@ export default function OfflineMap({
       {/* Why it helps, before the player decides. */}
       {!card && !saved && !busy && (
         <ul className="flex flex-col gap-2.5 text-[15px] text-[var(--ink)]">
-          <li className="flex items-center gap-3"><Icon name="map" size={20} className="text-[var(--green-deep)]" />Карта працює в лісі й без мережі</li>
+          <li className="flex items-center gap-3"><Icon name="map" size={20} className="text-[var(--green-deep)]" />Карта працює в лісі, навіть без інтернету</li>
           <li className="flex items-center gap-3"><Icon name="route" size={20} className="text-[var(--green-deep)]" />Шлях до скарбів видно без зв’язку</li>
         </ul>
       )}

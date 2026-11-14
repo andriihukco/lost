@@ -14,7 +14,7 @@ const MESSAGES: Record<UnfoundStatus, string> = {
   unfound: 'Скарб повернуто на карту',
   not_yours: 'Повернути може лише той, хто знайшов',
   not_found: 'Скарб не знайдено',
-  not_found_state: 'Скарб уже на карті',
+  not_found_state: 'Скарб вже на карті',
 };
 
 type Props = {

@@ -15,7 +15,7 @@ export default function NicknamePicker({ value, taken, onPick }: { value: Avatar
             type="button"
             role="radio"
             aria-checked={selected}
-            aria-label={gone ? `${a.nickname}, уже обрано` : a.nickname}
+            aria-label={gone ? `${a.nickname}, вже обрано` : a.nickname}
             disabled={gone}
             onClick={() => onPick(a.key)}
             className={`flex min-h-[64px] items-center gap-3 rounded-full border-2 px-3 py-2.5 text-left transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:grayscale ${

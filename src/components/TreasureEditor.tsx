@@ -113,7 +113,7 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
   function sendBack() {
     void run('Скарб повернуто на карту', async () => {
       const status = await unmarkFound(treasure.id);
-      if (status !== 'unfound') throw new Error('Скарб уже на карті');
+      if (status !== 'unfound') throw new Error('Скарб вже на карті');
       onChanged();
     });
   }
