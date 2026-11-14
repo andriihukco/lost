@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import NicknamePicker from '@/components/NicknamePicker';
 import OfflineMap from '@/components/OfflineMap';
+import { TransferCodeEntry } from '@/components/ProfileTransfer';
 import StickyAction from '@/components/StickyAction';
 import { isTaken, nicknameFor, type AvatarKey } from '@/lib/avatars';
 import type { LatLng } from '@/lib/geo';
@@ -85,6 +86,7 @@ export default function Onboarding({
           <form className="mt-5 flex flex-col gap-5 pb-24" onSubmit={(e) => { e.preventDefault(); void save(); }}>
             <NicknamePicker value={avatar} taken={taken} onPick={setAvatar} />
             {error && <p role="alert" className="text-sm font-bold text-[var(--danger)]">{error}</p>}
+            <TransferCodeEntry userId={userId} onMoved={onSaved} />
             <StickyAction>
               <button type="submit" disabled={!canSave} className="dl-btn">
                 {busy ? 'Зберігаємо…' : 'Далі'}

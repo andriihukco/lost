@@ -5,6 +5,7 @@ import NicknamePicker from '@/components/NicknamePicker';
 import { avatarEmoji, nicknameFor, type AvatarKey } from '@/lib/avatars';
 import { getAllPlayers, savePlayer, type Player } from '@/lib/player';
 import OfflineMap from '@/components/OfflineMap';
+import { TransferCodeMaker } from '@/components/ProfileTransfer';
 import { AnimatePresence, motion } from 'motion/react';
 import type { LatLng } from '@/lib/geo';
 
@@ -76,6 +77,11 @@ export default function ProfileTab({ player, onSaved, offlinePoints, bottomInset
       <p className="ios-section mt-8">Офлайн</p>
       <div className="dl-card mt-2 p-4">
         <OfflineMap points={offlinePoints} variant="card" />
+      </div>
+
+      <p className="ios-section mt-8">Перенести профіль</p>
+      <div className="dl-card mt-2 p-4">
+        <TransferCodeMaker />
       </div>
     </div>
   );
