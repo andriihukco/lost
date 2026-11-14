@@ -40,7 +40,7 @@ import { useTreasures, type Treasure } from '@/lib/useTreasures';
 import { useWakeLock } from '@/lib/useWakeLock';
 
 type Position = LatLng & { seenAt: number; heading: number | null };
-type RouteState = { stops: Treasure[]; walk: WalkRoute; pending: boolean };
+type RouteState = { stops: Treasure[]; walk: WalkRoute | null; pending: boolean }; // walk is null until the path is ready
 type Toast = { id: number; text: string };
 
 // Three tabs, iOS-style: the map, my finds, my profile. The sheet and the nearby notice sit above the tab bar.
@@ -108,11 +108,14 @@ export default function Game() {
     const ordered = order.map((i) => chosen[i]);
     const pts = ordered.map((t) => ({ lat: t.lat, lng: t.lng }));
     const straight = [start, ...pts];
-    setRoute({ stops: ordered, walk: straightRoute(straight, pathLengthM(start, pts)), pending: true });
+    // Nothing is drawn until the path along paths is ready; the straight line is only the labelled fallback.
+    setRoute({ stops: ordered, walk: null, pending: true });
     setTab('map');
     setSelectedId(null);
     const walk = await fetchWalkingRoute(straight);
-    setRoute((prev) => (prev && prev.stops === ordered ? { ...prev, walk: walk ?? prev.walk, pending: false } : prev));
+    setRoute((prev) => (prev && prev.stops === ordered
+      ? { ...prev, walk: walk ?? straightRoute(straight, pathLengthM(start, pts)), pending: false }
+      : prev));
   }, [geo.pos, pushToast]);
 
   // Show a treasure on the map (from the Знахідки tab): switch to the map and fly to it.
@@ -275,7 +278,7 @@ export default function Game() {
   const nameRecord = Object.fromEntries([...names.current].map(([id, v]) => [id, v.nickname]));
   const routeView: RouteView | null = route
     ? {
-        coords: route.walk.coords,
+        coords: route.walk?.coords ?? [],
         stops: route.stops.map((t, i) => ({ id: t.id, lat: t.lat, lng: t.lng, index: i + 1 })),
       }
     : null;
@@ -370,10 +373,12 @@ export default function Game() {
                 Маршрут · {route.stops.length} {route.stops.length === 1 ? 'точка' : 'точок'}
               </p>
               <p className="text-[17px] font-extrabold tabular-nums">
-                {route.pending ? 'Прокладаю…' : `${formatDistance(route.walk.distanceM)} · ~${Math.max(1, Math.round(route.walk.durationS / 60))} хв`}
+                {route.pending || !route.walk ? (
+                  <span className="inline-flex items-center gap-2"><span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--green)] border-t-transparent" />Прокладаю маршрут…</span>
+                ) : `${formatDistance(route.walk.distanceM)} · ~${Math.max(1, Math.round(route.walk.durationS / 60))} хв`}
               </p>
               <p className="text-[12px] font-semibold text-[var(--muted)]">
-                {route.walk.source === 'paths' ? 'По стежках і дорогах' : 'По прямій (маршрут стежками недоступний)'}
+                {route.pending || !route.walk ? 'Шукаємо стежки й дороги' : route.walk.source === 'paths' ? 'По стежках і дорогах' : 'По прямій: маршрут стежками недоступний'}
               </p>
             </div>
             <button type="button" onClick={() => setRoute(null)} className="dl-btn-secondary !w-auto !min-h-[44px] !px-4 !py-2 !text-[15px]">

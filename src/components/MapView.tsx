@@ -160,7 +160,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
         style: styleFor(kindRef.current, process.env.NEXT_PUBLIC_MAPTILER_KEY),
         center: [24.0315, 49.8419],
         zoom: 15,
-        attributionControl: { compact: true },
+        attributionControl: false, // attributions are logged to the console instead of shown on the map
       });
     } catch (err) {
       console.error('MapLibre failed to start', err);
@@ -185,6 +185,13 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       }
     };
     map.on('style.load', hideBusinesses);
+    // The map's data credits, for the console (the on-map attribution control is off).
+    map.on('style.load', () => {
+      const credits = Object.values(map.getStyle()?.sources ?? {})
+        .map((src) => (src as { attribution?: string }).attribution)
+        .filter((a): a is string => Boolean(a));
+      if (credits.length) console.info('Map attribution:', [...new Set(credits)]);
+    });
     map.on('style.load', () => applyRouteRef.current()); // a new style drops our route layers
     // Off-screen treasures are re-placed while the map moves.
     map.on('move', () => updateRef.current());
