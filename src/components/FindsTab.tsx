@@ -86,8 +86,8 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
 
       {view === 'map' && open.length > 0 && (
         <>
-          <p className="mt-5 text-[14px] font-medium text-[var(--muted)]">Натисніть скарб, щоб побачити його на мапі, або відмітьте кілька для маршруту.</p>
-          <ul className="ios-group">
+          <p className="mt-5 px-1 text-[14px] font-medium leading-snug text-[var(--muted)]">Натисніть скарб, щоб побачити його на мапі, або відмітьте кілька на мапі одночасно, щоб побудувати маршрут.</p>
+          <ul className="ios-group mt-3">
             {open.map((t) => {
               const on = picked.has(t.id);
               return (
