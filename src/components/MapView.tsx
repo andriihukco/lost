@@ -12,6 +12,7 @@ import { formatDistance } from '@/lib/geoFormat';
 import { edgePoint, type Box } from '@/lib/offscreen';
 import { pinOrDefault } from '@/lib/pinEmoji';
 import { CITY_BOUNDS, viewBounds } from '@/lib/mapBounds';
+import { clusterPins, type PinPoint } from '@/lib/clusterPins';
 import type { Treasure } from '@/lib/useTreasures';
 import type { MapMark } from '@/lib/mapMarks';
 import type { GeoJSONSource } from 'maplibre-gl';
@@ -54,6 +55,8 @@ type Props = {
 // Room kept clear at the top for the status card and chips.
 const TOP_INSET = 72;
 const SIDE_INSET = 16;
+// Pins closer than this many pixels would overlap their labels, so they are grouped (see layoutPins).
+const CLUSTER_PX = 72;
 
 // The city limit as MapLibre takes it: [[west, south], [east, north]].
 const CITY_LIMIT: [[number, number], [number, number]] = [[CITY_BOUNDS.west, CITY_BOUNDS.south], [CITY_BOUNDS.east, CITY_BOUNDS.north]];
@@ -370,9 +373,63 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 16), duration: 700, padding: { top: TOP_INSET, bottom: insetRef.current, left: 0, right: 0 } });
   }, [focusNonce, focusId]);
 
+  // Treasures whose pins would overlap on the screen are drawn as one badge with their count, so the labels do not
+  // sit on each other. Tapping a badge zooms in to its group until the pins separate. Runs on every move and zoom.
+  const clusterSlots = useRef<{ marker: Marker; el: HTMLButtonElement }[]>([]);
+  const layoutPins = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    const points: PinPoint[] = [];
+    for (const e of pinMap.current.values()) {
+      const p = map.project([e.treasure.lng, e.treasure.lat]);
+      points.push({ id: e.treasure.id, x: p.x, y: p.y, lat: e.treasure.lat, lng: e.treasure.lng });
+    }
+    const groups = clusterPins(points, CLUSTER_PX);
+    let used = 0;
+    for (const g of groups) {
+      const single = g.ids.length === 1;
+      for (const id of g.ids) {
+        const pin = pinMap.current.get(id);
+        if (pin) pin.el.style.display = single ? '' : 'none';
+      }
+      if (single) continue;
+      let slot = clusterSlots.current[used];
+      if (!slot) {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'dl-cluster';
+        const marker = new Marker({ element: el, anchor: 'center' }).setLngLat([g.lng, g.lat]).addTo(map);
+        slot = { marker, el };
+        clusterSlots.current.push(slot);
+      }
+      slot.el.style.display = '';
+      slot.marker.setLngLat([g.lng, g.lat]);
+      slot.el.textContent = String(g.ids.length);
+      slot.el.setAttribute('aria-label', `${g.ids.length} скарбів поруч. Наблизити`);
+      slot.el.onclick = () => zoomToGroup(g.ids);
+      used++;
+    }
+    for (let i = used; i < clusterSlots.current.length; i++) clusterSlots.current[i].el.style.display = 'none';
+  };
+
+  // Zoom to the treasures of one badge: the map fits them, which separates their pins (up to a close zoom).
+  function zoomToGroup(ids: string[]) {
+    const map = mapRef.current;
+    if (!map) return;
+    const pts = ids.map((id) => pinMap.current.get(id)?.treasure).filter((t): t is Treasure => t !== undefined);
+    if (pts.length === 0) return;
+    let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+    for (const t of pts) {
+      minLng = Math.min(minLng, t.lng); maxLng = Math.max(maxLng, t.lng);
+      minLat = Math.min(minLat, t.lat); maxLat = Math.max(maxLat, t.lat);
+    }
+    map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 90, maxZoom: 18, duration: 500 });
+  }
+
   // Off-screen treasures: a marker on the screen edge, turned toward the treasure, with its distance.
   // Visible treasures are not drawn here; their pins are on the map.
   const updateEdges = () => {
+    layoutPins();
     const map = mapRef.current;
     const layer = overlay.current;
     if (!map || !layer) return;
@@ -481,6 +538,7 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       };
       pinMap.current.set(t.id, entry);
     }
+    updateRef.current(); // pins were added or removed: regroup them now, not on the next move
   }, [treasures]);
 
   useEffect(() => {
