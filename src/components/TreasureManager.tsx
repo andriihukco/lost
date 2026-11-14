@@ -1,9 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import Icon from '@/components/Icon';
 import TreasureEditor from '@/components/TreasureEditor';
-import TreasureForm from '@/components/TreasureForm';
 import { listTreasures, type AdminTreasure } from '@/lib/adminTreasures';
 import { pinOrDefault } from '@/lib/pinEmoji';
 import { getAllPlayers } from '@/lib/player';
@@ -21,7 +21,6 @@ export default function TreasureManager() {
   const [names, setNames] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
-  const [creating, setCreating] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,14 +40,6 @@ export default function TreasureManager() {
   useEffect(() => {
     void reload();
   }, [reload]);
-
-  // The new-treasure sheet closes with Escape too.
-  useEffect(() => {
-    if (!creating) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setCreating(false); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [creating]);
 
   const activeCount = items.filter((t) => !t.is_found).length;
   const foundCount = items.length - activeCount;
@@ -132,34 +123,15 @@ export default function TreasureManager() {
         })}
       </ul>
 
-      <button
-        type="button"
-        onClick={() => setCreating(true)}
+      <Link
+        href="/admin/new"
         aria-label="Новий скарб"
         className="fixed right-5 z-30 grid h-16 w-16 place-items-center rounded-full bg-[var(--green)] text-white elev-green transition-transform active:scale-95"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
       >
         <Icon name="add" size={30} />
-      </button>
+      </Link>
 
-      {creating && (
-        <div role="dialog" aria-modal="true" aria-label="Новий скарб" className="fixed inset-0 z-50 flex flex-col bg-[var(--page)]">
-          <header className="flex items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--paper)] px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-            <h2 className="dl-title text-xl">Новий скарб</h2>
-            <button type="button" onClick={() => setCreating(false)} aria-label="Закрити" className="grid h-11 w-11 place-items-center rounded-full text-[var(--muted)]">
-              <Icon name="close" size={24} />
-            </button>
-          </header>
-          <div className="flex-1 overflow-y-auto overscroll-contain">
-            <TreasureForm
-              onCreated={() => {
-                setCreating(false);
-                void reload();
-              }}
-            />
-          </div>
-        </div>
-      )}
     </section>
   );
 }
