@@ -30,7 +30,9 @@ export default function Onboarding({ userId, onSaved }: { userId: string; onSave
   }
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 max-h-[92%] overflow-y-auto rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] elev-sheet">
+    // The map behind is blurred and cannot be moved until a nickname is chosen.
+    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-[var(--ink)]/15 backdrop-blur-md">
+    <div className="max-h-[92%] overflow-y-auto rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] elev-sheet">
       <div className="mx-auto max-w-md">
         <h2 className="dl-title text-3xl">Обери свій нік</h2>
         <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Кожна тварина має свій нік. Оберіть тварину, і її нік стане вашим.</p>
@@ -42,6 +44,7 @@ export default function Onboarding({ userId, onSaved }: { userId: string; onSave
           </button>
         </form>
       </div>
+    </div>
     </div>
   );
 }
