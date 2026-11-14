@@ -229,18 +229,29 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
   // The view is limited to me and the open treasures, plus MAP_PAD_M on each side: the camera cannot pan or zoom past it.
   const meLat = me?.lat ?? null;
   const meLng = me?.lng ?? null;
+  // The last limit applied. A limit is set only when it really changes: a fresh one on every GPS tick made the
+  // camera re-adjust over and over (the slow zoom-out while a route was shown).
+  const appliedBounds = useRef<string>('');
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     if (unlimited) {
-      map.setMaxBounds(null);
+      if (appliedBounds.current !== 'none') {
+        map.setMaxBounds(null);
+        appliedBounds.current = 'none';
+      }
       return;
     }
     const pts: LatLng[] = treasures.map((t) => ({ lat: t.lat, lng: t.lng }));
     if (meLat !== null && meLng !== null) pts.push({ lat: meLat, lng: meLng });
+    // The route is inside the limit too, so the camera never has to pull it back.
+    for (const c of route?.coords ?? []) pts.push(c);
     const b = viewBounds(pts, MAP_PAD_M);
+    const key = b ? `${b.west.toFixed(6)},${b.south.toFixed(6)},${b.east.toFixed(6)},${b.north.toFixed(6)}` : 'none';
+    if (key === appliedBounds.current) return;
+    appliedBounds.current = key;
     map.setMaxBounds(b ? [[b.west, b.south], [b.east, b.north]] : null);
-  }, [meLat, meLng, treasures, unlimited]);
+  }, [meLat, meLng, treasures, unlimited, route]);
 
   // Map marks: emoji pins for admin warnings. Not treasures: no distance, no edge arrow, not in any list.
   const markEntries = useRef(new Map<string, { marker: Marker; el: HTMLButtonElement }>());
