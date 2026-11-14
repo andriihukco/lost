@@ -57,6 +57,8 @@ const TOP_INSET = 72;
 const SIDE_INSET = 16;
 // Pins closer than this many pixels would overlap their labels, so they are grouped (see layoutPins).
 const CLUSTER_PX = 72;
+// Off-screen arrows closer than this many pixels at the screen edge are grouped (see updateEdges).
+const EDGE_CLUSTER_PX = 80;
 
 // The city limit as MapLibre takes it: [[west, south], [east, north]].
 const CITY_LIMIT: [[number, number], [number, number]] = [[CITY_BOUNDS.west, CITY_BOUNDS.south], [CITY_BOUNDS.east, CITY_BOUNDS.north]];
@@ -426,6 +428,19 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 90, maxZoom: 18, duration: 500 });
   }
 
+  // The grouped arrows that are in use; the rest are hidden, not removed, so they can come back cheaply.
+  const edgeGroupEls = useRef<HTMLButtonElement[]>([]);
+  // Puts an arrow on the screen edge: turned toward the treasure, with its badge and distance.
+  function placeArrow(el: HTMLElement, edge: { x: number; y: number; angle: number }, badge: string, distance: number | undefined) {
+    el.style.transform = `translate(${edge.x}px, ${edge.y}px) translate(-50%, -50%)`;
+    const dir = el.querySelector<HTMLElement>('.dl-heading');
+    if (dir) dir.style.transform = `rotate(${edge.angle + 90}deg)`;
+    const badgeEl = el.querySelector<HTMLElement>('.dl-edge-badge');
+    if (badgeEl) badgeEl.textContent = badge;
+    const label = el.querySelector<HTMLElement>('[data-label]');
+    if (label) label.textContent = distance === undefined ? '' : formatDistance(distance);
+  }
+
   // Off-screen treasures: a marker on the screen edge, turned toward the treasure, with its distance.
   // Visible treasures are not drawn here; their pins are on the map.
   const updateEdges = () => {
@@ -441,28 +456,53 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
       maxY: h - insetRef.current - SIDE_INSET,
     };
     const origin = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
-    const seen = new Set<string>();
+    // The arrows that point at off-screen treasures are grouped too: arrows that would overlap become one arrow with
+    // their count, so they do not sit on each other at the screen edge.
+    const edges = new Map<string, { x: number; y: number; angle: number }>();
+    const points: PinPoint[] = [];
     for (const t of treasuresRef.current) {
       if (t.is_found) continue; // a found treasure is greyed on the map; it gets no edge arrow
       const p = map.project([t.lng, t.lat]);
       const edge = edgePoint({ x: p.x, y: p.y }, origin, box);
       if (!edge) continue;
-      seen.add(t.id);
-      let el = edgeEls.current.get(t.id);
-      if (!el) {
-        el = buildEdge(t.id);
-        layer.append(el);
-        edgeEls.current.set(t.id, el);
-      }
-      el.style.transform = `translate(${edge.x}px, ${edge.y}px) translate(-50%, -50%)`;
-      const dir = el.querySelector<HTMLElement>('.dl-heading');
-      if (dir) dir.style.transform = `rotate(${edge.angle + 90}deg)`;
-      const badgeEl = el.querySelector<HTMLElement>('.dl-edge-badge');
-      if (badgeEl) badgeEl.textContent = pinOrDefault(t.pin_emoji);
-      const label = el.querySelector<HTMLElement>('[data-label]');
-      const d = distancesRef.current[t.id];
-      if (label) label.textContent = d === undefined ? '' : formatDistance(d);
+      edges.set(t.id, edge);
+      points.push({ id: t.id, x: edge.x, y: edge.y, lat: t.lat, lng: t.lng });
     }
+    const seen = new Set<string>();
+    let used = 0;
+    for (const g of clusterPins(points, EDGE_CLUSTER_PX)) {
+      const first = edges.get(g.ids[0]);
+      if (!first) continue;
+      if (g.ids.length === 1) {
+        const id = g.ids[0];
+        const t = treasuresRef.current.find((x) => x.id === id);
+        if (!t) continue;
+        seen.add(id);
+        let el = edgeEls.current.get(id);
+        if (!el) {
+          el = buildEdge(id);
+          layer.append(el);
+          edgeEls.current.set(id, el);
+        }
+        placeArrow(el, first, pinOrDefault(t.pin_emoji), distancesRef.current[id]);
+        continue;
+      }
+      // Several arrows at one spot: one arrow with the count and the nearest distance.
+      let slot = edgeGroupEls.current[used];
+      if (!slot) {
+        slot = buildEdgeShell();
+        slot.classList.add('dl-edge-group');
+        layer.append(slot);
+        edgeGroupEls.current.push(slot);
+      }
+      used++;
+      const ds = g.ids.map((id) => distancesRef.current[id]).filter((d): d is number => d !== undefined);
+      placeArrow(slot, first, String(g.ids.length), ds.length ? Math.min(...ds) : undefined);
+      slot.setAttribute('aria-label', `${g.ids.length} скарбів поза екраном. Показати`);
+      slot.onclick = () => zoomToGroup(g.ids);
+      slot.style.display = '';
+    }
+    for (let i = used; i < edgeGroupEls.current.length; i++) edgeGroupEls.current[i].style.display = 'none';
     for (const [id, el] of edgeEls.current) {
       if (!seen.has(id)) {
         el.remove();
@@ -472,17 +512,12 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
   };
   updateRef.current = updateEdges;
 
-  function buildEdge(id: string): HTMLButtonElement {
+  // An off-screen arrow: the shell (arrow, badge, distance). The tap is set by the caller.
+  function buildEdgeShell(): HTMLButtonElement {
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'dl-edge';
     el.setAttribute('aria-label', 'Скарб поза екраном');
-    el.onclick = () => {
-      const t = treasuresRef.current.find((x) => x.id === id);
-      const m = mapRef.current;
-      if (t && m) centerOn(m, t);
-      if (t) selectRef.current?.(t);
-    };
     const core = document.createElement('span');
     core.className = 'dl-edge-core';
     const wrap = document.createElement('span');
@@ -501,6 +536,18 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     label.setAttribute('data-label', '');
     core.append(wrap, label);
     el.append(core);
+    return el;
+  }
+
+  // The arrow for one off-screen treasure: tap to centre it and open its sheet.
+  function buildEdge(id: string): HTMLButtonElement {
+    const el = buildEdgeShell();
+    el.onclick = () => {
+      const t = treasuresRef.current.find((x) => x.id === id);
+      const m = mapRef.current;
+      if (t && m) centerOn(m, t);
+      if (t) selectRef.current?.(t);
+    };
     return el;
   }
 
