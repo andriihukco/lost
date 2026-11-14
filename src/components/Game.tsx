@@ -89,7 +89,7 @@ export default function Game() {
         phone ? effectiveCompass(compassPermOf(compass.status), !!grants.compass) : 'unavailable',
       );
   const wake = useWakeLock();
-  const { treasures, error, reload } = useTreasures();
+  const { treasures, error, reload } = useTreasures(userId !== null); // after sign-in: RLS hides treasures from anonymous queries
   // Compass if the browser has one (phones), otherwise the GPS course while moving.
   const myHeading = compass.heading ?? geo.course;
   const connRef = useRef<GameConnection | null>(null);

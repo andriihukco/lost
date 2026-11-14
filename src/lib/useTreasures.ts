@@ -17,7 +17,8 @@ export type Treasure = {
 };
 
 // RLS: every signed-in user reads all treasures (migration 0003). Realtime updates come from the game channel.
-export function useTreasures() {
+// Load only once the caller is signed in (enabled): before that, the query runs as anonymous and gets no rows.
+export function useTreasures(enabled: boolean) {
   const [treasures, setTreasures] = useState<Treasure[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,8 +33,8 @@ export function useTreasures() {
   }, []);
 
   useEffect(() => {
-    reload();
-  }, [reload]);
+    if (enabled) reload();
+  }, [enabled, reload]);
 
   return { treasures, error, reload };
 }
