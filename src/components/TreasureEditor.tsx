@@ -10,6 +10,7 @@ import {
   type AdminTreasure, type HistoryEvent,
 } from '@/lib/adminTreasures';
 import { unmarkFound } from '@/lib/found';
+import { usePasteImages } from '@/lib/usePasteImages';
 
 type Props = {
   treasure: AdminTreasure;
@@ -77,7 +78,10 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
     });
   }
 
-  function addFiles(files: FileList | null) {
+  // Pasted screenshots (Ctrl+V / ⌘V) and picked files take the same path.
+  usePasteImages(addFiles);
+
+  function addFiles(files: FileList | File[] | null) {
     const list = Array.from(files ?? []);
     if (list.length === 0) return;
     const room = MAX_PHOTOS - photos.length;

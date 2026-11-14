@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Icon from '@/components/Icon';
+import { takeUpTo } from '@/lib/clipboardImages';
+import { usePasteImages } from '@/lib/usePasteImages';
 import { useRouter } from 'next/navigation';
 import PinPicker from '@/components/PinPicker';
 import { parseCoordinates } from '@/lib/coords';
@@ -18,6 +21,22 @@ export default function TreasureForm() {
   const [point, setPoint] = useState<LatLng | null>(null);
   const [coordsError, setCoordsError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
+  const previews = useMemo(() => photos.map((f) => URL.createObjectURL(f)), [photos]);
+  useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
+
+  // Adds photos up to the limit; more than that is cut and the admin is told.
+  function addPhotos(incoming: File[]) {
+    if (incoming.length === 0) return;
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) return setError(`Не більше ${MAX_PHOTOS} фото`);
+    if (incoming.length > room) setError(`Не більше ${MAX_PHOTOS} фото: додано перші ${room}`);
+    else setError(null);
+    setPhotos((prev) => [...prev, ...takeUpTo(incoming, MAX_PHOTOS - prev.length)]);
+  }
+  function removePhoto(i: number) {
+    setPhotos((prev) => prev.filter((_, j) => j !== i));
+  }
+  usePasteImages(addPhotos);
   const [pinEmoji, setPinEmoji] = useState<string>(DEFAULT_PIN);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,12 +102,28 @@ export default function TreasureForm() {
       </label>
       <PinPicker value={point} onChange={pickOnMap} />
       <PinEmojiPicker value={pinEmoji} onChange={setPinEmoji} />
-      <label className="flex flex-col gap-1">
-        <span className="text-sm text-[var(--muted)]">Фото (від 1 до {MAX_PHOTOS})</span>
-        <input type="file" accept="image/*" multiple
-          onChange={(e) => setPhotos(Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS))}
-          className="text-[16px]" />
-      </label>
+      <div className="flex flex-col gap-2">
+        <span className="text-sm text-[var(--muted)]">Фото (від 1 до {MAX_PHOTOS}) · вставте зображення через Ctrl+V / ⌘V або оберіть файли</span>
+        {previews.length > 0 && (
+          <ul className="flex gap-2 overflow-x-auto">
+            {previews.map((url, i) => (
+              <li key={url} className="relative shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`Фото ${i + 1}`} className="h-24 w-24 rounded-xl object-cover" />
+                <button type="button" aria-label="Прибрати фото" onClick={() => removePhoto(i)}
+                  className="absolute right-0 top-0 grid h-11 w-11 place-items-center">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white"><Icon name="close" size={16} /></span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {photos.length < MAX_PHOTOS && (
+          <input type="file" accept="image/*" multiple
+            onChange={(e) => { addPhotos(Array.from(e.target.files ?? [])); e.target.value = ''; }}
+            className="text-[16px]" />
+        )}
+      </div>
       {error && <p role="alert" className="text-sm text-[var(--danger)]">{error}</p>}
       <button type="submit" disabled={!canSubmit}
         className="dl-btn">
