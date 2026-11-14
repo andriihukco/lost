@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export type FoundStatus = 'won' | 'taken' | 'not_member';
+export type FoundStatus = 'won' | 'taken' | 'not_player' | 'not_found';
 
 // Atomic first-come claim via the mark_found RPC (migration 0001, spec §6.4).
 export async function markFound(treasureId: string, manualNote?: string): Promise<FoundStatus> {

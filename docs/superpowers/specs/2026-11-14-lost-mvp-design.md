@@ -1,5 +1,7 @@
 # Lost MVP — Design
 
+> **Superseded in part (2026-11-14):** the game is now a single global map, not rooms. Admins place treasures; players pick a nickname and an animal avatar. See `supabase/migrations/0003_admin_global.sql` and `docs/DEPLOY.md`. Sections on rooms, room codes, and copy-link describe the earlier design.
+
 Status: draft for approval · Date: 2026-11-14 · Source: PRD v1.0 (Ukrainian), with the five defaults accepted on 2026-11-14.
 
 ## 1. Intent and why

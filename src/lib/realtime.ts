@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import type { LatLng } from '@/lib/geo';
 
 export type PosMessage = { user_id: string; lat: number; lng: number; accuracy: number | null; ts: number };
-export type PresenceUser = { user_id: string; nickname: string; color: string };
+export type PresenceUser = { user_id: string; nickname: string; avatar: string };
 
 type Handlers = {
   onPosition: (m: PosMessage) => void;
@@ -14,18 +14,17 @@ type Handlers = {
   onStatus: (connected: boolean) => void;
 };
 
-export type RoomConnection = {
+export type GameConnection = {
   sendPosition: (p: LatLng, accuracy: number | null) => void;
   close: () => void;
 };
 
+const CHANNEL = 'lost-game';
 const MAX_BACKOFF_MS = 10_000;
 
-// One channel per room. Positions go over Broadcast; presence is for online state only;
+// One global channel for everyone. Positions use Broadcast; presence is online state only;
 // found events come from Postgres Changes (spec §7). Reconnects with backoff capped at 10 s.
-export function openRoomConnection(
-  opts: Handlers & { code: string; roomId: string; me: PresenceUser },
-): RoomConnection {
+export function openGameConnection(opts: Handlers & { me: PresenceUser }): GameConnection {
   let channel: RealtimeChannel | null = null;
   let closed = false;
   let attempt = 0;
@@ -33,7 +32,7 @@ export function openRoomConnection(
 
   function connect() {
     if (closed) return;
-    const ch = supabase.channel(`room:${opts.code}`, {
+    const ch = supabase.channel(CHANNEL, {
       config: { broadcast: { self: false }, presence: { key: opts.me.user_id } },
     });
     ch.on('broadcast', { event: 'pos' }, ({ payload }) => opts.onPosition(payload as PosMessage))
@@ -41,11 +40,7 @@ export function openRoomConnection(
         const state = ch.presenceState<PresenceUser>();
         opts.onOnline(Object.values(state).flat());
       })
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'treasures', filter: `room_id=eq.${opts.roomId}` },
-        () => opts.onTreasuresChanged(),
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'treasures' }, () => opts.onTreasuresChanged())
       .subscribe(async (status) => {
         if (ch !== channel) return; // a replaced channel reports its own close
         if (status === 'SUBSCRIBED') {
@@ -78,13 +73,7 @@ export function openRoomConnection(
 
   return {
     sendPosition(p, accuracy) {
-      const payload: PosMessage = {
-        user_id: opts.me.user_id,
-        lat: p.lat,
-        lng: p.lng,
-        accuracy,
-        ts: Date.now(),
-      };
+      const payload: PosMessage = { user_id: opts.me.user_id, lat: p.lat, lng: p.lng, accuracy, ts: Date.now() };
       channel?.send({ type: 'broadcast', event: 'pos', payload });
     },
     close() {

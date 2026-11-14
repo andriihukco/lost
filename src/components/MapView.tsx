@@ -4,11 +4,19 @@ import { useEffect, useRef } from 'react';
 import { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LatLng } from '@/lib/geo';
+import { avatarEmoji } from '@/lib/avatars';
 import { configureMapLibre, mapStyle } from '@/lib/mapSetup';
 import { INTERP_MS, lerpLatLng, opacityForAge } from '@/lib/interpolate';
 import type { Treasure } from '@/lib/useTreasures';
 
-export type OtherPlayer = { id: string; nickname: string; color: string; lat: number; lng: number; seenAt: number };
+export type OtherPlayer = { id: string; nickname: string; avatar: string; lat: number; lng: number; seenAt: number };
+
+// A player marker is their animal emoji, with the nickname as the accessible label.
+function applyAvatar(el: HTMLElement, avatar: string | null, label: string) {
+  el.className = 'grid h-8 w-8 place-items-center text-2xl drop-shadow';
+  el.textContent = avatar ? avatarEmoji(avatar) : '📍';
+  el.setAttribute('aria-label', label);
+}
 
 type OtherEntry = {
   marker: Marker;
@@ -22,11 +30,12 @@ type OtherEntry = {
 type Props = {
   treasures: Treasure[];
   me: LatLng | null;
+  meAvatar: string | null;
   others: OtherPlayer[];
   onSelectTreasure?: (t: Treasure) => void;
 };
 
-export default function MapView({ treasures, me, others, onSelectTreasure }: Props) {
+export default function MapView({ treasures, me, meAvatar, others, onSelectTreasure }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const meMarker = useRef<Marker | null>(null);
@@ -88,17 +97,16 @@ export default function MapView({ treasures, me, others, onSelectTreasure }: Pro
     if (!map || !me) return;
     if (!meMarker.current) {
       const el = document.createElement('div');
-      el.className = 'h-4 w-4 rounded-full border-2 border-white bg-blue-600 shadow';
       el.setAttribute('aria-label', 'Ви');
       meMarker.current = new Marker({ element: el }).setLngLat([me.lng, me.lat]).addTo(map);
-    } else {
-      meMarker.current.setLngLat([me.lng, me.lat]);
     }
+    applyAvatar(meMarker.current.getElement(), meAvatar, 'Ви');
+    meMarker.current.setLngLat([me.lng, me.lat]);
     if (!centered.current) {
       map.jumpTo({ center: [me.lng, me.lat] });
       centered.current = true;
     }
-  }, [me]);
+  }, [me, meAvatar]);
 
   // Other players: sync markers to the latest positions; the loop below glides them.
   useEffect(() => {
@@ -112,9 +120,7 @@ export default function MapView({ treasures, me, others, onSelectTreasure }: Pro
       const entry = otherMarkers.current.get(o.id);
       if (!entry) {
         const el = document.createElement('div');
-        el.className = 'h-4 w-4 rounded-full border-2 border-white shadow';
-        el.style.backgroundColor = o.color;
-        el.setAttribute('aria-label', o.nickname);
+        applyAvatar(el, o.avatar, o.nickname);
         const marker = new Marker({ element: el }).setLngLat([to.lng, to.lat]).addTo(map);
         otherMarkers.current.set(o.id, { marker, el, from: to, to, startedAt: now, seenAt: o.seenAt });
       } else {
@@ -123,8 +129,7 @@ export default function MapView({ treasures, me, others, onSelectTreasure }: Pro
         entry.to = to;
         entry.startedAt = now;
         entry.seenAt = o.seenAt;
-        entry.el.style.backgroundColor = o.color;
-        entry.el.setAttribute('aria-label', o.nickname);
+        applyAvatar(entry.el, o.avatar, o.nickname);
       }
     }
     for (const [id, entry] of otherMarkers.current) {

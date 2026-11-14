@@ -18,7 +18,8 @@ type Props = {
 const MESSAGES: Record<FoundStatus, string> = {
   won: 'Знахідку підтверджено!',
   taken: 'Скарб уже знайдено',
-  not_member: 'Немає доступу до скарбу',
+  not_player: 'Спочатку оберіть імʼя й аватар',
+  not_found: 'Скарб не знайдено',
 };
 
 export default function TreasureSheetContent({ treasure, pos, accuracy, onResult }: Props) {

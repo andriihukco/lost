@@ -7,7 +7,7 @@ import { parseCoordinates } from '@/lib/coords';
 import type { LatLng } from '@/lib/geo';
 import { createTreasure, MAX_PHOTOS } from '@/lib/treasures';
 
-export default function TreasureForm({ roomId, code }: { roomId: string; code: string }) {
+export default function TreasureForm() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [hint, setHint] = useState('');
@@ -43,8 +43,8 @@ export default function TreasureForm({ roomId, code }: { roomId: string; code: s
     setBusy(true);
     setError(null);
     try {
-      await createTreasure({ roomId, title, hint: hint || null, point, photos });
-      router.replace(`/r/${code}/map`);
+      await createTreasure({ title, hint: hint || null, point, photos });
+      router.replace('/');
     } catch (e) {
       setError((e as Error).message);
       setBusy(false);

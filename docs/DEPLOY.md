@@ -1,186 +1,162 @@
 # Deploying Lost
 
-Lost is a Next.js 16 app with a Supabase backend. You need two services: **Supabase** (database, auth, storage, realtime) and a **host for the Next.js app**. Vercel is recommended (see §1).
+Lost is a single global game: one map, players who choose a nickname and an animal, and admins who place the treasures. It runs on **Next.js 16** (Vercel) and **Supabase** (database, auth, storage, realtime).
 
-Order: 1) choose host, 2) Supabase, 3) MapTiler key, 4) push code to GitHub, 5) deploy on Vercel, 6) check.
-
----
-
-## 1. Host: Vercel or Netlify?
-
-**Use Vercel.** Reasons:
-
-- Next.js is built by the same team, so App Router, Suspense and the build output work without an adapter.
-- HTTPS is on by default. Geolocation and Screen Wake Lock both require a secure context, so the app will not work on a phone over plain HTTP.
-- Every push to GitHub gets a preview URL. Good for testing on a phone before going live.
-- The app has no special hosting needs (no server functions, no cron, no custom headers), so Vercel's free tier covers it.
-
-Netlify also runs Next.js (through its own adapter). It works, but it adds one more layer to debug. If you already use Netlify, the same three environment variables and steps apply.
+Order: 1) Supabase, 2) admin account, 3) MapTiler key, 4) Vercel, 5) check.
 
 ---
 
-## 2. Supabase
+## 1. Supabase
 
-### 2.1 Create the project
+### 1.1 Project and anonymous sign-ins
 
-1. Go to https://supabase.com/dashboard → **New project**.
-2. Pick a region close to your players (for Ukraine, a central-European region).
-3. Save the **database password** somewhere safe. You will need it for the CLI.
-
-### 2.2 Enable anonymous sign-ins (required)
-
-Players join without an account, so anonymous auth must be on.
+Players sign in anonymously, so anonymous auth must be on.
 
 - Dashboard → **Authentication → Sign In / Providers** → enable **Anonymous Sign-ins** → Save.
+- Dashboard → **Authentication → Rate Limits**: anonymous sign-ins are limited per IP per hour (the local config uses 30). Friends on one Wi-Fi share an IP, so raise the limit if many people join at once.
 
-Note: the local config (`supabase/config.toml`) sets `anonymous_users = 30` (sign-ins per hour per IP). Check the matching rate limit in the dashboard under **Authentication → Rate Limits**. Friends sharing one Wi-Fi share an IP, so raise the limit if many people join at once.
+### 1.2 Apply the migrations
 
-### 2.3 Apply the database migrations
+The schema lives in `supabase/migrations/`:
 
-The schema, RLS policies, RPC functions and the private `treasure-photos` bucket all live in `supabase/migrations/`. Apply them to the remote project with the CLI:
+| File | What it does |
+|---|---|
+| `0001_init.sql` | First schema (rooms model). Superseded by 0003. |
+| `0002_hardening.sql` | Hardening of the rooms model. Superseded by 0003. |
+| `0003_admin_global.sql` | **Global game:** drops rooms, adds `admins` and `players`, admin-only treasures, photo rules. |
+
+Run them from the repo folder:
 
 ```bash
-# one-time: install the CLI if missing
-brew install supabase/tap/supabase
-
-supabase login
 cd /Users/andriihuk/Desktop/Lost
-supabase link --project-ref <your-project-ref>   # ref is in the dashboard URL: /project/<ref>
-supabase db push                                  # applies 0001_init.sql and 0002_hardening.sql
+supabase link --project-ref <your-project-ref>   # /project/<ref> in the dashboard URL
+supabase migration list --linked                 # shows what is local and what is applied
+supabase db push --linked
 ```
 
-`supabase link` asks for the database password from §2.1.
+> **Destructive:** 0003 drops the `rooms`, `participants` and `treasures` tables. Any rooms or treasures on the remote project are lost. Your project has only test data so far, so this is expected. Do not run it on a project that holds real data.
 
-Migration 0002 (`0002_hardening.sql`) is required. It adds the last-treasure lock, the `join_room_as` RPC that the app uses to join, the participant guard, and the photo size and type limits. Without it, joining and photo uploads will fail.
-
-### 2.4 Check that it worked
-
-In the dashboard **SQL Editor**, run:
+Check after the push (SQL editor, read-only):
 
 ```sql
-select tablename, rowsecurity from pg_tables where schemaname = 'public';
--- expect: participants, rooms, treasures with rowsecurity = true
+select table_name from information_schema.tables
+where table_schema = 'public' order by 1;
+-- expect: admins, players, treasures
 
-select id, public, file_size_limit, allowed_mime_types from storage.buckets;
--- expect: treasure-photos, public = false, file_size_limit = 5242880
+select proname from pg_proc where proname in ('is_admin', 'mark_found') order by 1;
+-- expect: is_admin, mark_found
+
+select id, file_size_limit from storage.buckets where id = 'treasure-photos';
+-- expect: treasure-photos, 5242880
 ```
 
-Also check **Database → Replication**: `treasures` should be in the `supabase_realtime` publication (the migration adds it).
-
-### 2.5 Copy the API keys
+### 1.3 Keys
 
 Dashboard → **Project Settings → API**:
 
-- **Project URL** → becomes `NEXT_PUBLIC_SUPABASE_URL`
-- **anon / publishable key** → becomes `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+- **anon / publishable key** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-The anon key is public by design. Security comes from RLS, which is on for every table. **Never** put the `service_role` key in this app or in any `NEXT_PUBLIC_` variable.
+The anon key is public by design; RLS protects the data. **Never** put the `service_role` key in the app or in any `NEXT_PUBLIC_` variable.
 
-### 2.6 Free-plan limits to know
+### 1.4 Free-plan limits
 
-- A free project **pauses after about 7 days without activity**. Open the dashboard and click "Restore" if it stops responding.
+- A free project **pauses after about 7 days without activity**. Restore it from the dashboard if it stops responding.
 - Realtime has a concurrent-connection limit on the free plan. Fine for a friends game.
+
+---
+
+## 2. Admin account
+
+Only admins can place treasures. Admins sign in with email and password on `/admin`. Players never need an account.
+
+1. Dashboard → **Authentication → Users → Add user → Create new user**. Enter an email and a strong password, and tick **Auto Confirm User**.
+2. Grant the admin role in the SQL editor (replace the email):
+
+```sql
+insert into public.admins (user_id)
+select id from auth.users where email = 'you@example.com'
+on conflict do nothing;
+```
+
+3. Check it: `select count(*) from public.admins;` should be at least 1.
+
+To add another admin, repeat both steps. To remove one, delete the row from `public.admins`.
 
 ---
 
 ## 3. MapTiler key (for the map)
 
-Without a key, the map shows a blank background (no streets).
+Without a key the map shows a blank background (no streets).
 
 1. Create a free account at https://cloud.maptiler.com → **Keys** → create a key.
-2. Restrict it to your domains: **Key → Allowed HTTP origins** (referrers). Add:
+2. Restrict it: **Key → Allowed HTTP origins**. Add:
    - your Vercel domain, e.g. `https://lost-yourname.vercel.app`
-   - `http://localhost:3000` (for local work)
-3. Copy the key → becomes `NEXT_PUBLIC_MAPTILER_KEY`.
+   - `http://localhost:3000` (local work)
+3. Copy the key → `NEXT_PUBLIC_MAPTILER_KEY`.
 
-Public OSM tile servers are **not** used, on purpose. Their usage policy forbids heavy app traffic.
+Public OSM tile servers are **not** used, on purpose: their usage policy forbids heavy app traffic.
 
 ---
 
-## 4. Put the code on GitHub
+## 4. Code on GitHub
 
-The repo has no remote yet. Create an empty repository on GitHub (no README), then run:
+The code is already at `https://github.com/andriihukco/lost` (branch `main`). After a change, commit and push:
 
 ```bash
 cd /Users/andriihuk/Desktop/Lost
-git status                                   # should be clean; .env.local and .superpowers are ignored
-git remote add origin https://github.com/<you>/lost.git
-git branch -M main                           # optional: Vercel expects main as the production branch
-git push -u origin main
+git status                      # .env.local and .superpowers are ignored
+git add -A
+git commit -m "your message"
+git push origin HEAD:main
 ```
-
-If you keep the branch name `lost-mvp`, set the production branch to `lost-mvp` in Vercel instead.
-
-Check that `.env.local` is **not** pushed (it contains local keys). `git check-ignore -v .env.local` should print a match.
 
 ---
 
 ## 5. Deploy on Vercel
 
-### 5.1 Import the repo
+Vercel is recommended over Netlify: Next.js is first-party there, HTTPS is on by default (geolocation and Wake Lock need it), and no adapter is needed.
 
-1. https://vercel.com → **Add New… → Project** → import the GitHub repo.
-2. Framework preset: **Next.js** (auto-detected). Leave build settings as they are.
-3. **Environment Variables** — add these three, for **Production and Preview**:
+1. https://vercel.com → **Add New… → Project** → import `andriihukco/lost`. Production branch: `main`.
+2. **Environment Variables**, for **Production and Preview**:
 
 | Name | Value |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL from §2.5 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key from §2.5 |
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL from §1.3 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key from §1.3 |
 | `NEXT_PUBLIC_MAPTILER_KEY` | key from §3 |
 
-4. Click **Deploy**.
+3. **Deploy.**
 
-Build notes:
+Notes:
 
-- `npm install` runs a `postinstall` script that copies the MapLibre worker into `public/`. This is required; the map will not render without it. Nothing to configure.
-- If the build fails with "Задайте NEXT_PUBLIC_SUPABASE_URL…", a variable is missing or was added only to Development.
-- Changing an env var needs a **redeploy** (Deployments → ⋯ → Redeploy). `NEXT_PUBLIC_*` values are baked in at build time.
-
-### 5.2 Or deploy from the terminal (no GitHub needed)
-
-```bash
-npm i -g vercel
-cd /Users/andriihuk/Desktop/Lost
-vercel login
-vercel link                    # create or pick the project
-vercel env add NEXT_PUBLIC_SUPABASE_URL production
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
-vercel env add NEXT_PUBLIC_MAPTILER_KEY production
-vercel --prod
-```
-
-Each `vercel env add` asks for the value on stdin. Add the same three for `preview` if you want preview deploys to work.
-
-### 5.3 Custom domain (optional)
-
-Vercel → Project → **Settings → Domains**. Add the domain, then add it to the MapTiler allowed origins (§3).
+- `npm install` runs a `postinstall` script that copies the MapLibre worker into `public/`. Nothing to configure.
+- Build error "Задайте NEXT_PUBLIC_SUPABASE_URL…" means a variable is missing for that environment.
+- `NEXT_PUBLIC_*` values are baked in at build time. After changing one, redeploy.
+- Add the Vercel domain to the MapTiler origins (§3).
 
 ---
 
 ## 6. Check the live site
 
-Do this on real phones, over the HTTPS URL, not on a laptop:
+Use real phones over the HTTPS URL:
 
-1. **Desktop browser:** open the URL → "Нова гра" → join form → map loads.
-2. **iPhone (Safari):** open the URL on the same room → join → tap **Дозволити** for location → status shows "GPS: точно" after a few seconds.
-3. **Android (Chrome):** join the same room with a different nickname → each sees the other's marker move.
-4. **Host flow:** add a treasure by coordinates + one photo → it appears as an orange pin on both phones.
-5. **Found flow:** stand within about 15 m of a pin → "Підтвердити знахідку" becomes active → tap → the pin turns grey on the other phone without reload.
+1. **Desktop:** open the URL → the map loads with the onboarding sheet → enter a name, pick an animal → **Зберегти і відкрити карту** → the map opens.
+2. **Phone 2 (Safari or Chrome):** the same URL → onboarding → you see phone 1's animal move on the map.
+3. **Admin:** `/admin` → sign in → add a treasure with coordinates and at least one photo → it appears as an orange pin on both phones.
+4. **Found:** stand within about 15 m of a pin → **Підтвердити знахідку** → the pin turns grey on the other phone without reload.
 
-Full device checklist: spec §10 in `docs/superpowers/specs/2026-11-14-lost-mvp-design.md`.
+Limits to tell players:
 
-Known limits to tell players:
-
-- Tracking pauses when the phone locks or the browser goes to the background (iOS limit, spec C1). Keep the screen on and Lost in front.
-- No vibration on iPhone (iOS does not support the Vibration API).
+- Tracking pauses when the phone locks or the browser goes to the background (iOS limit).
+- No vibration on iPhone.
 
 ---
 
 ## 7. Updating later
 
-- **Code changes:** push to the production branch; Vercel deploys automatically.
-- **Database changes:** add a new file under `supabase/migrations/`, then run `supabase db push`. Do not edit an applied migration; add a new one.
+- **Code:** push to `main`; Vercel deploys automatically.
+- **Database:** add a new file under `supabase/migrations/` and run `supabase db push --linked`. Do not edit an applied migration.
 - **Keys rotated:** update the env var in Vercel and redeploy.
 
 ---
@@ -189,16 +165,16 @@ Known limits to tell players:
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| "Кімнату не знайдено" for a valid code | Migration 0001 or 0002 not applied | `supabase db push` |
-| Join fails with an error | Anonymous sign-ins off, or migration 0002 missing | §2.2 and §2.3 |
-| Map is blank grey, no streets | `NEXT_PUBLIC_MAPTILER_KEY` empty, or the domain is not in the key's allowed origins | §3 |
-| "Немає зв'язку" on the map | Realtime blocked or project paused | Check the project is active; check the browser console |
-| Photo upload fails | Bucket missing or migration 0002 not applied | §2.4 |
-| Geolocation does nothing on a phone | Page served over HTTP, or the user denied permission | Use the HTTPS URL; check permission in browser settings |
-| Build fails on Vercel with a Supabase error | Env vars missing for the environment being built | §5.1 step 3 |
+| "Не вдалося створити сесію" on the map | Anonymous sign-ins off, or the anonymous rate limit reached | §1.1 |
+| Map is blank grey, no streets | MapTiler key empty, or the domain is not in its allowed origins | §3 |
+| Admin login says "Цей акаунт не має доступу адміністратора" | Admin row missing for that user | §2 step 2 |
+| Treasure save fails for admin | 0003 not applied, or the admin is not in `public.admins` | §1.2, §2 |
+| Photo upload fails | Photo over 5 MB or not WebP/JPEG, or not admin | Compressed photos are well under 5 MB; check the account |
+| No other player visible | Other phone not onboarded, or realtime blocked | Check the project is active; check the browser console |
+| Geolocation does nothing on a phone | Page served over HTTP, or permission denied | Use the HTTPS URL; check browser permissions |
 
 ---
 
 ## 9. Costs
 
-Everything here runs on free tiers: Vercel Hobby, Supabase Free, MapTiler free tier. Limits to watch: Supabase project pausing after inactivity, Supabase realtime connections, and MapTiler's monthly map loads. A friends game stays well inside all of them.
+Free tiers throughout: Vercel Hobby, Supabase Free, MapTiler free. Watch Supabase project pausing, realtime connections and MapTiler monthly map loads. A friends game stays well inside all of them.

@@ -3,7 +3,7 @@
 import type { GpsStatus } from '@/lib/useGeolocation';
 
 type Props = {
-  roomName: string;
+  title: string;
   foundCount: number;
   total: number;
   gps: GpsStatus;
@@ -13,7 +13,7 @@ type Props = {
   online: boolean;
 };
 
-// Passive top status (spec §5.1): room name, found counter, GPS and wake-lock state.
+// Passive top status (spec §5.1): title, found counter, GPS and wake-lock state.
 const GPS_GOOD_M = 25; // accuracy at or below this reads as "точно"
 
 function gpsLabel(gps: GpsStatus, accuracy: number | null): string {
@@ -25,7 +25,7 @@ function gpsLabel(gps: GpsStatus, accuracy: number | null): string {
 }
 
 export default function StatusBar({
-  roomName, foundCount, total, gps, accuracy, wakeActive, wakeSupported, online,
+  title, foundCount, total, gps, accuracy, wakeActive, wakeSupported, online,
 }: Props) {
   const wakeText = wakeActive ? 'Екран активний' : 'Екран не блокується';
   return (
@@ -34,7 +34,7 @@ export default function StatusBar({
       className="apple-material-thick rounded-2xl px-4 py-2 text-sm font-medium shadow-[var(--shadow-soft)]"
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="truncate">{roomName}</span>
+        <span className="truncate">{title}</span>
         <span className="tabular-nums">Знайдено {foundCount}/{total}</span>
       </div>
       <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-neutral-500">
