@@ -18,9 +18,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   userScalable: true,
+  interactiveWidget: "resizes-content", // keyboard resizes the page, not the map shell
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#58a700" },
-    { media: "(prefers-color-scheme: dark)", color: "#58a700" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f7f1" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1613" },
   ],
 };
 

@@ -281,7 +281,7 @@ export default function Game() {
             </span>
           )}
           {compass.status === 'needs-permission' && (
-            <button type="button" onClick={() => void compass.requestPermission()} className="dl-tag px-4 py-2 text-[15px]">
+            <button type="button" onClick={() => void compass.requestPermission()} className="dl-tag min-h-[44px] px-4 py-2 text-[15px]">
               Увімкнути компас
             </button>
           )}
@@ -327,7 +327,7 @@ export default function Game() {
                 {route.walk.source === 'paths' ? 'По стежках і дорогах' : 'По прямій (маршрут стежками недоступний)'}
               </p>
             </div>
-            <button type="button" onClick={() => setRoute(null)} className="dl-btn-secondary !w-auto !px-4 !py-2 !text-[15px]">
+            <button type="button" onClick={() => setRoute(null)} className="dl-btn-secondary !w-auto !min-h-[44px] !px-4 !py-2 !text-[15px]">
               Закрити
             </button>
           </div>

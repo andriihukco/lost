@@ -53,7 +53,7 @@ export default function TreasureManager() {
                     : 'На карті'}
                 </span>
               </span>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${t.is_found ? 'bg-neutral-200 text-neutral-600' : 'bg-orange-100 text-orange-700'}`}>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${t.is_found ? 'bg-[var(--line)] text-[var(--muted)]' : 'bg-orange-100 text-orange-700'}`}>
                 {t.is_found ? 'знайдено' : 'активний'}
               </span>
             </button>

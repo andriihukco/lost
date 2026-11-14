@@ -143,7 +143,7 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
         </label>
       </div>
       {errors.map((e) => <p key={e} role="alert" className="text-sm text-[var(--danger)]">{e}</p>)}
-      <button type="button" disabled={busy} onClick={save} className="dl-btn !w-auto !py-2.5 !text-sm">
+      <button type="button" disabled={busy} onClick={save} className="dl-btn !w-auto !min-h-[44px] !py-2.5 !text-sm">
         Зберегти зміни
       </button>
 
@@ -154,8 +154,8 @@ export default function TreasureEditor({ treasure, names, onChanged, onDeleted }
         <div className="flex gap-2 overflow-x-auto">
           {photos.map((p) => (
             <div key={p} className="relative shrink-0">
-              {urls[p] ? <img src={urls[p]} alt="Фото" className="h-24 w-24 rounded-xl object-cover" /> : <div className="h-24 w-24 rounded-xl bg-neutral-200" />}
-              <button type="button" onClick={() => dropPhoto(p)} disabled={busy} className="absolute right-1 top-1 rounded-full bg-black/60 px-2 text-xs text-white">×</button>
+              {urls[p] ? <img src={urls[p]} alt="Фото" className="h-24 w-24 rounded-xl object-cover" /> : <div className="h-24 w-24 rounded-xl bg-[var(--line)]" />}
+              <button type="button" aria-label="Видалити фото" onClick={() => dropPhoto(p)} disabled={busy} className="absolute right-0 top-0 grid h-11 w-11 place-items-center"><span className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-sm text-white">×</span></button>
             </div>
           ))}
         </div>

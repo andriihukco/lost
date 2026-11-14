@@ -101,7 +101,7 @@ export default function AdminScreen() {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-[var(--green)] text-white shadow-[0_4px_0_var(--green-deep)]' : 'dl-card text-[var(--ink)]'}`}
+            className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-[var(--green)] text-white shadow-[0_4px_0_var(--green-deep)]' : 'dl-card text-[var(--ink)]'}`}
           >
             {t === 'manage' ? 'Скарби' : 'Додати скарб'}
           </button>

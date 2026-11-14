@@ -121,7 +121,7 @@ export default function FindsTab({ treasures, myId, names, distances, gpsReady, 
             {others.map((t) => (
               <li key={t.id}>
                 <button type="button" onClick={() => onShow(t.id)} className={`${row} w-full`}>
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-neutral-100 text-xl">🔎</span>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--line)] text-xl">🔎</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[17px] font-semibold">{t.title}</span>
                     <span className="block text-[13px] text-[var(--muted)]">Знайшов(ла) {names[t.found_by ?? ''] ?? 'гравець'}</span>
