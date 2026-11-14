@@ -46,6 +46,7 @@ type Props = {
   unlimited?: boolean; // admin view: no movement limit around me and the treasures
   mapKind?: MapKind; // outdoor, satellite or hybrid; switching keeps pins and the route
   marks?: MapMark[]; // admin warnings and notes: emoji pins only (no distance, not treasures)
+  onViewChange?: (v: { lat: number; lng: number; zoom: number }) => void; // the centre and zoom, for the map-type previews
   onSelectMark?: (m: MapMark) => void;
   fitTo?: LatLng[]; // when this array changes, the camera fits these points once (admin: everyone on the map)
 };
@@ -120,7 +121,11 @@ function buildPin(emoji: string): { el: HTMLButtonElement; label: HTMLSpanElemen
 type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
 type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; badge: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0, unlimited = false, fitTo, mapKind = 'outdoor', marks = [], onSelectMark }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0, unlimited = false, fitTo, mapKind = 'outdoor', marks = [], onSelectMark, onViewChange }: Props) {
+  const viewRef = useRef(onViewChange);
+  useEffect(() => {
+    viewRef.current = onViewChange;
+  }, [onViewChange]);
   const kindRef = useRef<MapKind>(mapKind); // the kind the map is currently showing
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -199,6 +204,12 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     // Off-screen treasures are re-placed while the map moves.
     map.on('move', () => updateRef.current());
     map.on('resize', () => updateRef.current());
+    const emitView = () => {
+      const c = map.getCenter();
+      viewRef.current?.({ lat: c.lat, lng: c.lng, zoom: map.getZoom() });
+    };
+    map.on('moveend', emitView);
+    map.on('load', emitView);
     mapRef.current = map;
     const pins = pinMap.current;
     const others = otherMarkers.current;

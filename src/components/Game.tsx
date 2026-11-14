@@ -65,6 +65,7 @@ export default function Game() {
   const [entered, setEntered] = useState(false); // the entry gate was passed in this visit
   const [mapKind, setMapKind] = useState<MapKind>('outdoor');
   const [marks, setMarks] = useState<MapMark[]>([]); // admin warnings and notes, shown on the map only
+  const [mapView, setMapView] = useState({ lat: 49.8419, lng: 24.0315, zoom: 15 }); // the area in view, for the map-type previews
   const [selectedMark, setSelectedMark] = useState<MapMark | null>(null);
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
@@ -316,6 +317,7 @@ export default function Game() {
         mapKind={mapKind}
         marks={marks}
         onSelectMark={setSelectedMark}
+        onViewChange={setMapView}
       />
 
       {tab !== 'map' && player && (
@@ -373,6 +375,7 @@ export default function Game() {
       {tab === 'map' && (
         <MapKindPicker
           value={mapKind}
+          view={mapView}
           onChange={(k) => {
             setMapKind(k);
             saveMapKind(window.localStorage, k);
