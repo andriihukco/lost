@@ -1,30 +1,37 @@
-// Animal avatars for players. The keys must match the check constraint in migration 0003
-// (enforced by tests/avatars.test.ts).
+// Animal avatars for players. Each animal comes with its predefined nickname: a player picks an animal and gets
+// its nickname, so nicknames are never typed by hand and stay unique (the animal is unique). The keys must match the
+// check constraint in migration 0003 (enforced by tests/avatars.test.ts). Nicknames are Ukrainian two-word names
+// where the adjective agrees with the animal's grammatical gender.
 export const AVATARS = [
-  { key: 'fox', emoji: '🦊', label: 'Лис' },
-  { key: 'bear', emoji: '🐻', label: 'Ведмідь' },
-  { key: 'panda', emoji: '🐼', label: 'Панда' },
-  { key: 'koala', emoji: '🐨', label: 'Коала' },
-  { key: 'tiger', emoji: '🐯', label: 'Тигр' },
-  { key: 'lion', emoji: '🦁', label: 'Лев' },
-  { key: 'frog', emoji: '🐸', label: 'Жабка' },
-  { key: 'monkey', emoji: '🐵', label: 'Мавпа' },
-  { key: 'penguin', emoji: '🐧', label: 'Пінгвін' },
-  { key: 'rabbit', emoji: '🐰', label: 'Кролик' },
-  { key: 'pig', emoji: '🐷', label: 'Свинка' },
-  { key: 'cow', emoji: '🐮', label: 'Корова' },
-  { key: 'dog', emoji: '🐶', label: 'Песик' },
-  { key: 'cat', emoji: '🐱', label: 'Котик' },
-  { key: 'octopus', emoji: '🐙', label: 'Восьминіг' },
-  { key: 'owl', emoji: '🦉', label: 'Сова' },
-  { key: 'unicorn', emoji: '🦄', label: 'Єдиноріг' },
-  { key: 'turtle', emoji: '🐢', label: 'Черепаха' },
+  { key: 'fox', emoji: '🦊', nickname: 'Хитра Лисиця' },
+  { key: 'bear', emoji: '🐻', nickname: 'Сильний Ведмідь' },
+  { key: 'panda', emoji: '🐼', nickname: 'Спокійна Панда' },
+  { key: 'koala', emoji: '🐨', nickname: 'Сонна Коала' },
+  { key: 'tiger', emoji: '🐯', nickname: 'Грізний Тигр' },
+  { key: 'lion', emoji: '🦁', nickname: 'Гордий Лев' },
+  { key: 'frog', emoji: '🐸', nickname: 'Весела Жаба' },
+  { key: 'monkey', emoji: '🐵', nickname: 'Щаслива Мавпа' },
+  { key: 'penguin', emoji: '🐧', nickname: 'Холодний Пінгвін' },
+  { key: 'rabbit', emoji: '🐰', nickname: 'Швидкий Кролик' },
+  { key: 'pig', emoji: '🐷', nickname: 'Рожева Свинка' },
+  { key: 'cow', emoji: '🐮', nickname: 'Мирна Корова' },
+  { key: 'dog', emoji: '🐶', nickname: 'Вірний Песик' },
+  { key: 'cat', emoji: '🐱', nickname: 'Дикий Кіт' },
+  { key: 'octopus', emoji: '🐙', nickname: 'Розумний Восьминіг' },
+  { key: 'owl', emoji: '🦉', nickname: 'Мудра Сова' },
+  { key: 'unicorn', emoji: '🦄', nickname: 'Чарівний Єдиноріг' },
+  { key: 'turtle', emoji: '🐢', nickname: 'Повільна Черепаха' },
 ] as const;
 
 export type AvatarKey = (typeof AVATARS)[number]['key'];
 
 export function avatarEmoji(key: string): string {
   return AVATARS.find((a) => a.key === key)?.emoji ?? '👤';
+}
+
+// The predefined nickname of an animal, or null for an unknown key.
+export function nicknameFor(key: string): string | null {
+  return AVATARS.find((a) => a.key === key)?.nickname ?? null;
 }
 
 // An animal is taken when another player has it. My own animal stays available to me.
