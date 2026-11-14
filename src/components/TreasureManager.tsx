@@ -127,7 +127,7 @@ export default function TreasureManager() {
         href="/admin/new"
         aria-label="Новий скарб"
         className="fixed right-5 z-30 grid h-16 w-16 place-items-center rounded-full bg-[var(--green)] text-white elev-green transition-transform active:scale-95"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 104px)' }}
       >
         <Icon name="add" size={30} />
       </Link>

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import TreasureManager from '@/components/TreasureManager';
 import PlayersPanel from '@/components/PlayersPanel';
 import AdminMap from '@/components/AdminMap';
+import PillTabBar from '@/components/PillTabBar';
 import Icon from '@/components/Icon';
 import Splash from '@/components/Splash';
 import { checkIsAdmin } from '@/lib/player';
@@ -93,7 +94,7 @@ export default function AdminScreen() {
   }
 
   return (
-    <main className="min-h-dvh bg-[var(--page)]">
+    <main className="min-h-dvh bg-[var(--page)] pb-28">
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-[var(--page)]/90 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-md">
         <Link href="/" aria-label="На карту" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--ink)] elev-sm">
           <Icon name="arrow_back" size={22} />
@@ -103,25 +104,20 @@ export default function AdminScreen() {
           <Icon name="logout" size={22} />
         </button>
       </header>
-      <nav aria-label="Розділи адмінки" className="px-4 pb-3">
-        <div role="tablist" className="grid grid-cols-3 gap-1 rounded-full bg-[var(--line)] p-1">
-          {([['treasures', 'Скарби'], ['players', 'Гравці'], ['map', 'Карта']] as const).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={section === id}
-              onClick={() => setSection(id)}
-              className={`min-h-[40px] rounded-full text-sm font-bold transition-colors ${section === id ? 'bg-[var(--paper)] text-[var(--ink)] elev-sm' : 'text-[var(--muted)]'}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </nav>
       {section === 'treasures' && <TreasureManager />}
       {section === 'players' && <PlayersPanel />}
       {section === 'map' && <AdminMap />}
+      <PillTabBar
+        navLabel="Розділи адмінки"
+        position="fixed"
+        items={[
+          { id: 'treasures', label: 'Скарби', icon: 'travel_explore' },
+          { id: 'players', label: 'Гравці', icon: 'group' },
+          { id: 'map', label: 'Карта', icon: 'map' },
+        ]}
+        value={section}
+        onChange={setSection}
+      />
     </main>
   );
 }
