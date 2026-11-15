@@ -4,6 +4,8 @@ import { plural } from '@/lib/plural';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TreasureModal from '@/components/TreasureModal';
 import MarkSheet from '@/components/MarkSheet';
+import { PasscodeLock } from '@/components/Passcode';
+import { readPasscode } from '@/lib/passcode';
 import MapKindPicker from '@/components/MapKindPicker';
 import { listMapMarks, type MapMark } from '@/lib/mapMarks';
 import { loadMapKind, saveMapKind } from '@/lib/mapKind';
@@ -17,7 +19,6 @@ import InAppGate from '@/components/InAppGate';
 import { detectInApp, type InApp } from '@/lib/inApp';
 import { isWelcomed, markWelcomed } from '@/lib/welcome';
 import Icon from '@/components/Icon';
-import Splash from '@/components/Splash';
 import { compassPermOf, firstGateStep, type LocationPerm } from '@/lib/entryGate';
 import { effectiveCompass, effectiveLocation, readGrants, rememberGrant, type Grant } from '@/lib/grants';
 import { useIsPhone } from '@/lib/useIsPhone';
@@ -74,7 +75,9 @@ export default function Game() {
   const [mapView, setMapView] = useState({ lat: 49.8419, lng: 24.0315, zoom: 15 }); // the area in view, for the map-type previews
   const [selectedMark, setSelectedMark] = useState<MapMark | null>(null);
   const [onboardingMap, setOnboardingMap] = useState(false); // after the nickname: the offline-map step of onboarding
-  const [isAdmin, setIsAdmin] = useState(false); // an admin may bring a found treasure back to the map, as the finder can
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [locked, setLocked] = useState(false); // the passcode lock screen is up
+  const lastTouch = useRef(Date.now()); // the last touch on the app: the auto-lock counts from it // an admin may bring a found treasure back to the map, as the finder can
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
   const [recenter, setRecenter] = useState(0);
@@ -236,6 +239,26 @@ export default function Game() {
     return () => { cancelled = true; };
   }, [inApp, inAppOk]);
 
+  // The passcode: the app opens locked when a code is set, and locks again once it has been left untouched for the
+  // chosen time. A touch on the app, or coming back to it, is checked against that time.
+  useEffect(() => {
+    if (readPasscode(window.localStorage)) setLocked(true);
+    const touch = () => { lastTouch.current = Date.now(); };
+    const check = () => {
+      const p = readPasscode(window.localStorage);
+      if (p && p.lockAfterMs > 0 && Date.now() - lastTouch.current >= p.lockAfterMs) setLocked(true);
+    };
+    const events = ['pointerdown', 'keydown', 'touchstart'] as const;
+    for (const e of events) window.addEventListener(e, touch, { passive: true });
+    document.addEventListener('visibilitychange', check);
+    const id = setInterval(check, 5000);
+    return () => {
+      for (const e of events) window.removeEventListener(e, touch);
+      document.removeEventListener('visibilitychange', check);
+      clearInterval(id);
+    };
+  }, []);
+
   // Whether this browser's session is an admin's (the database decides; the player app only shows the action).
   useEffect(() => {
     if (!userId) return;
@@ -352,7 +375,8 @@ export default function Game() {
 
   const gate = inApp?.inApp === true && !inAppOk;
   if (gate) return <InAppGate info={inApp} url={window.location.href} onContinue={() => setInAppOk(true)} />;
-  if (!ready) return <Splash />;
+  // Until the app is ready the screen is plain: no logo or splash on start.
+  if (!ready) return <main className="min-h-dvh bg-[var(--page)]" aria-busy="true" />;
   if (failed) return <main className="p-6 text-[17px] font-semibold text-[var(--danger)]">{failed}</main>;
 
   const nameRecord = Object.fromEntries([...names.current].map(([id, v]) => [id, v.nickname]));
@@ -545,6 +569,15 @@ export default function Game() {
             markWelcomed(window.localStorage);
             setWelcomed(true);
             setEntered(true);
+          }}
+        />
+      )}
+
+      {locked && (
+        <PasscodeLock
+          onUnlock={() => {
+            lastTouch.current = Date.now();
+            setLocked(false);
           }}
         />
       )}
