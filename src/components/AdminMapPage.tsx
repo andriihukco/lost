@@ -281,7 +281,8 @@ export default function AdminMapPage({ onSignOut, onSection }: { onSignOut: () =
         {listOpen && <div className="flex min-h-0 flex-1 flex-col pb-4">{list}</div>}
       </section>
 
-      <PillTabBar
+      {!sheet && (
+        <PillTabBar
         navLabel="Розділи адмінки"
         position="fixed"
         items={[
@@ -292,7 +293,8 @@ export default function AdminMapPage({ onSignOut, onSection }: { onSignOut: () =
         onChange={(id) => {
           if (id === 'players') onSection('players');
         }}
-      />
+        />
+      )}
 
       {/* The editor: an existing object, or the form for a new one at the point picked on the map. */}
       <AnimatePresence>

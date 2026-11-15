@@ -3,6 +3,7 @@ import { plural } from '@/lib/plural';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TreasureModal from '@/components/TreasureModal';
+import MarkSheet from '@/components/MarkSheet';
 import MapKindPicker from '@/components/MapKindPicker';
 import { listMapMarks, type MapMark } from '@/lib/mapMarks';
 import { loadMapKind, saveMapKind } from '@/lib/mapKind';
@@ -451,25 +452,13 @@ export default function Game() {
 
       {/* One panel above the tab bar at a time: a mark you tapped, else the route, else the nearby treasure.
           It is docked to the tab bar and scrolls when tall, so the map keeps its focus. */}
-      {tab === 'map' && (selectedMark || route || (player && nearby && !showSheet)) && (
+      {tab === 'map' && (route || (player && nearby && !showSheet)) && (
         <div
           style={{ bottom: tabBarH }}
           className="absolute inset-x-0 z-10 flex max-h-[40dvh] flex-col overflow-y-auto rounded-t-[24px] border-t border-[var(--line)] bg-[var(--paper)] px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-2 elev-sheet"
         >
           <div aria-hidden className="mx-auto mb-3 h-1.5 w-10 shrink-0 rounded-full bg-[var(--line)]" />
-          {selectedMark ? (
-            <div role="dialog" aria-label={selectedMark.title} className="flex items-start gap-3">
-              <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-2xl">{selectedMark.emoji}</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Мітка на карті</p>
-                <p className="text-[17px] font-bold">{selectedMark.title}</p>
-                {selectedMark.note && <p className="mt-0.5 text-[15px] text-[var(--muted)]">{selectedMark.note}</p>}
-              </div>
-              <button type="button" aria-label="Закрити" onClick={() => setSelectedMark(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--muted)]">
-                <Icon name="close" size={22} />
-              </button>
-            </div>
-          ) : route ? (
+          {route ? (
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -538,9 +527,14 @@ export default function Game() {
           />
           </TreasureModal>
         )}
+      {selectedMark && (
+          <TreasureModal key={`mark-${selectedMark.id}`} title={selectedMark.title} onClose={() => setSelectedMark(null)}>
+            <MarkSheet mark={selectedMark} />
+          </TreasureModal>
+        )}
       </AnimatePresence>
 
-      {player && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); setSelectedMark(null); }} onHeight={setTabBarH} />}
+      {player && !showSheet && !selectedMark && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); setSelectedMark(null); }} onHeight={setTabBarH} />}
 
       {gateStep && (
         <Welcome
