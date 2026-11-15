@@ -52,7 +52,7 @@ export default function OfflineMap({
   const saved = result !== null && result.failed === 0;
 
   return (
-    <section className={`flex flex-col gap-4 ${card ? '' : 'p-5'}`}>
+    <section className="flex flex-col gap-4">
       <div className="flex items-start gap-3">
         <span
           aria-hidden

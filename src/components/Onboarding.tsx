@@ -62,7 +62,7 @@ export default function Onboarding({
               <span className="h-1 flex-1 rounded-full bg-[var(--green)]" />
             </div>
             <h2 className="dl-title mt-5 text-3xl">Майже готово</h2>
-            <div className="dl-card mt-5">
+            <div className="mt-6">
               <OfflineMap points={points} variant="prompt" onDone={onFinish} onLater={onFinish} />
             </div>
           </div>
