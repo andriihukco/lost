@@ -13,7 +13,7 @@ type Slide = { id: string; emoji: string; title: string; text: string; permissio
 const SLIDES: Slide[] = [
   {
     id: 'hello',
-    emoji: '🌲',
+    emoji: '🔎',
     title: 'Ласкаво просимо до Lost',
     text: 'Шукайте сховані скарби разом із друзями. Ходіть лісовими стежками й знаходьте їх.',
   },
@@ -62,7 +62,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
   const slide = SLIDES[index];
 
   function goTo(i: number) {
-    if (busy || i < 0 || i >= SLIDES.length || i > reached) return;
+    if (busy || i < 0 || i >= SLIDES.length) return; // the dots check "reached" themselves
     setDir(i > index ? 1 : -1);
     setIndex(i);
     setNote(null);
@@ -156,7 +156,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
               initial={{ scale: 0.6, rotate: -8 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', visualDuration: 0.5, bounce: 0.35 }}
-              className="grid h-36 w-36 place-items-center rounded-full border-[3px] border-[var(--green)] bg-[var(--paper)] text-[76px] leading-none elev-md"
+              className="block text-[96px] leading-none"
             >
               {slide.emoji}
             </motion.span>
