@@ -56,7 +56,7 @@ export default function AdminObjectList({
             role="tab"
             aria-selected={filter === c.id}
             onClick={() => onFilter(c.id)}
-            className={`min-h-[36px] shrink-0 rounded-full px-3.5 text-[14px] font-bold transition-colors ${
+            className={`min-h-[44px] shrink-0 rounded-full px-3.5 text-[14px] font-bold transition-colors ${
               filter === c.id ? 'bg-[var(--green)] text-white' : 'bg-[var(--line)]/70 text-[var(--muted)]'
             }`}
           >

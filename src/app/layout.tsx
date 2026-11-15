@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import SwRegister from "@/components/SwRegister";
+import MotionProvider from "@/components/MotionProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,7 +29,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="uk" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}<SwRegister /></body>
+      <body className="min-h-full flex flex-col"><MotionProvider>{children}</MotionProvider><SwRegister /></body>
     </html>
   );
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import AdminMapPage from '@/components/AdminMapPage';
+import BackButton from '@/components/BackButton';
 import PlayersPanel from '@/components/PlayersPanel';
 import PillTabBar from '@/components/PillTabBar';
 import Icon from '@/components/Icon';
@@ -107,9 +108,7 @@ export default function AdminScreen() {
     <main className="min-h-dvh bg-[var(--page)] pb-28">
       <header className="sticky top-0 z-20 bg-[var(--page)]/90 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
-          <Link href="/" aria-label="На карту" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--ink)] elev-sm">
-            <Icon name="arrow_back" size={22} />
-          </Link>
+          <BackButton href="/" label="На карту" />
           <p className="text-[15px] font-bold">Адмін · Гравці</p>
           <button type="button" onClick={() => void signOut()} aria-label="Вийти" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--muted)] elev-sm">
             <Icon name="logout" size={22} />

@@ -71,9 +71,12 @@ export default function TreasureModal({ title, onClose, children }: Props) {
             aria-label="Закрити"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onClose}
-            className="absolute right-4 top-2 grid h-9 w-9 place-items-center rounded-full bg-[var(--line)]/70 text-[var(--muted)]"
+            className="absolute right-3 top-1 grid h-11 w-11 place-items-center"
           >
-            <Icon name="close" size={18} />
+            {/* A 44 px tap target around the smaller visible circle. */}
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--line)]/70 text-[var(--muted)]">
+              <Icon name="close" size={18} />
+            </span>
           </button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-b-[28px] md:rounded-none" style={{ touchAction: 'pan-y' }}>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import BackButton from '@/components/BackButton';
 import NicknamePicker from '@/components/NicknamePicker';
 import OfflineMap from '@/components/OfflineMap';
 import { LockPicker, PasscodeSetup } from '@/components/Passcode';
@@ -116,7 +117,8 @@ export default function Onboarding({
 
             {step === 'passcode' && passcodeStage === 'time' && (
               <>
-                <p className="mt-5 text-[34px] leading-none" aria-hidden>⏱️</p>
+                <BackButton label="Назад до коду" onClick={() => setPasscodeStage('code')} className="mt-4" />
+                <p className="mt-4 text-[34px] leading-none" aria-hidden>⏱️</p>
                 <h2 className="dl-title mt-3 text-3xl">Коли просити код?</h2>
                 <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">
                   Коли застосунок має знову просити код?
@@ -124,14 +126,9 @@ export default function Onboarding({
                 <div className="mt-6">
                   <LockPicker value={lockMs} onChange={setLockMs} />
                 </div>
-                <div className="mt-6 flex flex-col gap-2">
-                  <button type="button" onClick={() => void finishPasscode()} className="dl-btn">
-                    Готово
-                  </button>
-                  <button type="button" onClick={() => setPasscodeStage('code')} className="min-h-[44px] text-center text-[15px] font-bold text-[var(--muted)]">
-                    Назад
-                  </button>
-                </div>
+                <button type="button" onClick={() => void finishPasscode()} className="dl-btn mt-6">
+                  Готово
+                </button>
               </>
             )}
 

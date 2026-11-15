@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion, type PanInfo } from 'motion/react';
+import BackButton from '@/components/BackButton';
 import { compassPermOf, firstGateStep } from '@/lib/entryGate';
 import { rememberGrant } from '@/lib/grants';
 import { WELCOME_STEPS, type WelcomeStep } from '@/lib/welcome';
@@ -127,9 +128,14 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[var(--page)] px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)]">
-      <p className="text-center text-[13px] font-bold uppercase tracking-wider text-[var(--muted)]" aria-live="polite">
-        Крок {index + 1} з {SLIDES.length}
-      </p>
+      {/* The top bar, as in an iOS navigation bar: back on the left, where the player is in the middle. */}
+      <div className="mx-auto flex w-full max-w-md items-center justify-between">
+        <BackButton label="Назад" onClick={() => goTo(index - 1)} disabled={!canBack} className={index === 0 ? 'invisible' : ''} />
+        <p className="text-center text-[13px] font-bold uppercase tracking-wider text-[var(--muted)]" aria-live="polite">
+          Крок {index + 1} з {SLIDES.length}
+        </p>
+        <span aria-hidden className="w-11" />
+      </div>
 
       <div className="relative mx-auto flex w-full max-w-md flex-1 items-center justify-center">
         <AnimatePresence mode="wait" initial={false} custom={dir}>
@@ -168,16 +174,8 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
       </div>
 
       <div className="mx-auto flex w-full max-w-md flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => goTo(index - 1)}
-            disabled={!canBack}
-            className={`min-h-[44px] w-20 text-left text-[16px] font-bold text-[var(--muted)] ${index === 0 ? 'invisible' : ''}`}
-          >
-            Назад
-          </button>
-          <div role="tablist" aria-label="Слайди" className="flex items-center gap-2">
+        <div className="flex items-center justify-center">
+          <div role="tablist" aria-label="Слайди" className="flex items-center">
             {SLIDES.map((s, i) => {
               const open = i <= reached;
               return (
@@ -189,7 +187,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
                   aria-label={`Слайд ${i + 1}: ${s.title}`}
                   disabled={!open || i === index || busy}
                   onClick={() => goTo(i)}
-                  className="grid h-6 place-items-center disabled:cursor-default"
+                  className="grid h-11 place-items-center px-1 disabled:cursor-default"
                 >
                   <motion.span
                     animate={{ width: i === index ? 24 : 8, opacity: open ? 1 : 0.5 }}
@@ -200,7 +198,6 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
               );
             })}
           </div>
-          <span aria-hidden className="w-20" />
         </div>
 
         <button type="button" disabled={busy} onClick={primary.run} className="dl-btn">

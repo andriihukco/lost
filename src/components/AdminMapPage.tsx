@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { AnimatePresence } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminObjectList, { type ListFilter, type ListSelection } from '@/components/AdminObjectList';
+import BackButton from '@/components/BackButton';
 import Icon from '@/components/Icon';
 import MapView, { type OtherPlayer } from '@/components/MapView';
 import MarkForm from '@/components/MarkForm';
@@ -204,13 +204,11 @@ export default function AdminMapPage({ onSignOut, onSection }: { onSignOut: () =
       {/* Wide screens: the sidebar with the list. */}
       <aside className="absolute inset-y-0 left-0 hidden w-[380px] flex-col border-r border-[var(--line)] bg-[var(--paper)] md:flex">
         <header className="flex items-center gap-3 px-5 pb-3 pt-5">
-          <Link href="/" aria-label="На карту" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--page)] text-[var(--ink)]">
-            <Icon name="arrow_back" size={20} />
-          </Link>
+          <BackButton href="/" label="На карту" />
           <h1 className="dl-title min-w-0 flex-1 text-[22px]">Карта</h1>
           {addButton}
-          <button type="button" onClick={onSignOut} aria-label="Вийти" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--page)] text-[var(--muted)]">
-            <Icon name="logout" size={20} />
+          <button type="button" onClick={onSignOut} aria-label="Вийти" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--page)] text-[var(--muted)]">
+            <Icon name="logout" size={22} />
           </button>
         </header>
         <div className="flex min-h-0 flex-1 flex-col px-4 pb-24">{list}</div>
@@ -218,9 +216,7 @@ export default function AdminMapPage({ onSignOut, onSection }: { onSignOut: () =
 
       {/* Phones: a floating header; the list is a panel at the bottom that opens on demand. */}
       <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] md:hidden">
-        <Link href="/" aria-label="На карту" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--ink)] elev-sm">
-          <Icon name="arrow_back" size={22} />
-        </Link>
+        <BackButton href="/" label="На карту" />
         <p className="rounded-full bg-[var(--paper)]/95 px-4 py-2 text-[15px] font-bold elev-sm">Адмін · Карта</p>
         <div className="flex items-center gap-2">
           {addButton}

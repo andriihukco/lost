@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import BackButton from '@/components/BackButton';
 import Icon from '@/components/Icon';
 import NicknamePicker from '@/components/NicknamePicker';
 import OfflineSection from '@/components/OfflineSection';
@@ -38,14 +39,7 @@ function SettingsRow({ emoji, label, value, onClick, last = false }: { emoji: st
 function PageHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <header className="flex items-center gap-3 pt-3">
-      <button
-        type="button"
-        onClick={onBack}
-        aria-label="Назад до профілю"
-        className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--paper)] text-[var(--ink)] elev-sm"
-      >
-        <Icon name="arrow_back" size={22} />
-      </button>
+      <BackButton label="Назад до профілю" onClick={onBack} />
       <h1 className="dl-title text-[26px]">{title}</h1>
     </header>
   );

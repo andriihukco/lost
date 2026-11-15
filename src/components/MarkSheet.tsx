@@ -12,8 +12,10 @@ export default function MarkSheet({ mark, onClose }: { mark: MapMark; onClose: (
         <p className="truncate text-[17px] font-bold">{mark.title}</p>
         {mark.note && <p className="mt-0.5 line-clamp-2 text-[14px] leading-snug text-[var(--muted)]">{mark.note}</p>}
       </div>
-      <button type="button" aria-label="Закрити" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--line)]/70 text-[var(--muted)]">
-        <Icon name="close" size={18} />
+      <button type="button" aria-label="Закрити" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center">
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--line)]/70 text-[var(--muted)]">
+          <Icon name="close" size={18} />
+        </span>
       </button>
     </>
   );
