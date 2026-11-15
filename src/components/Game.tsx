@@ -449,69 +449,66 @@ export default function Game() {
         />
       )}
 
-      {tab === 'map' && route && (
-        <div style={{ bottom: `calc(${tabBarH}px + 12px)` }} className="dl-card absolute inset-x-3 z-10 flex flex-col gap-2 px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">
-                Маршрут · {route.stops.length} {plural(route.stops.length, ['точка', 'точки', 'точок'])}
-              </p>
-              <p className="text-[17px] font-extrabold tabular-nums">
-                {route.pending || !route.walk ? (
-                  <span className="inline-flex items-center gap-2"><span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--green)] border-t-transparent" />Прокладаю маршрут…</span>
-                ) : `${formatDistance(route.walk.distanceM)} · ~${Math.max(1, Math.round(route.walk.durationS / 60))} хв`}
-              </p>
-              <p className="text-[12px] font-semibold text-[var(--muted)]">
-                {route.pending || !route.walk ? 'Шукаємо стежки й дороги' : route.walk.source === 'paths' ? 'По стежках і дорогах' : 'По прямій: маршрут стежками недоступний'}
-              </p>
-            </div>
-            <button type="button" onClick={() => setRoute(null)} className="dl-btn-secondary !w-auto !min-h-[44px] !px-4 !py-2 !text-[15px]">
-              Закрити
-            </button>
-          </div>
-          <ol className="flex flex-wrap gap-2 text-[13px] font-semibold">
-            {route.stops.map((t, i) => (
-              <li key={t.id}>
-                <button type="button" onClick={() => showOnMap(t.id)} className="dl-tag px-2.5 py-1">{i + 1}. {t.title}</button>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-
-
-      {tab === 'map' && selectedMark && (
+      {/* One panel above the tab bar at a time: a mark you tapped, else the route, else the nearby treasure.
+          It is docked to the tab bar and scrolls when tall, so the map keeps its focus. */}
+      {tab === 'map' && (selectedMark || route || (player && nearby && !showSheet)) && (
         <div
-          role="dialog"
-          aria-label={selectedMark.title}
-          style={{ bottom: `calc(${tabBarH}px + 12px)` }}
-          className="dl-card absolute inset-x-3 z-10 flex items-start gap-3 px-4 py-3"
+          style={{ bottom: tabBarH }}
+          className="absolute inset-x-0 z-10 flex max-h-[40dvh] flex-col overflow-y-auto rounded-t-[24px] border-t border-[var(--line)] bg-[var(--paper)] px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-2 elev-sheet"
         >
-          <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-2xl">{selectedMark.emoji}</span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Мітка на карті</p>
-            <p className="text-[17px] font-bold">{selectedMark.title}</p>
-            {selectedMark.note && <p className="mt-0.5 text-[15px] text-[var(--muted)]">{selectedMark.note}</p>}
-          </div>
-          <button type="button" aria-label="Закрити" onClick={() => setSelectedMark(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--muted)]">
-            <Icon name="close" size={22} />
-          </button>
+          <div aria-hidden className="mx-auto mb-3 h-1.5 w-10 shrink-0 rounded-full bg-[var(--line)]" />
+          {selectedMark ? (
+            <div role="dialog" aria-label={selectedMark.title} className="flex items-start gap-3">
+              <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--page)] text-2xl">{selectedMark.emoji}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Мітка на карті</p>
+                <p className="text-[17px] font-bold">{selectedMark.title}</p>
+                {selectedMark.note && <p className="mt-0.5 text-[15px] text-[var(--muted)]">{selectedMark.note}</p>}
+              </div>
+              <button type="button" aria-label="Закрити" onClick={() => setSelectedMark(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--muted)]">
+                <Icon name="close" size={22} />
+              </button>
+            </div>
+          ) : route ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">
+                    Маршрут · {route.stops.length} {plural(route.stops.length, ['точка', 'точки', 'точок'])}
+                  </p>
+                  <p className="text-[17px] font-extrabold tabular-nums">
+                    {route.pending || !route.walk ? (
+                      <span className="inline-flex items-center gap-2"><span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--green)] border-t-transparent" />Прокладаю маршрут…</span>
+                    ) : `${formatDistance(route.walk.distanceM)} · ~${Math.max(1, Math.round(route.walk.durationS / 60))} хв`}
+                  </p>
+                  <p className="text-[12px] font-semibold text-[var(--muted)]">
+                    {route.pending || !route.walk ? 'Шукаємо стежки й дороги' : route.walk.source === 'paths' ? 'По стежках і дорогах' : 'По прямій: маршрут стежками недоступний'}
+                  </p>
+                </div>
+                <button type="button" onClick={() => setRoute(null)} className="dl-btn-secondary !w-auto !min-h-[44px] !px-4 !py-2 !text-[15px]">
+                  Закрити
+                </button>
+              </div>
+              <ol className="flex flex-wrap gap-2 text-[13px] font-semibold">
+                {route.stops.map((t, i) => (
+                  <li key={t.id}>
+                    <button type="button" onClick={() => showOnMap(t.id)} className="dl-tag px-2.5 py-1">{i + 1}. {t.title}</button>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : (
+            nearby && (
+              <button type="button" onClick={() => setSelectedId(nearby.treasure.id)} className="flex min-h-[56px] items-center gap-3 text-left">
+                <span className="dl-pin-badge !h-12 !w-12 shrink-0">{pinOrDefault(nearby.treasure.pin_emoji)}</span>
+                <span className="min-w-0">
+                  <span className="block text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Скарб поруч (до {NEARBY_M} м)</span>
+                  <span className="block truncate text-[17px] font-bold">{nearby.treasure.title} · {Math.round(nearby.distanceM)} м</span>
+                </span>
+              </button>
+            )
+          )}
         </div>
-      )}
-
-      {tab === 'map' && player && nearby && !showSheet && !route && (
-        <button
-          type="button"
-          onClick={() => setSelectedId(nearby.treasure.id)}
-          style={{ bottom: `calc(${tabBarH}px + 12px)` }}
-          className="dl-card absolute inset-x-3 z-10 flex min-h-[64px] items-center gap-3 px-4 py-3 text-left"
-        >
-          <span className="dl-pin-badge !h-12 !w-12 shrink-0">{pinOrDefault(nearby.treasure.pin_emoji)}</span>
-          <span className="min-w-0">
-            <span className="block text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">Скарб поруч (до {NEARBY_M} м)</span>
-            <span className="block truncate text-[17px] font-bold">{nearby.treasure.title} · {Math.round(nearby.distanceM)} м</span>
-          </span>
-        </button>
       )}
 
       <AnimatePresence>
