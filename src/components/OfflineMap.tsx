@@ -58,7 +58,7 @@ export default function OfflineMap({
           aria-hidden
           className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${saved ? 'bg-[var(--green)] text-white' : 'bg-[var(--green-soft)] text-[var(--green-deep)]'}`}
         >
-          <Icon name={saved ? 'check' : 'travel_explore'} size={26} />
+          <span className="text-[24px] leading-none">{saved ? '✅' : '🗺️'}</span>
         </span>
         <div className="min-w-0 pt-0.5">
           <p className="text-[17px] font-bold">{saved ? 'Карту збережено' : 'Карта без інтернету'}</p>
@@ -73,8 +73,8 @@ export default function OfflineMap({
       {/* Why it helps, before the player decides. */}
       {!card && !saved && !busy && (
         <ul className="flex flex-col gap-2.5 text-[15px] text-[var(--ink)]">
-          <li className="flex items-center gap-3"><Icon name="map" size={20} className="text-[var(--green-deep)]" />Карта працює в лісі, навіть без інтернету</li>
-          <li className="flex items-center gap-3"><Icon name="route" size={20} className="text-[var(--green-deep)]" />Шлях до скарбів видно без зв’язку</li>
+          <li className="flex items-center gap-3"><span aria-hidden className="text-[20px] leading-none">🌲</span>Карта працює в лісі, навіть без інтернету</li>
+          <li className="flex items-center gap-3"><span aria-hidden className="text-[20px] leading-none">🧭</span>Шлях до скарбів видно без зв’язку</li>
         </ul>
       )}
 

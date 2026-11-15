@@ -61,7 +61,7 @@ export default function OfflineSection({ points }: { points: LatLng[] }) {
     <section className="flex flex-col gap-4">
       <div className="flex items-start gap-3">
         <span aria-hidden className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--green)] text-white">
-          <Icon name="check" size={26} />
+          <span className="text-[24px] leading-none">✅</span>
         </span>
         <div className="min-w-0 pt-0.5">
           <p className="text-[17px] font-bold">Карту збережено</p>
