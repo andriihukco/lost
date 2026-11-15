@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import NicknamePicker from '@/components/NicknamePicker';
 import { avatarEmoji, nicknameFor, type AvatarKey } from '@/lib/avatars';
-import { getAllPlayers, savePlayer, type Player } from '@/lib/player';
+import { getAllPlayers, releaseProfile, savePlayer, type Player } from '@/lib/player';
+import { supabase } from '@/lib/supabase';
 import OfflineSection from '@/components/OfflineSection';
 import { TransferCodeMaker } from '@/components/ProfileTransfer';
 import { AnimatePresence, motion } from 'motion/react';
@@ -32,6 +33,24 @@ export default function ProfileTab({ player, onSaved, offlinePoints, bottomInset
     } catch (e) {
       setMessage((e as Error).message);
     } finally {
+      setBusy(false);
+    }
+  }
+
+  // Signs out of the profile: the animal is released for another player, and this browser starts over.
+  async function leave() {
+    const ok = window.confirm(
+      `Вийти з профілю? Тварина «${nicknameFor(player.avatar) ?? 'гравець'}» звільниться, і її зможе обрати інший гравець. ` +
+        'Ваші знахідки лишаться на карті, але з цього браузера ви їх більше не побачите. Відновити профіль не можна.',
+    );
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await releaseProfile();
+      await supabase.auth.signOut({ scope: 'local' });
+      window.location.reload();
+    } catch (e) {
+      setMessage((e as Error).message);
       setBusy(false);
     }
   }
@@ -82,6 +101,16 @@ export default function ProfileTab({ player, onSaved, offlinePoints, bottomInset
       <p className="ios-section mt-8">Перенести профіль</p>
       <div className="dl-card mt-2 p-4">
         <TransferCodeMaker />
+      </div>
+
+      <p className="ios-section mt-8">Профіль</p>
+      <div className="mt-2 flex flex-col gap-2">
+        <p className="px-1 text-[14px] leading-snug text-[var(--muted)]">
+          Вийдіть, щоб звільнити тварину для іншого гравця. Наступного разу буде новий профіль.
+        </p>
+        <button type="button" disabled={busy} onClick={() => void leave()} className="dl-btn-danger">
+          Вийти з профілю
+        </button>
       </div>
     </div>
   );

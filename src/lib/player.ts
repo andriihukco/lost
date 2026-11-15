@@ -27,6 +27,13 @@ export async function savePlayer(userId: string, nickname: string, avatar: Avata
   return data as Player;
 }
 
+// Signing out of the profile: the row is removed (migration 0009), so the animal becomes free for another player.
+export async function releaseProfile(): Promise<boolean> {
+  const { data, error } = await supabase.rpc('release_profile');
+  if (error || !data) throw new Error('Не вдалося вийти з профілю. Спробуйте ще раз.');
+  return (data as { status: string }).status === 'released';
+}
+
 // Server-side check; the admins table is not readable from the client.
 export async function checkIsAdmin(): Promise<boolean> {
   const { data, error } = await supabase.rpc('is_admin');
