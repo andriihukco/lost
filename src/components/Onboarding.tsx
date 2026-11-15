@@ -37,7 +37,7 @@ export default function Onboarding({
   const [taken, setTaken] = useState<string[]>([]);
   // A passcode already kept in this browser is used as it is; the step is not asked again.
   const [passcodeDone, setPasscodeDone] = useState(() => typeof window !== 'undefined' && readPasscode(window.localStorage) !== null);
-  const [passcodeStage, setPasscodeStage] = useState<'code' | 'time'>('code');
+  const [passcodeStage, setPasscodeStage] = useState<'offer' | 'code' | 'time'>('offer');
   const [draftPin, setDraftPin] = useState<string | null>(null);
   const [lockMs, setLockMs] = useState(DEFAULT_LOCK_MS);
 
@@ -69,8 +69,8 @@ export default function Onboarding({
   const stepNumber = step === 'nickname' ? 1 : step === 'passcode' ? 2 : 3;
 
   return (
-    // The map behind is blurred and cannot be moved until onboarding is done.
-    <div className="fixed inset-0 z-40 flex flex-col justify-end overflow-hidden bg-[var(--ink)]/15 backdrop-blur-md">
+    // Onboarding is a sequence of full-page screens: no blurred map, no sheet.
+    <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-[var(--page)]">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={step === 'passcode' ? `passcode-${passcodeStage}` : step}
@@ -78,7 +78,7 @@ export default function Onboarding({
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: -90, opacity: 0 }}
           transition={{ type: 'spring', visualDuration: 0.4, bounce: 0.1 }}
-          className="max-h-[92%] overflow-y-auto rounded-t-[28px] border-t-2 border-[var(--line)] bg-[var(--paper)] px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] elev-sheet"
+          className="min-h-dvh px-5 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"
         >
           <div className="mx-auto max-w-md">
             <StepDots current={stepNumber} total={TOTAL_STEPS} />
@@ -93,10 +93,29 @@ export default function Onboarding({
               </>
             )}
 
-            {step === 'passcode' && passcodeStage === 'code' && (
+            {step === 'passcode' && passcodeStage === 'offer' && (
               <>
                 <p className="mt-5 text-[34px] leading-none" aria-hidden>🔐</p>
-                <span className="mt-4 inline-block rounded-full bg-[var(--green-soft)] px-3 py-1 text-[13px] font-bold text-[var(--green-deep)]">Рекомендуємо</span>
+                <h2 className="dl-title mt-3 text-3xl">Код-пароль</h2>
+                <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Захистіть застосунок 4 цифрами. Код знає лише ваш телефон.</p>
+                <div role="radiogroup" aria-label="Код-пароль" className="mt-6 flex flex-col gap-3">
+                  <button type="button" role="radio" aria-checked="true" onClick={() => setPasscodeStage('code')} className="flex min-h-[64px] items-center justify-between rounded-2xl border-2 border-[var(--green)] bg-[var(--paper)] px-4 text-left">
+                    <span>
+                      <span className="block text-[16px] font-bold">Увімкнути код</span>
+                      <span className="block text-[13px] text-[var(--muted)]">Рекомендуємо</span>
+                    </span>
+                    <span aria-hidden className="text-[20px] font-extrabold text-[var(--green-deep)]">✓</span>
+                  </button>
+                  <button type="button" role="radio" aria-checked="false" onClick={() => setPasscodeDone(true)} className="flex min-h-[64px] items-center rounded-2xl border-2 border-[var(--line)] bg-[var(--paper)] px-4 text-left">
+                    <span className="block text-[16px] font-bold">Не зараз</span>
+                  </button>
+                </div>
+              </>
+            )}
+            {step === 'passcode' && passcodeStage === 'code' && (
+              <>
+                <BackButton label="Назад" onClick={() => setPasscodeStage('offer')} className="mb-4" />
+                <p className="mt-5 text-[34px] leading-none" aria-hidden>🔐</p>
                 <h2 className="dl-title mt-3 text-3xl">Код-пароль</h2>
                 <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">
                   Захистіть застосунок 4 цифрами. Код знає лише ваш телефон.
@@ -109,9 +128,6 @@ export default function Onboarding({
                     }}
                   />
                 </div>
-                <button type="button" onClick={() => setPasscodeDone(true)} className="mt-6 min-h-[44px] w-full text-center text-[15px] font-bold text-[var(--muted)]">
-                  Не зараз
-                </button>
               </>
             )}
 

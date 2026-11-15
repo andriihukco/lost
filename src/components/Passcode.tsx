@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { checkPin, clearPasscode, LOCK_OPTIONS, PIN_LENGTH } from '@/lib/passcode';
+import { checkPin, LOCK_OPTIONS, PIN_LENGTH } from '@/lib/passcode';
 
 // The number pad, as on the iPhone's lock screen.
 export function Keypad({ onDigit, onDelete, disabled = false }: { onDigit: (d: string) => void; onDelete: () => void; disabled?: boolean }) {
@@ -142,11 +142,6 @@ export function PasscodeLock({ onUnlock }: { onUnlock: () => void }) {
     }
   }
 
-  function forget() {
-    if (!window.confirm('Скинути код на цьому пристрої? Профіль і прогрес лишаться, але відкривати застосунок буде без коду.')) return;
-    clearPasscode(window.localStorage);
-    onUnlock();
-  }
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col items-center justify-between bg-[var(--page)] px-6 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-[calc(env(safe-area-inset-top)+3rem)]">
@@ -165,9 +160,6 @@ export function PasscodeLock({ onUnlock }: { onUnlock: () => void }) {
 
       <Keypad onDigit={(d) => void press(d)} onDelete={() => setPin((p) => p.slice(0, -1))} disabled={waiting} />
 
-      <button type="button" onClick={forget} className="min-h-[44px] text-[15px] font-bold text-[var(--green-deep)]">
-        Забули код?
-      </button>
     </div>
   );
 }
