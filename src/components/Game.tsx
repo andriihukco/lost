@@ -551,14 +551,21 @@ export default function Game() {
           />
           </TreasureModal>
         )}
-      {selectedMark && (
-          <TreasureModal key={`mark-${selectedMark.id}`} title={selectedMark.title} onClose={() => setSelectedMark(null)}>
-            <MarkSheet mark={selectedMark} />
-          </TreasureModal>
-        )}
       </AnimatePresence>
 
-      {player && !showSheet && !selectedMark && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); setSelectedMark(null); }} onHeight={setTabBarH} />}
+      {/* A mark: a compact card above the tab bar. The tab bar stays; the card does not cover the map. */}
+      {tab === 'map' && selectedMark && (
+        <div
+          role="dialog"
+          aria-label={selectedMark.title}
+          style={{ bottom: tabBarH }}
+          className="absolute inset-x-0 z-20 flex items-center gap-3 rounded-t-[24px] border-t border-[var(--line)] bg-[var(--paper)] px-5 pb-3 pt-4 elev-sheet"
+        >
+          <MarkSheet mark={selectedMark} onClose={() => setSelectedMark(null)} />
+        </div>
+      )}
+
+      {player && !showSheet && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); setSelectedMark(null); }} onHeight={setTabBarH} />}
 
       {gateStep && (
         <Welcome
