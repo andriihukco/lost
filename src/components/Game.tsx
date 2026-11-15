@@ -559,14 +559,14 @@ export default function Game() {
         <div
           role="dialog"
           aria-label={selectedMark.title}
-          style={{ bottom: tabBarH }}
-          className="absolute inset-x-0 z-20 flex items-center gap-3 rounded-t-[24px] border-t border-[var(--line)] bg-[var(--paper)] px-5 pb-3 pt-4 elev-sheet"
+          style={{ bottom: 0 }}
+          className="absolute inset-x-0 z-20 flex items-center gap-3 rounded-t-[24px] border-t border-[var(--line)] bg-[var(--paper)] px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-4 elev-sheet"
         >
           <MarkSheet mark={selectedMark} onClose={() => setSelectedMark(null)} />
         </div>
       )}
 
-      {player && !showSheet && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); setSelectedMark(null); }} onHeight={setTabBarH} />}
+      {player && !showSheet && !selectedMark && <TabBar tab={tab} onChange={(t) => { setTab(t); setSelectedId(null); setSelectedMark(null); }} onHeight={setTabBarH} />}
 
       {gateStep && (
         <Welcome
