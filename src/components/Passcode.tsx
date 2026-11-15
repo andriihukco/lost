@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { checkPin, LOCK_OPTIONS, PIN_LENGTH } from '@/lib/passcode';
+import BackButton from '@/components/BackButton';
+import { checkPin, DEFAULT_LOCK_MS, LOCK_OPTIONS, PIN_LENGTH, setPasscode } from '@/lib/passcode';
 
 // The number pad, as on the iPhone's lock screen.
 export function Keypad({ onDigit, onDelete, disabled = false }: { onDigit: (d: string) => void; onDelete: () => void; disabled?: boolean }) {
@@ -160,6 +161,48 @@ export function PasscodeLock({ onUnlock }: { onUnlock: () => void }) {
 
       <Keypad onDigit={(d) => void press(d)} onDelete={() => setPin((p) => p.slice(0, -1))} disabled={waiting} />
 
+    </div>
+  );
+}
+
+// Required before the app opens: a player who has no code yet sets one here. There is no skip.
+export function PasscodeRequired({ onDone }: { onDone: () => void }) {
+  const [pin, setPin] = useState<string | null>(null);
+  const [lockMs, setLockMs] = useState(DEFAULT_LOCK_MS);
+  const [busy, setBusy] = useState(false);
+
+  if (pin === null) {
+    return (
+      <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-[var(--page)] px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 pt-10">
+          <span aria-hidden className="text-[56px] leading-none">🔐</span>
+          <h1 className="dl-title text-center text-[28px]">Створіть код</h1>
+          <p className="text-center text-[15px] text-[var(--muted)]">Чотири цифри. Без коду застосунок не відкриється.</p>
+          <PasscodeSetup onSet={setPin} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-[var(--page)] px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+        <BackButton label="Назад" onClick={() => setPin(null)} />
+        <h1 className="dl-title text-[28px]">Коли просити код?</h1>
+        <LockPicker value={lockMs} onChange={setLockMs} />
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            await setPasscode(window.localStorage, pin, lockMs);
+            onDone();
+          }}
+          className="dl-btn"
+        >
+          Готово
+        </button>
+      </div>
     </div>
   );
 }

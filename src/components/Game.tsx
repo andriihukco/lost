@@ -4,7 +4,7 @@ import { plural } from '@/lib/plural';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TreasureModal from '@/components/TreasureModal';
 import MarkSheet from '@/components/MarkSheet';
-import { PasscodeLock } from '@/components/Passcode';
+import { PasscodeLock, PasscodeRequired } from '@/components/Passcode';
 import { clearPasscode, readPasscode } from '@/lib/passcode';
 import MapKindPicker from '@/components/MapKindPicker';
 import { listMapMarks, type MapMark } from '@/lib/mapMarks';
@@ -77,6 +77,7 @@ export default function Game() {
   const [onboardingMap, setOnboardingMap] = useState(false); // after the nickname: the offline-map step of onboarding
   const [isAdmin, setIsAdmin] = useState(false); // an admin may bring a found treasure back to the map, as the finder can
   const [locked, setLocked] = useState(false); // the passcode lock screen is up
+  const [needsPasscode, setNeedsPasscode] = useState(false); // a player without a code: the app waits for one
   const lastTouch = useRef(0); // the last touch on the app: the auto-lock counts from it (set when the app is ready)
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
@@ -229,6 +230,7 @@ export default function Game() {
         setPlayer(p);
         // No player row for this identity (a first visit, or the player was removed by an admin): the whole
         // onboarding runs again, starting with the welcome intro. The browser's "welcomed" flag alone would skip it.
+        setNeedsPasscode(!!p && !readPasscode(window.localStorage));
         if (!p) {
           // The code belongs to the profile on this device: without a profile there is nothing to lock. The new
           // player is offered a code again in onboarding.
@@ -384,6 +386,7 @@ export default function Game() {
   if (gate) return <InAppGate info={inApp} url={window.location.href} onContinue={() => setInAppOk(true)} />;
   // Until the app is ready the screen is plain: no logo or splash on start.
   if (!ready) return <main className="min-h-dvh bg-[var(--page)]" aria-busy="true" />;
+  if (needsPasscode) return <PasscodeRequired onDone={() => setNeedsPasscode(false)} />;
   if (failed) return <main className="p-6 text-[17px] font-semibold text-[var(--danger)]">{failed}</main>;
 
   const nameRecord = Object.fromEntries([...names.current].map(([id, v]) => [id, v.nickname]));

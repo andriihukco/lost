@@ -60,7 +60,7 @@ export default function OfflineMap({
           <p className="mt-0.5 text-[14px] leading-snug text-[var(--muted)]">
             {saved
               ? 'Карта і скарби працюють без зв’язку.'
-              : 'Збережемо карту навколо вас, щоб вона працювала без зв’язку.'}
+              : 'Карта працюватиме без інтернету.'}
           </p>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function OfflineMap({
               {busy ? 'Зберігаємо…' : result ? 'Спробувати ще раз' : 'Зберегти карту'}
             </button>
             {variant === 'prompt' && !busy && onLater && (
-              <button type="button" onClick={onLater} className="dl-btn-secondary">Не зараз</button>
+              <button type="button" onClick={onLater} className="dl-btn-secondary">Пізніше</button>
             )}
           </>
         )}

@@ -37,7 +37,7 @@ export default function Onboarding({
   const [taken, setTaken] = useState<string[]>([]);
   // A passcode already kept in this browser is used as it is; the step is not asked again.
   const [passcodeDone, setPasscodeDone] = useState(() => typeof window !== 'undefined' && readPasscode(window.localStorage) !== null);
-  const [passcodeStage, setPasscodeStage] = useState<'offer' | 'code' | 'time'>('offer');
+  const [passcodeStage, setPasscodeStage] = useState<'code' | 'time'>('code');
   const [draftPin, setDraftPin] = useState<string | null>(null);
   const [lockMs, setLockMs] = useState(DEFAULT_LOCK_MS);
 
@@ -93,32 +93,13 @@ export default function Onboarding({
               </>
             )}
 
-            {step === 'passcode' && passcodeStage === 'offer' && (
-              <>
-                <p className="mt-5 text-[34px] leading-none" aria-hidden>🔐</p>
-                <h2 className="dl-title mt-3 text-3xl">Код-пароль</h2>
-                <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Захистіть застосунок 4 цифрами. Код знає лише ваш телефон.</p>
-                <div role="radiogroup" aria-label="Код-пароль" className="mt-6 flex flex-col gap-3">
-                  <button type="button" role="radio" aria-checked="true" onClick={() => setPasscodeStage('code')} className="flex min-h-[64px] items-center justify-between rounded-2xl border-2 border-[var(--green)] bg-[var(--paper)] px-4 text-left">
-                    <span>
-                      <span className="block text-[16px] font-bold">Увімкнути код</span>
-                      <span className="block text-[13px] text-[var(--muted)]">Рекомендуємо</span>
-                    </span>
-                    <span aria-hidden className="text-[20px] font-extrabold text-[var(--green-deep)]">✓</span>
-                  </button>
-                  <button type="button" role="radio" aria-checked="false" onClick={() => setPasscodeDone(true)} className="flex min-h-[64px] items-center rounded-2xl border-2 border-[var(--line)] bg-[var(--paper)] px-4 text-left">
-                    <span className="block text-[16px] font-bold">Не зараз</span>
-                  </button>
-                </div>
-              </>
-            )}
             {step === 'passcode' && passcodeStage === 'code' && (
               <>
-                <BackButton label="Назад" onClick={() => setPasscodeStage('offer')} className="mb-4" />
+                
                 <p className="mt-5 text-[34px] leading-none" aria-hidden>🔐</p>
-                <h2 className="dl-title mt-3 text-3xl">Код-пароль</h2>
+                <h2 className="dl-title mt-3 text-3xl">Створіть код</h2>
                 <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">
-                  Захистіть застосунок 4 цифрами. Код знає лише ваш телефон.
+                  Чотири цифри. Без коду застосунок не відкриється.
                 </p>
                 <div className="mt-6">
                   <PasscodeSetup
@@ -137,7 +118,7 @@ export default function Onboarding({
                 <p className="mt-4 text-[34px] leading-none" aria-hidden>⏱️</p>
                 <h2 className="dl-title mt-3 text-3xl">Коли просити код?</h2>
                 <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">
-                  Коли застосунок має знову просити код?
+                  Після перерви в користуванні.
                 </p>
                 <div className="mt-6">
                   <LockPicker value={lockMs} onChange={setLockMs} />
@@ -152,7 +133,7 @@ export default function Onboarding({
               <>
                 <p className="mt-5 text-[34px] leading-none" aria-hidden>🐾</p>
                 <h2 className="dl-title mt-3 text-3xl">Оберіть свій нік</h2>
-                <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Оберіть тварину. Її ім’я стане вашим ніком.</p>
+                <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Оберіть тварину: це буде ваш нік.</p>
                 <form className="mt-5 flex flex-col gap-5 pb-24" onSubmit={(e) => { e.preventDefault(); void save(); }}>
                   <NicknamePicker value={avatar} taken={taken} onPick={setAvatar} />
                   {error && <p role="alert" className="text-sm font-bold text-[var(--danger)]">{error}</p>}
