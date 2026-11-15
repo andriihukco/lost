@@ -76,6 +76,7 @@ export default function ProfileTab({ player, onSaved, offlinePoints, bottomInset
     setBusy(true);
     try {
       await releaseProfile();
+      clearPasscode(window.localStorage);
       await supabase.auth.signOut({ scope: 'local' });
       window.location.reload();
     } catch (e) {

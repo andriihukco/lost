@@ -95,9 +95,10 @@ export default function Onboarding({
             {step === 'passcode' && passcodeStage === 'code' && (
               <>
                 <p className="mt-5 text-[34px] leading-none" aria-hidden>🔐</p>
+                <span className="mt-4 inline-block rounded-full bg-[var(--green-soft)] px-3 py-1 text-[13px] font-bold text-[var(--green-deep)]">Рекомендуємо</span>
                 <h2 className="dl-title mt-3 text-3xl">Код-пароль</h2>
                 <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">
-                  Захистіть застосунок 4-значним кодом. Його можна змінити або вимкнути в профілі.
+                  Захистіть застосунок 4 цифрами. Код знає лише ваш телефон.
                 </p>
                 <div className="mt-6">
                   <PasscodeSetup
@@ -108,7 +109,7 @@ export default function Onboarding({
                   />
                 </div>
                 <button type="button" onClick={() => setPasscodeDone(true)} className="mt-6 min-h-[44px] w-full text-center text-[15px] font-bold text-[var(--muted)]">
-                  Без коду
+                  Не зараз
                 </button>
               </>
             )}
@@ -116,9 +117,9 @@ export default function Onboarding({
             {step === 'passcode' && passcodeStage === 'time' && (
               <>
                 <p className="mt-5 text-[34px] leading-none" aria-hidden>⏱️</p>
-                <h2 className="dl-title mt-3 text-3xl">Блокувати після</h2>
+                <h2 className="dl-title mt-3 text-3xl">Коли просити код?</h2>
                 <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">
-                  Скільки можна не торкатися застосунку, перш ніж він попросить код.
+                  Коли застосунок має знову просити код?
                 </p>
                 <div className="mt-6">
                   <LockPicker value={lockMs} onChange={setLockMs} />
@@ -138,7 +139,7 @@ export default function Onboarding({
               <>
                 <p className="mt-5 text-[34px] leading-none" aria-hidden>🐾</p>
                 <h2 className="dl-title mt-3 text-3xl">Оберіть свій нік</h2>
-                <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Кожна тварина має свій нік. Оберіть тварину: її нік стане вашим.</p>
+                <p className="mt-2 text-[15px] leading-snug text-[var(--muted)]">Оберіть тварину. Її ім’я стане вашим ніком.</p>
                 <form className="mt-5 flex flex-col gap-5 pb-24" onSubmit={(e) => { e.preventDefault(); void save(); }}>
                   <NicknamePicker value={avatar} taken={taken} onPick={setAvatar} />
                   {error && <p role="alert" className="text-sm font-bold text-[var(--danger)]">{error}</p>}

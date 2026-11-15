@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TreasureModal from '@/components/TreasureModal';
 import MarkSheet from '@/components/MarkSheet';
 import { PasscodeLock } from '@/components/Passcode';
-import { readPasscode } from '@/lib/passcode';
+import { clearPasscode, readPasscode } from '@/lib/passcode';
 import MapKindPicker from '@/components/MapKindPicker';
 import { listMapMarks, type MapMark } from '@/lib/mapMarks';
 import { loadMapKind, saveMapKind } from '@/lib/mapKind';
@@ -229,7 +229,13 @@ export default function Game() {
         setPlayer(p);
         // No player row for this identity (a first visit, or the player was removed by an admin): the whole
         // onboarding runs again, starting with the welcome intro. The browser's "welcomed" flag alone would skip it.
-        if (!p) setWelcomed(false);
+        if (!p) {
+          // The code belongs to the profile on this device: without a profile there is nothing to lock. The new
+          // player is offered a code again in onboarding.
+          clearPasscode(window.localStorage);
+          setLocked(false);
+          setWelcomed(false);
+        }
       } catch (e) {
         if (!cancelled) setFailed((e as Error).message);
       } finally {

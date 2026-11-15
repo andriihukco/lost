@@ -15,26 +15,26 @@ const SLIDES: Slide[] = [
     id: 'hello',
     emoji: '🔎',
     title: 'Ласкаво просимо до Lost',
-    text: 'Шукайте сховані скарби разом із друзями. Ходіть лісовими стежками й знаходьте їх.',
+    text: 'Шукайте скарби разом із друзями.',
   },
   {
     id: 'map',
     emoji: '🗺️',
     title: 'Карта — ваш путівник',
-    text: 'На карті видно скарби, мітки небезпек і інших гравців. Коли дійдете до місця, відмітьте його.',
+    text: 'Скарби, мітки і друзі на одній карті.',
   },
   {
     id: 'location',
     emoji: '📍',
     title: 'Геолокація',
-    text: 'Щоб бачити відстань до скарбів і показувати ваше місце на карті. Інші гравці бачать його, поки ви в грі.',
+    text: 'Щоб бачити, де ви і як далеко скарби.',
     permission: 'location',
   },
   {
     id: 'compass',
     emoji: '🧭',
     title: 'Компас',
-    text: 'Щоб карта показувала, куди ви дивитеся, і вказувала напрямок до скарбу. На iPhone браузер запитає дозвіл.',
+    text: 'Щоб карта поверталася за вами.',
     permission: 'compass',
   },
 ];
@@ -82,7 +82,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
     if (!('geolocation' in navigator)) {
       setBusy(false);
       setBlocked('location');
-      setNote('Цей браузер не підтримує геолокацію. Без неї гра неможлива.');
+      setNote('Цей браузер не вміє визначати місцезнаходження.');
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -97,7 +97,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
       () => {
         setBusy(false);
         setBlocked('location');
-        setNote('Геолокацію заблоковано. Дозвольте доступ до місцезнаходження в налаштуваннях браузера, а потім натисніть «Спробувати ще раз».');
+        setNote('Геолокацію вимкнено. Увімкніть її в налаштуваннях браузера й спробуйте ще раз.');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
     );
@@ -114,7 +114,7 @@ export default function Welcome({ start, compassStatus, onCompass, onDone }: Pro
       onDone();
     } else {
       setBlocked('compass');
-      setNote('Доступ до руху й орієнтації заблоковано. На iPhone: Налаштування → Safari → Рух і орієнтація. Потім натисніть «Спробувати ще раз».');
+      setNote('Увімкніть «Рух і орієнтацію» в налаштуваннях Safari і спробуйте ще раз.');
     }
   }
 

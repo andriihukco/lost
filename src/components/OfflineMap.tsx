@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/Icon';
 import type { LatLng } from '@/lib/geo';
-import { OFFLINE_RADIUS_M, planOfflineUrls, saveOffline } from '@/lib/offlineMap';
+import { planOfflineUrls, saveOffline } from '@/lib/offlineMap';
 
 // Saves the map around the treasures, marks and the player, so it works without a connection.
 // variant "prompt": the onboarding step. One primary action at a time, and a plain "Не зараз" to skip.
@@ -60,34 +60,15 @@ export default function OfflineMap({
           <p className="mt-0.5 text-[14px] leading-snug text-[var(--muted)]">
             {saved
               ? 'Карта і скарби працюють без зв’язку.'
-              : `Збережемо карту на ${OFFLINE_RADIUS_M / 1000} км навколо скарбів, міток і вас.`}
+              : 'Збережемо карту навколо вас, щоб вона працювала без зв’язку.'}
           </p>
         </div>
       </div>
 
       {/* Why it helps, before the player decides. */}
-      {!card && !saved && !busy && (
-        <ul className="flex flex-col gap-3 rounded-2xl bg-[var(--page)] p-4">
-          <li className="flex items-start gap-3">
-            <span aria-hidden className="text-[24px] leading-none">🌲</span>
-            <span className="min-w-0">
-              <span className="block text-[16px] font-bold">Карта в лісі</span>
-              <span className="block text-[14px] leading-snug text-[var(--muted)]">Працює без мережі, навіть далеко від міста.</span>
-            </span>
-          </li>
-          <li className="flex items-start gap-3">
-            <span aria-hidden className="text-[24px] leading-none">🧭</span>
-            <span className="min-w-0">
-              <span className="block text-[16px] font-bold">Шлях до скарбів</span>
-              <span className="block text-[14px] leading-snug text-[var(--muted)]">Маршрут видно без зв’язку, як і самі скарби.</span>
-            </span>
-          </li>
-        </ul>
-      )}
-
       {planError && <p role="alert" className="text-[14px] font-semibold text-[var(--danger)]">{planError}</p>}
       {!planError && urls === null && <p className="text-[14px] font-semibold text-[var(--muted)]">Готуємо список…</p>}
-      {urls !== null && !busy && !result && (
+      {card && urls !== null && !busy && !result && (
         <p className="text-[14px] font-semibold text-[var(--muted)]">≈ {urls.length} файлів · краще зберегти з Wi-Fi</p>
       )}
 
