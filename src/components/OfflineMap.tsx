@@ -53,14 +53,9 @@ export default function OfflineMap({
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-start gap-3">
-        <span
-          aria-hidden
-          className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${saved ? 'bg-[var(--green)] text-white' : 'bg-[var(--green-soft)] text-[var(--green-deep)]'}`}
-        >
-          <span className="text-[24px] leading-none">{saved ? '✅' : '🗺️'}</span>
-        </span>
-        <div className="min-w-0 pt-0.5">
+      <div className="flex items-start gap-4">
+        <span aria-hidden className="shrink-0 text-[44px] leading-none">{saved ? '✅' : '🗺️'}</span>
+        <div className="min-w-0 pt-1">
           <p className="text-[17px] font-bold">{saved ? 'Карту збережено' : 'Карта без інтернету'}</p>
           <p className="mt-0.5 text-[14px] leading-snug text-[var(--muted)]">
             {saved
@@ -72,9 +67,21 @@ export default function OfflineMap({
 
       {/* Why it helps, before the player decides. */}
       {!card && !saved && !busy && (
-        <ul className="flex flex-col gap-2.5 text-[15px] text-[var(--ink)]">
-          <li className="flex items-center gap-3"><span aria-hidden className="text-[20px] leading-none">🌲</span>Карта працює в лісі, навіть без інтернету</li>
-          <li className="flex items-center gap-3"><span aria-hidden className="text-[20px] leading-none">🧭</span>Шлях до скарбів видно без зв’язку</li>
+        <ul className="flex flex-col gap-3 rounded-2xl bg-[var(--page)] p-4">
+          <li className="flex items-start gap-3">
+            <span aria-hidden className="text-[24px] leading-none">🌲</span>
+            <span className="min-w-0">
+              <span className="block text-[16px] font-bold">Карта в лісі</span>
+              <span className="block text-[14px] leading-snug text-[var(--muted)]">Працює без мережі, навіть далеко від міста.</span>
+            </span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span aria-hidden className="text-[24px] leading-none">🧭</span>
+            <span className="min-w-0">
+              <span className="block text-[16px] font-bold">Шлях до скарбів</span>
+              <span className="block text-[14px] leading-snug text-[var(--muted)]">Маршрут видно без зв’язку, як і самі скарби.</span>
+            </span>
+          </li>
         </ul>
       )}
 
