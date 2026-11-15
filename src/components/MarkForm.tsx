@@ -10,12 +10,13 @@ import { createMapMark, type MapMark, type MarkInput, updateMapMark } from '@/li
 import { markEmoji, MARK_DEFAULT_EMOJI } from '@/lib/mapMarkRules';
 
 // The map-mark form, for a new mark or for editing one (pass `initial`). Saved marks are shown on the map.
-export default function MarkForm({ initial, onSaved }: { initial?: MapMark | null; onSaved: () => void }) {
+export default function MarkForm({ initial, onSaved, initialPoint }: { initial?: MapMark | null; onSaved: () => void; initialPoint?: LatLng | null }) {
   const [title, setTitle] = useState(initial?.title ?? '');
   const [note, setNote] = useState(initial?.note ?? '');
   const [emoji, setEmoji] = useState<string>(initial?.emoji ?? MARK_DEFAULT_EMOJI);
-  const [point, setPoint] = useState<LatLng | null>(initial ? { lat: initial.lat, lng: initial.lng } : null);
-  const [coordsText, setCoordsText] = useState(initial ? `${initial.lat.toFixed(6)}, ${initial.lng.toFixed(6)}` : '');
+  const start = initial ?? initialPoint ?? null;
+  const [point, setPoint] = useState<LatLng | null>(start ? { lat: start.lat, lng: start.lng } : null);
+  const [coordsText, setCoordsText] = useState(start ? `${start.lat.toFixed(6)}, ${start.lng.toFixed(6)}` : '');
   const [coordsError, setCoordsError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

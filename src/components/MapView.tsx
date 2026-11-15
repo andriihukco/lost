@@ -51,6 +51,8 @@ type Props = {
   onViewChange?: (v: { lat: number; lng: number; zoom: number }) => void; // the centre and zoom, for the map-type previews
   onSelectMark?: (m: MapMark) => void;
   fitTo?: LatLng[]; // when this array changes, the camera fits these points once (admin: everyone on the map)
+  onMapClick?: (p: LatLng) => void; // a tap on the map, not on a pin (admin: to place a new treasure or mark)
+  focusPoint?: { lat: number; lng: number; nonce: number } | null; // fly the camera to this point when the nonce changes
 };
 
 // Room kept clear at the top for the status card and chips.
@@ -130,11 +132,15 @@ function buildPin(emoji: string): { el: HTMLButtonElement; label: HTMLSpanElemen
 type OtherEntry = { marker: Marker; el: HTMLDivElement; from: LatLng; to: LatLng; startedAt: number; seenAt: number };
 type PinEntry = { marker: Marker; el: HTMLButtonElement; label: HTMLSpanElement; badge: HTMLSpanElement; treasure: Treasure };
 
-export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0, unlimited = false, fitTo, mapKind = 'outdoor', marks = [], onSelectMark, onViewChange }: Props) {
+export default function MapView({ treasures, distances, me, meAvatar, meName, meHeading, others, onSelectTreasure, bottomInset = 96, route = null, focusId = null, focusNonce = 0, recenterNonce = 0, unlimited = false, fitTo, mapKind = 'outdoor', marks = [], onSelectMark, onViewChange, onMapClick, focusPoint = null }: Props) {
   const viewRef = useRef(onViewChange);
   useEffect(() => {
     viewRef.current = onViewChange;
   }, [onViewChange]);
+  const clickRef = useRef(onMapClick);
+  useEffect(() => {
+    clickRef.current = onMapClick;
+  }, [onMapClick]);
   const kindRef = useRef<MapKind>(mapKind); // the kind the map is currently showing
   const unlimitedRef = useRef(unlimited);
   const container = useRef<HTMLDivElement>(null);
@@ -221,6 +227,12 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     };
     map.on('moveend', emitView);
     map.on('load', emitView);
+    // A tap on the map, not on a pin: the page decides what it means (the admin may be placing something).
+    map.on('click', (e) => {
+      const target = e.originalEvent?.target as HTMLElement | undefined;
+      if (target?.closest?.('.maplibregl-marker')) return;
+      clickRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+    });
     mapRef.current = map;
     const pins = pinMap.current;
     const others = otherMarkers.current;
@@ -377,6 +389,15 @@ export default function MapView({ treasures, distances, me, meAvatar, meName, me
     if (!map || !here || recenterNonce === 0) return;
     map.easeTo({ center: [here.lng, here.lat], zoom: Math.max(map.getZoom(), 16), duration: 500 });
   }, [recenterNonce]);
+
+  // The page asks the camera to show a point (an object picked from its list).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focusPoint) return;
+    map.flyTo({ center: [focusPoint.lng, focusPoint.lat], zoom: Math.max(map.getZoom(), 16), duration: 600 });
+    // Only a new nonce moves the camera; the point itself is read when it changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusPoint?.nonce]);
 
   // Show a treasure from the Знахідки tab: fly the map to it.
   useEffect(() => {

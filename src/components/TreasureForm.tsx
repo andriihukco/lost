@@ -14,11 +14,11 @@ import { validateTreasure } from '@/lib/treasureRules';
 import { usePasteImages } from '@/lib/usePasteImages';
 
 // The new-treasure form, shown in the admin sheet. onCreated runs after the treasure is saved.
-export default function TreasureForm({ onCreated }: { onCreated: () => void }) {
+export default function TreasureForm({ onCreated, initialPoint }: { onCreated: () => void; initialPoint?: LatLng | null }) {
   const [title, setTitle] = useState('');
   const [hint, setHint] = useState('');
-  const [coordsText, setCoordsText] = useState('');
-  const [point, setPoint] = useState<LatLng | null>(null);
+  const [coordsText, setCoordsText] = useState(initialPoint ? `${initialPoint.lat.toFixed(6)}, ${initialPoint.lng.toFixed(6)}` : '');
+  const [point, setPoint] = useState<LatLng | null>(initialPoint ?? null);
   const [coordsError, setCoordsError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
   const [pinEmoji, setPinEmoji] = useState<string>(DEFAULT_PIN);

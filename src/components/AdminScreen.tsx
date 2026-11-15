@@ -2,31 +2,31 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import TreasureManager from '@/components/TreasureManager';
+import AdminMapPage from '@/components/AdminMapPage';
 import PlayersPanel from '@/components/PlayersPanel';
-import AdminMap from '@/components/AdminMap';
 import PillTabBar from '@/components/PillTabBar';
-import MarksPanel from '@/components/MarksPanel';
 import Icon from '@/components/Icon';
 import Splash from '@/components/Splash';
 import { checkIsAdmin } from '@/lib/player';
 import { supabase } from '@/lib/supabase';
 
 type View = 'loading' | 'login' | 'admin';
+type Section = 'map' | 'players';
 
 // Admins sign in with email and password (account created in the dashboard). Only admins see the form;
 // RLS enforces the same rule on the server (migration 0003).
+// After sign-in the admin works on one page: the map, with treasures and marks on it. Players have their own tab.
 export default function AdminScreen() {
   const [view, setView] = useState<View>('loading');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [section, setSection] = useState<'treasures' | 'players' | 'map' | 'marks'>('treasures');
-  // A link like /admin?s=marks opens that section (used after saving a map mark).
+  const [section, setSection] = useState<Section>('map');
+  // A link like /admin?s=players opens the players tab. Old links (?s=treasures, ?s=marks) open the map.
   useEffect(() => {
     const s = new URLSearchParams(window.location.search).get('s');
-    if (s === 'treasures' || s === 'players' || s === 'map' || s === 'marks') setSection(s);
+    if (s === 'players') setSection('players');
   }, []);
 
   useEffect(() => {
@@ -99,32 +99,30 @@ export default function AdminScreen() {
     );
   }
 
+  if (section === 'map') {
+    return <AdminMapPage onSignOut={() => void signOut()} onSection={setSection} />;
+  }
+
   return (
     <main className="min-h-dvh bg-[var(--page)] pb-28">
       <header className="sticky top-0 z-20 bg-[var(--page)]/90 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
-
           <Link href="/" aria-label="На карту" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--ink)] elev-sm">
             <Icon name="arrow_back" size={22} />
           </Link>
-          <p className="text-[15px] font-bold">Адмін</p>
+          <p className="text-[15px] font-bold">Адмін · Гравці</p>
           <button type="button" onClick={() => void signOut()} aria-label="Вийти" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--paper)] text-[var(--muted)] elev-sm">
             <Icon name="logout" size={22} />
           </button>
         </div>
       </header>
-      {section === 'treasures' && <TreasureManager />}
-      {section === 'players' && <PlayersPanel />}
-      {section === 'marks' && <MarksPanel />}
-      {section === 'map' && <AdminMap />}
+      <PlayersPanel />
       <PillTabBar
         navLabel="Розділи адмінки"
         position="fixed"
         items={[
-          { id: 'treasures', label: 'Скарби', icon: 'travel_explore' },
-          { id: 'players', label: 'Гравці', icon: 'group' },
-          { id: 'marks', label: 'Мітки', icon: 'warning' },
           { id: 'map', label: 'Карта', icon: 'map' },
+          { id: 'players', label: 'Гравці', icon: 'group' },
         ]}
         value={section}
         onChange={setSection}
