@@ -66,7 +66,7 @@ export default function ProfileTab({ player, onSaved, offlinePoints, bottomInset
         <span className="text-[20px] font-bold">{nicknameFor(avatar) ?? 'Гравець'}</span>
       </div>
 
-      <p className="ios-section mt-8">Мій нік</p>
+      <p className="ios-section mt-12">Мій нік</p>
       <div className="mt-2">
         <NicknamePicker value={avatar} taken={taken} onPick={setAvatar} />
       </div>
@@ -93,17 +93,17 @@ export default function ProfileTab({ player, onSaved, offlinePoints, bottomInset
       </AnimatePresence>
       {message && <p role="status" className="mt-3 text-center text-[15px] font-semibold text-[var(--green-deep)]">{message}</p>}
 
-      <p className="ios-section mt-8">Офлайн-карта</p>
+      <p className="ios-section mt-12">Офлайн-карта</p>
       <div className="dl-card mt-2 p-4">
         <OfflineSection points={offlinePoints} />
       </div>
 
-      <p className="ios-section mt-8">Перенести профіль</p>
+      <p className="ios-section mt-12">Перенести профіль</p>
       <div className="dl-card mt-2 p-4">
         <TransferCodeMaker />
       </div>
 
-      <p className="ios-section mt-8">Профіль</p>
+      <p className="ios-section mt-12">Профіль</p>
       <div className="mt-2 flex flex-col gap-2">
         <p className="px-1 text-[14px] leading-snug text-[var(--muted)]">
           Вийдіть, щоб звільнити тварину для іншого гравця. Наступного разу буде новий профіль.
