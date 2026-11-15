@@ -75,9 +75,9 @@ export default function Game() {
   const [mapView, setMapView] = useState({ lat: 49.8419, lng: 24.0315, zoom: 15 }); // the area in view, for the map-type previews
   const [selectedMark, setSelectedMark] = useState<MapMark | null>(null);
   const [onboardingMap, setOnboardingMap] = useState(false); // after the nickname: the offline-map step of onboarding
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // an admin may bring a found treasure back to the map, as the finder can
   const [locked, setLocked] = useState(false); // the passcode lock screen is up
-  const lastTouch = useRef(Date.now()); // the last touch on the app: the auto-lock counts from it // an admin may bring a found treasure back to the map, as the finder can
+  const lastTouch = useRef(0); // the last touch on the app: the auto-lock counts from it (set when the app is ready)
   const [inApp, setInApp] = useState<InApp | null>(null);
   const [inAppOk, setInAppOk] = useState(false); // the player chose to continue inside the app
   const [recenter, setRecenter] = useState(0);
@@ -242,6 +242,7 @@ export default function Game() {
   // The passcode: the app opens locked when a code is set, and locks again once it has been left untouched for the
   // chosen time. A touch on the app, or coming back to it, is checked against that time.
   useEffect(() => {
+    lastTouch.current = Date.now();
     if (readPasscode(window.localStorage)) setLocked(true);
     const touch = () => { lastTouch.current = Date.now(); };
     const check = () => {
